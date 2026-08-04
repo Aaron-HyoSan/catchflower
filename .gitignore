@@ -1,0 +1,33 @@
+.DS_Store
+**/.DS_Store
+
+# 빌드 산출물
+build/
+.gradle/
+local.properties
+*.apk
+*.aab
+DerivedData/
+*.xcuserstate
+*.xcodeproj/xcuserdata/
+xcuserdata/
+.build/
+
+# 키·비밀 (절대 커밋 금지)
+*.env
+.env*
+secrets.*
+Secrets.*
+*.keystore
+*.jks
+GoogleService-Info.plist
+google-services.json
+
+# 파이썬
+__pycache__/
+*.pyc
+.venv/
+
+# 엑셀 임시
+~$*.xlsx
+~$*.docx
