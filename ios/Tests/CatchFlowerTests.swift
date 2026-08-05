@@ -707,4 +707,52 @@ struct AppSecretsTests {
             #expect(!AppSecrets.hasSupabase, "URL이 없는데 켜졌다고 한다")
         }
     }
+
+    /// **모양이 틀린 URL을 거른다.** 두 사례 다 실제로 났다 (2026-08-06).
+    ///
+    /// - `/rest/v1/`: 오너가 대시보드에서 REST 엔드포인트를 복사해 줬다.
+    ///   그대로 쓰면 클라이언트가 경로를 한 번 더 붙인다.
+    /// - `https:`: xcconfig에서 `//`가 주석이라 **조용히 잘린 값**이다.
+    ///   `isEmpty`가 아니라서 "키가 들어왔다"로 통과해 버린다.
+    ///
+    /// **둘 다 증상이 런타임 네트워크 오류로만 나타난다** — 그러면 원인을
+    /// 서버·RLS·네트워크에서 찾게 된다. 여기서 걸러야 하는 이유다.
+    @Test("모양이 틀린 Supabase URL은 거부한다", arguments: [
+        "https://abc.supabase.co/rest/v1/",   // 경로가 붙었다
+        "https://abc.supabase.co/rest/v1",    // 끝 슬래시가 없어도 같다
+        "https:",                             // xcconfig `//` 주석에 잘렸다
+        "https://",                           // 호스트가 없다
+        "http://abc.supabase.co",             // https가 아니다
+    ])
+    func rejectsMalformedSupabaseURL(bad: String) {
+        #expect(
+            AppSecrets.problem(inSupabaseURL: bad) != nil,
+            "이 URL을 통과시켰다: \(bad)"
+        )
+    }
+
+    /// 정상 형태는 통과해야 한다 — 검사가 과하면 켜지지 않는 게 문제가 된다.
+    @Test("호스트까지만 있는 URL은 통과한다", arguments: [
+        "https://ngfkkazyvbbhrcznqkar.supabase.co",
+        "https://ngfkkazyvbbhrcznqkar.supabase.co/",   // 끝 슬래시는 경로가 아니다
+    ])
+    func acceptsHostOnlySupabaseURL(good: String) {
+        #expect(
+            AppSecrets.problem(inSupabaseURL: good) == nil,
+            "정상 URL을 막았다: \(good) → \(AppSecrets.problem(inSupabaseURL: good) ?? "")"
+        )
+    }
+
+    /// **지금 이 맥에 주입된 값이 실제로 성립하는지 본다.** 위 두 테스트는
+    /// 로직만 보고, 이건 `Secrets.xcconfig`가 제대로 채워졌는지를 본다.
+    /// 값이 비어 있으면(다른 맥·CI) 건너뛴다 — 그건 결함이 아니다.
+    @Test("주입된 Supabase URL이 모양을 만족한다")
+    func injectedSupabaseURLIsWellFormed() throws {
+        try #require(!AppSecrets.supabaseURL.isEmpty, "URL 미주입 — 이 검사는 건너뛴다")
+        #expect(
+            AppSecrets.supabaseURLProblem == nil,
+            "주입된 URL이 틀렸다: \(AppSecrets.supabaseURLProblem ?? "")"
+        )
+        #expect(AppSecrets.hasSupabase, "URL·키가 다 있는데 서버 기능이 꺼져 있다")
+    }
 }
