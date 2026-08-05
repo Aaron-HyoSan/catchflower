@@ -27,6 +27,17 @@ final class AppSession {
     /// 도달하면 화면 12 제목이 `꽃이 아닐 수도 있어요`로 바뀐다.
     private(set) var identifyFailureStreak = 0
 
+    /// 화면 03(권한 안내)을 지났는가.
+    ///
+    /// **`UserDefaults`에 둔다.** 도감(`DiscoveryStore`)에 넣으면 기록을 지우거나
+    /// 파일이 깨질 때 온보딩이 되살아난다 — 둘은 수명이 다른 정보다.
+    ///
+    /// **권한 상태로 판단하지 않는다.** "카메라 권한이 없으면 온보딩 안 함"으로 하면
+    /// 설정에서 권한을 끈 기존 사용자에게 온보딩이 다시 뜬다.
+    private(set) var hasFinishedOnboarding: Bool
+
+    private static let onboardingKey = "hasFinishedOnboarding.v1"
+
     /// 로그인 전이라 임시 사용자다 (화면 01은 이번 범위 밖).
     let userID = UUID()
 
@@ -79,6 +90,14 @@ final class AppSession {
             root: root?.appendingPathComponent("Photos")
         )
         self.launchOptions = launchOptions
+        // UI 테스트는 대부분 도감부터 시작해야 한다. `-uiTestReset`은 도감만 지우고
+        // 온보딩은 건드리지 않는다 — 저장소 초기화와 온보딩 재현은 다른 요구다.
+        if launchOptions.forcesOnboarding {
+            self.hasFinishedOnboarding = false
+        } else {
+            self.hasFinishedOnboarding = launchOptions.skipsOnboarding
+                || UserDefaults.standard.bool(forKey: Self.onboardingKey)
+        }
         // 키가 없으면 장소 조회를 아예 하지 않는다 — `$(KAKAO_REST_API_KEY)`를
         // 키로 보내 403을 받는 것보다 조용히 꺼두는 게 낫다.
         self.places = places
@@ -256,6 +275,17 @@ final class AppSession {
 
     func noteIdentifyFailure() {
         identifyFailureStreak += 1
+    }
+
+    /// 화면 03을 지났다고 기록한다. **권한을 거부해도 부른다** —
+    /// `허용하지 않아도 도감은 쓸 수 있지만 일부 기능이 제한돼요`가 약속이다.
+    /// 거부한 사용자에게 같은 화면을 매번 다시 보여주는 건 안내가 아니라 강요다.
+    func finishOnboarding() {
+        hasFinishedOnboarding = true
+        // 강제 표시 중이면 저장하지 않는다 — 테스트가 한 번 통과한 뒤로
+        // 이 기기에서 온보딩 테스트가 영구히 무의미해진다.
+        guard !launchOptions.forcesOnboarding else { return }
+        UserDefaults.standard.set(true, forKey: Self.onboardingKey)
     }
 
     /// 화면 12 — 실패가 누적됐으면 제목을 바꾼다 (B-11).

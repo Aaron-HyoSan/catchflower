@@ -225,6 +225,36 @@ struct GamePolicyTests {
         #expect(!GamePolicy.Season.dormant.runsRanking)
         #expect(GamePolicy.Season.first.runsRanking)
     }
+
+    /// B-3 어뷰징 가드 ① — 막는 건 **희귀종 × 하위 순위** 조합 하나뿐이다.
+    /// 나머지를 다 통과시켜야 한다는 게 이 표의 요점이다 —
+    /// 넓게 막으면 진짜로 귀한 꽃을 만난 사람이 매번 두 장을 찍어야 한다.
+    @Test("가드 ① — 희귀종을 2·3순위에서 고를 때만 추가 사진", arguments: [
+        (Rarity.rare, 1, false),      // AI 1순위를 받아들인 것 = 어뷰징 모양이 아니다
+        (Rarity.rare, 2, true),
+        (Rarity.rare, 3, true),
+        (Rarity.common, 3, false),    // 흔한 꽃은 하위 순위여도 이득이 없다
+        (Rarity.normal, 3, false),
+        (Rarity.common, 1, false),
+    ])
+    func rareFlowerExtraPhotoGuard(rarity: Rarity, rank: Int, expected: Bool) {
+        #expect(GamePolicy.needsExtraPhoto(rarity: rarity, pickedRank: rank) == expected)
+    }
+
+    /// 임계값 상수와 판정이 **같은 규칙**을 말하는지 본다.
+    /// 상수만 있고 부르는 곳이 없어서 규칙이 아니라 장식이던 기간이 있었다.
+    @Test("가드 ① 임계값은 2순위부터다")
+    func rareGuardThresholdIsSecondRank() {
+        #expect(GamePolicy.rareFlowerExtraPhotoRankThreshold == 2)
+        #expect(!GamePolicy.needsExtraPhoto(
+            rarity: .rare,
+            pickedRank: GamePolicy.rareFlowerExtraPhotoRankThreshold - 1
+        ))
+        #expect(GamePolicy.needsExtraPhoto(
+            rarity: .rare,
+            pickedRank: GamePolicy.rareFlowerExtraPhotoRankThreshold
+        ))
+    }
 }
 
 // MARK: - 세션 로직

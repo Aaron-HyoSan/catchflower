@@ -54,6 +54,24 @@ enum GamePolicy {
     /// 사진을 한 장 더 받는다. `rarity == .rare` 이고 순위가 이 값 이상일 때.
     static let rareFlowerExtraPhotoRankThreshold = 2
 
+    /// B-3 어뷰징 가드 ① 판정.
+    ///
+    /// **왜 여기 두는가.** 화면에서 `rarity == .rare && rank >= 2`를 직접 쓰면
+    /// 규칙이 뷰 안에 숨는다. 오너 규칙은 정책 파일에 모아서 **테스트가 직접 부를 수
+    /// 있게** 한다 — `rareFlowerExtraPhotoRankThreshold`는 상수만 있고 부르는 곳이
+    /// 없어서 오랫동안 규칙이 아니라 장식이었다.
+    ///
+    /// **1순위는 통과시킨다.** AI가 가장 그럴 법하다고 본 답을 사용자가 그대로
+    /// 받아들인 건 어뷰징의 모양이 아니다. 여기까지 막으면 진짜로 귀한 꽃을
+    /// 만난 사람에게 매번 두 장을 요구하게 된다.
+    ///
+    /// **점수는 보지 않는다.** 희귀종은 표본이 적어 점수가 원래 낮게 나온다 —
+    /// 점수까지 조건에 넣으면 정직한 발견을 더 자주 막는다.
+    /// 낮은 순위를 **직접 고른 행위**가 신호다.
+    static func needsExtraPhoto(rarity: Rarity, pickedRank: Int) -> Bool {
+        rarity == .rare && pickedRank >= rareFlowerExtraPhotoRankThreshold
+    }
+
     /// B-11 ● 판별 실패를 몇 번 연속하면 안내를 바꾸는가.
     /// 이 횟수에 도달하면 화면 12 제목이 `꽃이 아닐 수도 있어요`로 바뀐다.
     static let identifyFailureStreakForGuideChange = 3

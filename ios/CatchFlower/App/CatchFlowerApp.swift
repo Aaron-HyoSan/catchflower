@@ -12,7 +12,16 @@ struct CatchFlowerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootTabView()
+            // 화면 03을 먼저 지난다. **탭 바 위에 시트로 얹지 않는다** —
+            // 뒤에 도감이 보이면 권한 안내가 건너뛰어도 되는 것처럼 읽히고,
+            // 실제로 뒤쪽 탭이 눌린다.
+            Group {
+                if session.hasFinishedOnboarding {
+                    RootTabView()
+                } else {
+                    PermissionIntroView { session.finishOnboarding() }
+                }
+            }
                 .environment(session)
                 .environment(toasts)
                 // E-3: 다크 모드 미대응. 시스템 설정과 무관하게 라이트로 고정한다.

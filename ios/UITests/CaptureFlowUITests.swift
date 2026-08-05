@@ -330,6 +330,7 @@ final class CaptureFlowUITests: XCTestCase {
             LaunchArgument.storageID, uiTestStorageID,
             LaunchArgument.reset,
             LaunchArgument.slowIdentify,
+            LaunchArgument.skipOnboarding,
         ]
         app.launch()
         openCamera(app)
@@ -386,6 +387,7 @@ final class CaptureFlowUITests: XCTestCase {
             LaunchArgument.storageID, uiTestStorageID,
             LaunchArgument.reset,
             LaunchArgument.slowIdentify,
+            LaunchArgument.skipOnboarding,
         ]
         app.launch()
         openCamera(app)
@@ -400,6 +402,102 @@ final class CaptureFlowUITests: XCTestCase {
         XCTAssertTrue(
             app.navigationBars["내 꽃 도감"].waitForExistence(timeout: 5),
             "사진을 버린 뒤인데 확인을 물었다"
+        )
+    }
+
+    // MARK: - B-3 어뷰징 가드 ① 희귀종 추가 사진
+
+    /// 애매 경로에서 **2순위 희귀종**을 고르면 즉시 등록되지 않는다.
+    /// 오너 확정 규칙인데 상수만 있고 부르는 곳이 없어서 그냥 등록됐던 자리다.
+    private func pickRareSecondCandidate(_ app: XCUIApplication) {
+        app.buttons["찍기 (애매 · 2순위 희귀종)"].tap()
+        XCTAssertTrue(
+            app.staticTexts["어느 꽃인가요?"].waitForExistence(timeout: 10),
+            "애매 경로로 가지 않았다"
+        )
+        let second = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS %@", "2번 후보")
+        ).firstMatch
+        XCTAssertTrue(second.waitForExistence(timeout: 5), "2번 후보가 없다")
+        second.tap()
+    }
+
+    func test_희귀종을_2순위에서_고르면_사진을_한장_더_받는다() {
+        let app = launch()
+        openCamera(app)
+        pickRareSecondCandidate(app)
+
+        // A 문서 3절에 추가한 문구 (2026-08-05)
+        XCTAssertTrue(
+            app.staticTexts["귀한 꽃이네요!"].waitForExistence(timeout: 5),
+            "가드 ①이 걸리지 않았다 — 2순위 희귀종이 그냥 등록됐다"
+        )
+        XCTAssertTrue(app.staticTexts["조금 다른 각도에서 찍어 주시면 좋아요."].exists)
+        XCTAssertTrue(app.buttons["한 장 더 찍기"].exists)
+        XCTAssertTrue(app.buttons["다시 고르기"].exists)
+        // 등록이 끝난 것처럼 읽히면 안 된다.
+        XCTAssertFalse(app.staticTexts["새로운 꽃을 발견했어요!"].exists)
+    }
+
+    /// 한 장 더 찍으면 등록된다. **두 번 묻지 않는다** —
+    /// 두 번째 사진도 판별을 새로 거치므로 같은 희귀종이 또 걸리면 영원히 등록할 수 없다.
+    func test_한장_더_찍으면_등록된다() {
+        let app = launch()
+        openCamera(app)
+        pickRareSecondCandidate(app)
+        XCTAssertTrue(app.buttons["한 장 더 찍기"].waitForExistence(timeout: 5))
+        app.buttons["한 장 더 찍기"].tap()
+
+        // 화면 07로 돌아간다.
+        XCTAssertTrue(
+            app.staticTexts["꽃 한 송이를 네모 안에 꽉 채워 주세요"].waitForExistence(timeout: 5),
+            "한 장 더 찍기가 촬영 화면으로 돌아가지 않았다"
+        )
+        pickRareSecondCandidate(app)
+
+        XCTAssertTrue(
+            app.staticTexts["새로운 꽃을 발견했어요!"].waitForExistence(timeout: 5),
+            "두 번째 사진인데 또 가드가 걸렸다 — 등록할 방법이 없다"
+        )
+    }
+
+    /// `다시 고르기`는 후보 선택으로 돌아간다. **면제를 주지 않는다** —
+    /// 되돌린 뒤 같은 희귀종을 다시 고르면 가드는 그대로 걸려야 한다.
+    func test_다시_고르기는_면제를_주지_않는다() {
+        let app = launch()
+        openCamera(app)
+        pickRareSecondCandidate(app)
+        XCTAssertTrue(app.buttons["다시 고르기"].waitForExistence(timeout: 5))
+        app.buttons["다시 고르기"].tap()
+
+        XCTAssertTrue(
+            app.staticTexts["어느 꽃인가요?"].waitForExistence(timeout: 5),
+            "다시 고르기가 후보 선택으로 돌아가지 않았다"
+        )
+        app.buttons.matching(
+            NSPredicate(format: "label CONTAINS %@", "2번 후보")
+        ).firstMatch.tap()
+
+        XCTAssertTrue(
+            app.staticTexts["귀한 꽃이네요!"].waitForExistence(timeout: 5),
+            "다시 고르기로 가드를 우회할 수 있다"
+        )
+    }
+
+    /// 1순위는 통과시킨다. AI가 가장 그럴 법하다고 본 답을 받아들인 건
+    /// 어뷰징의 모양이 아니다 — 여기까지 막으면 정직한 발견을 벌주게 된다.
+    func test_1순위는_추가_사진을_요구하지_않는다() {
+        let app = launch()
+        openCamera(app)
+        app.buttons["찍기 (애매 · 2순위 희귀종)"].tap()
+        XCTAssertTrue(app.staticTexts["어느 꽃인가요?"].waitForExistence(timeout: 10))
+        app.buttons.matching(
+            NSPredicate(format: "label CONTAINS %@", "1번 후보")
+        ).firstMatch.tap()
+
+        XCTAssertTrue(
+            app.staticTexts["새로운 꽃을 발견했어요!"].waitForExistence(timeout: 5),
+            "1순위인데 가드가 걸렸다"
         )
     }
 

@@ -211,6 +211,11 @@ enum FixtureShot: String, CaseIterable, Sendable {
     /// 이제 정상적으로 막힌다. 그래서 **재발견 화면(11)은 장소를 옮겨야만 볼 수 있다** —
     /// 규칙이 맞게 동작하는 것이고, 이 픽스처가 그 경로를 밟게 해준다.
     case confidentElsewhere = "fixture_confident_elsewhere.jpg"
+    /// 애매 경로 + **2순위가 희귀종**. B-3 가드 ①을 밟는 유일한 통로다.
+    ///
+    /// 파일명에 `low`가 들어가야 Mock이 애매 시나리오를 고른다(계약 표) —
+    /// 후보 3개가 같은 크기로 놓여야 2순위를 **직접 고르는 행위**를 재현할 수 있다.
+    case rareSecondLow = "fixture_low_rare2.jpg"
 
     var label: String {
         switch self {
@@ -218,6 +223,7 @@ enum FixtureShot: String, CaseIterable, Sendable {
         case .low: return "찍기 (애매 · 0.55)"
         case .fail: return "찍기 (실패)"
         case .confidentElsewhere: return "찍기 (확정 · 다른 장소)"
+        case .rareSecondLow: return "찍기 (애매 · 2순위 희귀종)"
         }
     }
 
@@ -225,9 +231,12 @@ enum FixtureShot: String, CaseIterable, Sendable {
     private var preferredDifficulty: AIDifficulty? {
         switch self {
         case .confident, .confidentElsewhere: return .low
-        case .low, .fail: return nil
+        case .low, .fail, .rareSecondLow: return nil
         }
     }
+
+    /// B-3 가드 ① 경로. 희귀종을 2순위 자리에 놓는다.
+    private var placesRareCandidateSecond: Bool { self == .rareSecondLow }
 
     /// `confidentElsewhere`만 다른 좌표를 쓴다. B-5가 "같은 장소"로 보지 않을 만큼
     /// 떨어져 있어야 한다(반올림 4자리 ≈ 11m 기준).
@@ -249,7 +258,8 @@ enum FixtureShot: String, CaseIterable, Sendable {
             lat: coordinate.lat,
             lng: coordinate.lng,
             placeName: coordinate.place,
-            preferredDifficulty: preferredDifficulty
+            preferredDifficulty: preferredDifficulty,
+            placesRareCandidateSecond: placesRareCandidateSecond
         )
     }
 }

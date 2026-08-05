@@ -30,15 +30,37 @@ struct LaunchOptions: Sendable {
     /// 타이밍에 기대는 테스트를 타이밍을 정해주는 테스트로 바꾼다.
     var slowsIdentification = false
 
+    /// 화면 03(권한 안내)을 건너뛴다.
+    ///
+    /// **UI 테스트 대부분은 도감부터 시작해야 한다.** 온보딩 게이트를 붙인 순간
+    /// 23개가 전부 권한 화면에서 멈춘다 — 테스트마다 권한 화면을 통과하는 코드를
+    /// 붙이면 실제로 검증하려는 것과 무관한 절차가 23번 복제된다.
+    ///
+    /// **기본값을 "건너뛴다"로 두지 않았다.** 그러면 화면 03이 테스트에서
+    /// 영원히 안 보인다. 테스트가 명시적으로 켜고 끈다.
+    var skipsOnboarding = false
+
+    /// 화면 03을 **무조건** 띄운다. `skipsOnboarding`보다 우선한다.
+    ///
+    /// 온보딩 통과 여부는 `UserDefaults`에 남아서 앱을 지우기 전까지 유지된다.
+    /// 그래서 "온보딩이 뜨는가"를 검증하는 테스트가 **앞선 테스트의 실행 여부에
+    /// 좌우된다** — 단독으로 돌리면 통과하고 전체로 돌리면 실패하는 종류다.
+    /// 상태를 지우는 대신 **상태를 무시하게** 만든다.
+    var forcesOnboarding = false
+
     static let temporaryStorageFlag = "-uiTestTemporaryStorage"
     static let resetFlag = "-uiTestReset"
     static let storageIDFlag = "-uiTestStorageID"
     static let slowIdentifyFlag = "-uiTestSlowIdentify"
+    static let skipOnboardingFlag = "-uiTestSkipOnboarding"
+    static let forceOnboardingFlag = "-uiTestForceOnboarding"
 
     init(arguments: [String] = []) {
         usesTemporaryStorage = arguments.contains(Self.temporaryStorageFlag)
         resetsStorage = arguments.contains(Self.resetFlag)
         slowsIdentification = arguments.contains(Self.slowIdentifyFlag)
+        skipsOnboarding = arguments.contains(Self.skipOnboardingFlag)
+        forcesOnboarding = arguments.contains(Self.forceOnboardingFlag)
         if let index = arguments.firstIndex(of: Self.storageIDFlag),
            index + 1 < arguments.count {
             storageID = arguments[index + 1]

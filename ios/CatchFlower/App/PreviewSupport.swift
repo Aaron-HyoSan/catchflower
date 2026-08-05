@@ -16,6 +16,15 @@ struct RootTabPreview: View {
     }
 }
 
+/// 화면 03 프리뷰. 권한 요청은 프리뷰에서 실제로 뜨지 않는다 — 배치만 본다.
+struct PermissionIntroPreview: View {
+    var body: some View {
+        PermissionIntroView {}
+            .environment(AppSession.preview(discoveryCount: 0))
+            .preferredColorScheme(.light)
+    }
+}
+
 extension AppSession {
     /// 지금 달에 피는 꽃 앞쪽부터 `count`종을 발견한 상태로 만든다.
     ///

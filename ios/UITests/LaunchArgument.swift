@@ -12,6 +12,8 @@ enum LaunchArgument {
     static let reset = "-uiTestReset"
     static let storageID = "-uiTestStorageID"
     static let slowIdentify = "-uiTestSlowIdentify"
+    static let skipOnboarding = "-uiTestSkipOnboarding"
+    static let forceOnboarding = "-uiTestForceOnboarding"
 }
 
 extension XCTestCase {
@@ -24,11 +26,16 @@ extension XCTestCase {
     }
 
     /// 격리된 저장소로 앱을 띄운다.
+    ///
+    /// **온보딩(화면 03)은 건너뛴다.** 검증 대상이 도감·촬영인데 권한 화면을
+    /// 통과하는 절차를 테스트마다 붙이면, 실제로 보려는 것과 무관한 코드가
+    /// 스무 번 복제된다. 화면 03 자체는 전용 테스트가 본다.
     func launchIsolatedApp(reset: Bool = true) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments += [
             LaunchArgument.temporaryStorage,
             LaunchArgument.storageID, uiTestStorageID,
+            LaunchArgument.skipOnboarding,
         ]
         if reset { app.launchArguments.append(LaunchArgument.reset) }
         app.launch()

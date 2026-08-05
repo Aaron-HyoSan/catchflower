@@ -19,6 +19,14 @@ struct CaptureFlow: View {
     @State private var recorded: Discovery?
     /// B-5로 막힌 종. 화면에 꽃 이름·그림을 보여주려면 알아야 한다.
     @State private var duplicateFlowerID: Int?
+    /// B-3 가드 ① — 추가 사진을 요구한 후보. 화면에 꽃 이름·그림을 보여주려면 필요하다.
+    @State private var pendingRareCandidate: RecognitionCandidate?
+    /// 추가 사진을 이미 받았는가.
+    ///
+    /// **두 번 묻지 않기 위한 것이다.** 두 번째 사진도 판별을 새로 거치는데(그게 목적이다),
+    /// 이 표시가 없으면 같은 희귀종을 다시 골랐을 때 또 막혀서 **영원히 등록할 수 없다.**
+    /// 규칙은 "한 장 더 받는다"이고 "두 장을 계속 받는다"가 아니다.
+    @State private var hasProvidedExtraPhoto = false
     /// 촬영 중 이탈 확인 (A 문서 3절). **찍은 사진이 사라지는 걸 미리 알려야 한다.**
     @State private var isConfirmingLeave = false
 
@@ -31,6 +39,7 @@ struct CaptureFlow: View {
         case failed             // 12
         case share              // 13
         case duplicate          // B-5 하루 중복 (와이어프레임에 없다 — A 문서 3절)
+        case rareExtraPhoto     // B-3 가드 ① 희귀종 추가 사진 (와이어프레임에 없다)
     }
 
     var body: some View {
@@ -87,6 +96,9 @@ struct CaptureFlow: View {
                 // 취소하면 그 사진은 버린다. 남겨두면 화면 07에서 `닫기`를 눌렀을 때
                 // 이미 없는 사진을 두고 "저장되지 않아요"라고 묻게 된다.
                 shot = nil
+                // 추가 사진 면제도 같이 버린다 — 이 등록을 포기한 것이다.
+                hasProvidedExtraPhoto = false
+                pendingRareCandidate = nil
                 step = .camera
             })
             .task { await identify() }
@@ -103,6 +115,11 @@ struct CaptureFlow: View {
                     },
                     onRetake: {
                         shot = nil
+                        // **면제를 물려주지 않는다.** `아니에요, 다시 찍을게요`는
+                        // 이 등록을 포기하는 것이다 — 여기서 안 지우면 다음 촬영에서
+                        // 3순위 희귀종을 골라도 가드가 안 걸린다(가드를 우회하는 길이 생긴다).
+                        hasProvidedExtraPhoto = false
+                        pendingRareCandidate = nil
                         step = .camera
                     }
                 )
@@ -130,6 +147,31 @@ struct CaptureFlow: View {
                     flower: flower,
                     onGoToCodex: { dismiss() },
                     onRetake: { step = .camera }
+                )
+            }
+
+        case .rareExtraPhoto:
+            // 이름을 바꿔 받는다 — `if let pendingRareCandidate`로 가리면
+            // 콜백 안에서 상태를 지울 수 없다(`let` 상수가 된다).
+            if let pending = pendingRareCandidate,
+               let flower = session.repository[pending.flowerID] {
+                RareFlowerExtraPhotoView(
+                    flower: flower,
+                    onRetake: {
+                        // **찍은 사진은 버린다.** 같은 사진을 다시 보내는 건 확인이 아니다.
+                        // 다음 촬영에서 `hasProvidedExtraPhoto`가 켜져 있어서
+                        // 같은 후보로 바로 등록된다.
+                        hasProvidedExtraPhoto = true
+                        shot = nil
+                        step = .camera
+                    },
+                    onReselect: {
+                        // 후보 선택으로 되돌린다. 잘못 골랐을 수 있다.
+                        // **`hasProvidedExtraPhoto`는 켜지 않는다** — 다시 고른 뒤에도
+                        // 희귀종 하위 순위면 규칙은 그대로 적용돼야 한다.
+                        pendingRareCandidate = nil
+                        step = .confirm
+                    }
                 )
             }
 
@@ -184,6 +226,21 @@ struct CaptureFlow: View {
                 let l = session.repository[lhs]?.aiDifficulty == wanted
                 let r = session.repository[rhs]?.aiDifficulty == wanted
                 return l && !r
+            }
+        }
+
+        // B-3 가드 ① 경로용. 희귀종을 **2순위 자리에** 끼워 넣는다.
+        //
+        // **개화월에 희귀종이 없는 달이 있다.** 200종 중 `귀함`은 10종이고
+        // 개화기가 2~10월에만 몰려 있어서 11·12·1월에는 후보에 하나도 안 들어온다.
+        // 그 달에 테스트가 실패하면 그건 코드가 아니라 **달력이 깨뜨린 것**이다 —
+        // 이 달에는 개화월 밖 희귀종으로 대체한다(Mock 경로에만 영향).
+        if taken.placesRareCandidateSecond {
+            let rareInSeason = candidateIDs.first { session.repository[$0]?.rarity == .rare }
+            let fallback = session.repository.flowers.first { $0.rarity == .rare }?.id
+            if let rareID = rareInSeason ?? fallback {
+                candidateIDs.removeAll { $0 == rareID }
+                candidateIDs.insert(rareID, at: min(1, candidateIDs.count))
             }
         }
         #endif
@@ -259,6 +316,18 @@ struct CaptureFlow: View {
             return
         }
 
+        // **B-3 어뷰징 가드 ① — 오너 확정 규칙.** 희귀종을 2·3순위에서 골랐으면
+        // 즉시 확정하지 않고 사진을 한 장 더 받는다.
+        // 상수(`rareFlowerExtraPhotoRankThreshold`)만 있고 부르는 곳이 없어서
+        // 그동안 3순위 희귀종이 그냥 등록됐다 — B-5와 똑같은 종류의 미완성이었다.
+        if !hasProvidedExtraPhoto,
+           let flower = session.repository[candidate.flowerID],
+           GamePolicy.needsExtraPhoto(rarity: flower.rarity, pickedRank: rank) {
+            pendingRareCandidate = candidate
+            step = .rareExtraPhoto
+            return
+        }
+
         let isFirst = !session.hasDiscovered(flowerID: candidate.flowerID)
 
         // **사진을 실제로 저장한다.** 안 하면 도감 사진이 회색 아이콘으로 남는다.
@@ -286,6 +355,10 @@ struct CaptureFlow: View {
         )
         session.record(discovery)
         recorded = discovery
+        // 등록이 끝났으니 면제를 되돌린다. 화면 10·11에서 다시 촬영으로 가는 길은
+        // 없지만, 남겨두면 다음에 흐름을 늘릴 때 조용히 가드가 꺼진다.
+        hasProvidedExtraPhoto = false
+        pendingRareCandidate = nil
         step = isFirst ? .registered : .rediscovered
     }
 }
@@ -309,4 +382,10 @@ struct CapturedPhoto: Equatable, Sendable {
     /// 후보 1순위가 `high`면 0.82로도 애매 경로가 된다 — 즉 **어느 꽃이 뽑히느냐로
     /// 경로가 바뀐다**. 실기기에서는 이 필드가 항상 nil이다.
     var preferredDifficulty: AIDifficulty?
+    /// **시뮬레이터 픽스처 전용.** 희귀종을 2순위에 놓는다 — B-3 가드 ①을 밟기 위한 것이다.
+    ///
+    /// 가드는 `귀함` 종을 **2·3순위에서 골랐을 때**만 걸린다. 그런데 어느 꽃이 후보로
+    /// 뽑히는지는 개화월이 정하고, 200종 중 `귀함`은 10종뿐이라
+    /// **그냥 찍어서는 이 경로를 밟을 수 없다.** 실기기에서는 항상 false다.
+    var placesRareCandidateSecond = false
 }
