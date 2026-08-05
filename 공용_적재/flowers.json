@@ -1,0 +1,4080 @@
+{
+ "schema_version": 1,
+ "source": "꽃도감/꽃목록_200종.csv",
+ "note": "생성물이다. 직접 고치지 않는다. 원본은 공용_적재/build_flowers_json.py",
+ "count": 200,
+ "bloom_months_by_month": {
+  "1": 1,
+  "2": 4,
+  "3": 24,
+  "4": 52,
+  "5": 71,
+  "6": 78,
+  "7": 100,
+  "8": 98,
+  "9": 67,
+  "10": 36,
+  "11": 4,
+  "12": 2
+ },
+ "flowers": [
+  {
+   "id": 1,
+   "name": "개나리",
+   "scientific_name": "Forsythia koreana",
+   "family": "물푸레나무과",
+   "bloom_months": [
+    3,
+    4
+   ],
+   "bloom_label": "3~4월",
+   "season": "spring",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "담장·공원 울타리",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [
+    13
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 2,
+   "name": "진달래",
+   "scientific_name": "Rhododendron mucronulatum",
+   "family": "진달래과",
+   "bloom_months": [
+    3,
+    4
+   ],
+   "bloom_label": "3~4월",
+   "season": "spring",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "산지·공원 사면",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    3,
+    4
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 3,
+   "name": "철쭉",
+   "scientific_name": "Rhododendron schlippenbachii",
+   "family": "진달래과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "산지·공원",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    2,
+    4
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 4,
+   "name": "영산홍",
+   "scientific_name": "Rhododendron indicum",
+   "family": "진달래과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "붉은색",
+   "rarity": "common",
+   "habitat": "화단·가로 조경",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    3,
+    2
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 5,
+   "name": "벚꽃",
+   "scientific_name": "Prunus × yedoensis",
+   "family": "장미과",
+   "bloom_months": [
+    4
+   ],
+   "bloom_label": "4월",
+   "season": "spring",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "가로수·공원",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    6,
+    7,
+    9
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 6,
+   "name": "매화",
+   "scientific_name": "Prunus mume",
+   "family": "장미과",
+   "bloom_months": [
+    2,
+    3,
+    4
+   ],
+   "bloom_label": "2~4월",
+   "season": "winter",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "공원·정원",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    5,
+    7
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 7,
+   "name": "살구꽃",
+   "scientific_name": "Prunus armeniaca",
+   "family": "장미과",
+   "bloom_months": [
+    4
+   ],
+   "bloom_label": "4월",
+   "season": "spring",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "주택가·농가",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    6,
+    5,
+    8
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 8,
+   "name": "복사꽃",
+   "scientific_name": "Prunus persica",
+   "family": "장미과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "과수원·주택가",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    7,
+    5
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 9,
+   "name": "자두꽃",
+   "scientific_name": "Prunus salicina",
+   "family": "장미과",
+   "bloom_months": [
+    4
+   ],
+   "bloom_label": "4월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "과수원·주택가",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    6,
+    5
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 10,
+   "name": "백목련",
+   "scientific_name": "Magnolia denudata",
+   "family": "목련과",
+   "bloom_months": [
+    3,
+    4
+   ],
+   "bloom_label": "3~4월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "공원·학교",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    11,
+    12
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 11,
+   "name": "목련",
+   "scientific_name": "Magnolia kobus",
+   "family": "목련과",
+   "bloom_months": [
+    3,
+    4
+   ],
+   "bloom_label": "3~4월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "공원·산지",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    10
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 12,
+   "name": "자목련",
+   "scientific_name": "Magnolia liliiflora",
+   "family": "목련과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "공원·정원",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [
+    10
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 13,
+   "name": "산수유",
+   "scientific_name": "Cornus officinalis",
+   "family": "층층나무과",
+   "bloom_months": [
+    3,
+    4
+   ],
+   "bloom_label": "3~4월",
+   "season": "spring",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "공원·가로수",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    1,
+    14
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 14,
+   "name": "생강나무",
+   "scientific_name": "Lindera obtusiloba",
+   "family": "녹나무과",
+   "bloom_months": [
+    3
+   ],
+   "bloom_label": "3월",
+   "season": "spring",
+   "color": "노랑",
+   "rarity": "normal",
+   "habitat": "산지 등산로",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    13
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 15,
+   "name": "동백꽃",
+   "scientific_name": "Camellia japonica",
+   "family": "차나무과",
+   "bloom_months": [
+    12,
+    1,
+    2,
+    3,
+    4
+   ],
+   "bloom_label": "12~4월",
+   "season": "winter",
+   "color": "붉은색",
+   "rarity": "normal",
+   "habitat": "남부 해안·공원",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [
+    16
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 16,
+   "name": "애기동백",
+   "scientific_name": "Camellia sasanqua",
+   "family": "차나무과",
+   "bloom_months": [
+    10,
+    11,
+    12
+   ],
+   "bloom_label": "10~12월",
+   "season": "winter",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "공원·정원",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    15
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 17,
+   "name": "명자나무꽃",
+   "scientific_name": "Chaenomeles speciosa",
+   "family": "장미과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "붉은색",
+   "rarity": "normal",
+   "habitat": "정원·울타리",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    15
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 18,
+   "name": "조팝나무",
+   "scientific_name": "Spiraea prunifolia",
+   "family": "장미과",
+   "bloom_months": [
+    4
+   ],
+   "bloom_label": "4월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "공원·도로변",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    26
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 19,
+   "name": "수수꽃다리",
+   "scientific_name": "Syringa dilatata",
+   "family": "물푸레나무과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "보라",
+   "rarity": "common",
+   "habitat": "공원·학교",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 1
+  },
+  {
+   "id": 20,
+   "name": "이팝나무",
+   "scientific_name": "Chionanthus retusus",
+   "family": "물푸레나무과",
+   "bloom_months": [
+    5,
+    6
+   ],
+   "bloom_label": "5~6월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "가로수",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    26
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 21,
+   "name": "아까시나무",
+   "scientific_name": "Robinia pseudoacacia",
+   "family": "콩과",
+   "bloom_months": [
+    5,
+    6
+   ],
+   "bloom_label": "5~6월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "산지·도로변",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    91
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 22,
+   "name": "등나무",
+   "scientific_name": "Wisteria floribunda",
+   "family": "콩과",
+   "bloom_months": [
+    5
+   ],
+   "bloom_label": "5월",
+   "season": "spring",
+   "color": "보라",
+   "rarity": "common",
+   "habitat": "공원 그늘막·정자",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [
+    93
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 23,
+   "name": "병꽃나무",
+   "scientific_name": "Weigela subsessilis",
+   "family": "인동과",
+   "bloom_months": [
+    5
+   ],
+   "bloom_label": "5월",
+   "season": "spring",
+   "color": "붉은색",
+   "rarity": "normal",
+   "habitat": "산지·공원",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 24,
+   "name": "황매화",
+   "scientific_name": "Kerria japonica",
+   "family": "장미과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "노랑",
+   "rarity": "normal",
+   "habitat": "공원·화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 2
+  },
+  {
+   "id": 25,
+   "name": "산딸나무",
+   "scientific_name": "Cornus kousa",
+   "family": "층층나무과",
+   "bloom_months": [
+    5,
+    6
+   ],
+   "bloom_label": "5~6월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "공원·가로수",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [],
+   "illust_batch": 2
+  },
+  {
+   "id": 26,
+   "name": "쥐똥나무",
+   "scientific_name": "Ligustrum obtusifolium",
+   "family": "물푸레나무과",
+   "bloom_months": [
+    5,
+    6
+   ],
+   "bloom_label": "5~6월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "울타리·도로변",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    20,
+    18
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 27,
+   "name": "모란",
+   "scientific_name": "Paeonia suffruticosa",
+   "family": "작약과",
+   "bloom_months": [
+    5
+   ],
+   "bloom_label": "5월",
+   "season": "spring",
+   "color": "붉은색",
+   "rarity": "normal",
+   "habitat": "정원·고궁",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    28
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 28,
+   "name": "작약",
+   "scientific_name": "Paeonia lactiflora",
+   "family": "작약과",
+   "bloom_months": [
+    5,
+    6
+   ],
+   "bloom_label": "5~6월",
+   "season": "spring",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "화단·농가",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    27
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 29,
+   "name": "찔레꽃",
+   "scientific_name": "Rosa multiflora",
+   "family": "장미과",
+   "bloom_months": [
+    5,
+    6
+   ],
+   "bloom_label": "5~6월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "들·산기슭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    81,
+    82
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 30,
+   "name": "마가목",
+   "scientific_name": "Sorbus commixta",
+   "family": "장미과",
+   "bloom_months": [
+    5,
+    6
+   ],
+   "bloom_label": "5~6월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "공원·산지",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 31,
+   "name": "민들레",
+   "scientific_name": "Taraxacum platycarpum",
+   "family": "국화과",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ],
+   "bloom_label": "3~5월",
+   "season": "spring",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "길가·공터",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    32,
+    45
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 32,
+   "name": "서양민들레",
+   "scientific_name": "Taraxacum officinale",
+   "family": "국화과",
+   "bloom_months": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "3~10월",
+   "season": "spring",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "길가·공터",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    31
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 33,
+   "name": "제비꽃",
+   "scientific_name": "Viola mandshurica",
+   "family": "제비꽃과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "보라",
+   "rarity": "common",
+   "habitat": "길가·잔디밭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    34,
+    73
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 34,
+   "name": "남산제비꽃",
+   "scientific_name": "Viola albida",
+   "family": "제비꽃과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "산지",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    33
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 35,
+   "name": "꽃마리",
+   "scientific_name": "Trigonotis peduncularis",
+   "family": "지치과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "파랑",
+   "rarity": "common",
+   "habitat": "길가·잔디밭",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    36
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 36,
+   "name": "큰개불알풀",
+   "scientific_name": "Veronica persica",
+   "family": "현삼과",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ],
+   "bloom_label": "3~5월",
+   "season": "spring",
+   "color": "파랑",
+   "rarity": "common",
+   "habitat": "길가·밭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    35
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 37,
+   "name": "봄맞이꽃",
+   "scientific_name": "Androsace umbellata",
+   "family": "앵초과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "길가·논둑",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    38
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 38,
+   "name": "별꽃",
+   "scientific_name": "Stellaria media",
+   "family": "석죽과",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ],
+   "bloom_label": "3~5월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "길가·밭",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    39,
+    40
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 39,
+   "name": "쇠별꽃",
+   "scientific_name": "Stellaria aquatica",
+   "family": "석죽과",
+   "bloom_months": [
+    4,
+    5,
+    6
+   ],
+   "bloom_label": "4~6월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "습한 길가",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    38
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 40,
+   "name": "개별꽃",
+   "scientific_name": "Pseudostellaria heterophylla",
+   "family": "석죽과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "산지 숲",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    38
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 41,
+   "name": "광대나물",
+   "scientific_name": "Lamium amplexicaule",
+   "family": "꿀풀과",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ],
+   "bloom_label": "3~5월",
+   "season": "spring",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "길가·밭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    42
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 42,
+   "name": "자주광대나물",
+   "scientific_name": "Lamium purpureum",
+   "family": "꿀풀과",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ],
+   "bloom_label": "3~5월",
+   "season": "spring",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "길가·공터",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    41
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 43,
+   "name": "냉이",
+   "scientific_name": "Capsella bursa-pastoris",
+   "family": "십자화과",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ],
+   "bloom_label": "3~5월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "길가·밭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 2
+  },
+  {
+   "id": 44,
+   "name": "애기똥풀",
+   "scientific_name": "Chelidonium majus",
+   "family": "양귀비과",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "5~8월",
+   "season": "spring",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "길가·담장 밑",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    45
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 45,
+   "name": "씀바귀",
+   "scientific_name": "Ixeris dentata",
+   "family": "국화과",
+   "bloom_months": [
+    5,
+    6,
+    7
+   ],
+   "bloom_label": "5~7월",
+   "season": "spring",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "길가·들",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    46,
+    31
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 46,
+   "name": "고들빼기",
+   "scientific_name": "Crepidiastrum sonchifolium",
+   "family": "국화과",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "5~8월",
+   "season": "spring",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "길가·공터",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    45,
+    47
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 47,
+   "name": "뽀리뱅이",
+   "scientific_name": "Youngia japonica",
+   "family": "국화과",
+   "bloom_months": [
+    5,
+    6
+   ],
+   "bloom_label": "5~6월",
+   "season": "spring",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "길가·화단 틈",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    46
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 48,
+   "name": "지칭개",
+   "scientific_name": "Hemistepta lyrata",
+   "family": "국화과",
+   "bloom_months": [
+    5,
+    6,
+    7
+   ],
+   "bloom_label": "5~7월",
+   "season": "spring",
+   "color": "보라",
+   "rarity": "common",
+   "habitat": "길가·공터",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    49
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 49,
+   "name": "엉겅퀴",
+   "scientific_name": "Cirsium japonicum",
+   "family": "국화과",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "6~8월",
+   "season": "autumn",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "들·산기슭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    48
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 50,
+   "name": "유채꽃",
+   "scientific_name": "Brassica napus",
+   "family": "십자화과",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ],
+   "bloom_label": "3~5월",
+   "season": "spring",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "강변·경관 밭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 1
+  },
+  {
+   "id": 51,
+   "name": "토끼풀",
+   "scientific_name": "Trifolium repens",
+   "family": "콩과",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "5~8월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "잔디밭·공원",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [
+    52
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 52,
+   "name": "붉은토끼풀",
+   "scientific_name": "Trifolium pratense",
+   "family": "콩과",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "5~8월",
+   "season": "spring",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "길가·잔디밭",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [
+    51
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 53,
+   "name": "살갈퀴",
+   "scientific_name": "Vicia angustifolia",
+   "family": "콩과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "보라",
+   "rarity": "common",
+   "habitat": "길가·논둑",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 54,
+   "name": "자운영",
+   "scientific_name": "Astragalus sinicus",
+   "family": "콩과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "논·밭 (남부)",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    52
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 55,
+   "name": "벌노랑이",
+   "scientific_name": "Lotus corniculatus",
+   "family": "콩과",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "5~8월",
+   "season": "spring",
+   "color": "노랑",
+   "rarity": "normal",
+   "habitat": "길가·잔디밭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 56,
+   "name": "금낭화",
+   "scientific_name": "Lamprocapnos spectabilis",
+   "family": "현호색과",
+   "bloom_months": [
+    5,
+    6
+   ],
+   "bloom_label": "5~6월",
+   "season": "spring",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "화단·산지",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [],
+   "illust_batch": 2
+  },
+  {
+   "id": 57,
+   "name": "현호색",
+   "scientific_name": "Corydalis remota",
+   "family": "현호색과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "산지 숲",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 58,
+   "name": "할미꽃",
+   "scientific_name": "Pulsatilla koreana",
+   "family": "미나리아재비과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "보라",
+   "rarity": "rare",
+   "habitat": "산소·풀밭",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 59,
+   "name": "노루귀",
+   "scientific_name": "Hepatica asiatica",
+   "family": "미나리아재비과",
+   "bloom_months": [
+    3,
+    4
+   ],
+   "bloom_label": "3~4월",
+   "season": "winter",
+   "color": "분홍",
+   "rarity": "rare",
+   "habitat": "산지 숲",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 60,
+   "name": "복수초",
+   "scientific_name": "Adonis amurensis",
+   "family": "미나리아재비과",
+   "bloom_months": [
+    2,
+    3,
+    4
+   ],
+   "bloom_label": "2~4월",
+   "season": "winter",
+   "color": "노랑",
+   "rarity": "rare",
+   "habitat": "산지 숲",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 61,
+   "name": "변산바람꽃",
+   "scientific_name": "Eranthis byunsanensis",
+   "family": "미나리아재비과",
+   "bloom_months": [
+    2,
+    3
+   ],
+   "bloom_label": "2~3월",
+   "season": "winter",
+   "color": "흰색",
+   "rarity": "rare",
+   "habitat": "남부 산지",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 62,
+   "name": "앵초",
+   "scientific_name": "Primula sieboldii",
+   "family": "앵초과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "분홍",
+   "rarity": "rare",
+   "habitat": "산지 습지",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 63,
+   "name": "은방울꽃",
+   "scientific_name": "Convallaria keiskei",
+   "family": "백합과",
+   "bloom_months": [
+    5,
+    6
+   ],
+   "bloom_label": "5~6월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "rare",
+   "habitat": "산지 숲",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 64,
+   "name": "붓꽃",
+   "scientific_name": "Iris sanguinea",
+   "family": "붓꽃과",
+   "bloom_months": [
+    5,
+    6
+   ],
+   "bloom_label": "5~6월",
+   "season": "spring",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "공원·화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    65,
+    66
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 65,
+   "name": "꽃창포",
+   "scientific_name": "Iris ensata",
+   "family": "붓꽃과",
+   "bloom_months": [
+    6,
+    7
+   ],
+   "bloom_label": "6~7월",
+   "season": "summer",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "물가·습지",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    64
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 66,
+   "name": "노랑꽃창포",
+   "scientific_name": "Iris pseudacorus",
+   "family": "붓꽃과",
+   "bloom_months": [
+    5,
+    6
+   ],
+   "bloom_label": "5~6월",
+   "season": "spring",
+   "color": "노랑",
+   "rarity": "normal",
+   "habitat": "물가·수변공원",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    65
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 67,
+   "name": "등심붓꽃",
+   "scientific_name": "Sisyrinchium rosulatum",
+   "family": "붓꽃과",
+   "bloom_months": [
+    5,
+    6
+   ],
+   "bloom_label": "5~6월",
+   "season": "spring",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "잔디밭 (남부)",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 68,
+   "name": "튤립",
+   "scientific_name": "Tulipa gesneriana",
+   "family": "백합과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "기타",
+   "rarity": "common",
+   "habitat": "화단·공원",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [],
+   "illust_batch": 1
+  },
+  {
+   "id": 69,
+   "name": "수선화",
+   "scientific_name": "Narcissus tazetta",
+   "family": "수선화과",
+   "bloom_months": [
+    3,
+    4
+   ],
+   "bloom_label": "3~4월",
+   "season": "spring",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "화단·공원",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [],
+   "illust_batch": 1
+  },
+  {
+   "id": 70,
+   "name": "히아신스",
+   "scientific_name": "Hyacinthus orientalis",
+   "family": "아스파라거스과",
+   "bloom_months": [
+    4
+   ],
+   "bloom_label": "4월",
+   "season": "spring",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "화단·화분",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [
+    71
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 71,
+   "name": "무스카리",
+   "scientific_name": "Muscari armeniacum",
+   "family": "아스파라거스과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "파랑",
+   "rarity": "normal",
+   "habitat": "화단",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [
+    70
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 72,
+   "name": "크로커스",
+   "scientific_name": "Crocus vernus",
+   "family": "붓꽃과",
+   "bloom_months": [
+    3,
+    4
+   ],
+   "bloom_label": "3~4월",
+   "season": "spring",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 73,
+   "name": "팬지",
+   "scientific_name": "Viola × wittrockiana",
+   "family": "제비꽃과",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ],
+   "bloom_label": "3~5월",
+   "season": "spring",
+   "color": "기타",
+   "rarity": "common",
+   "habitat": "화단·화분",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    74,
+    33
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 74,
+   "name": "비올라",
+   "scientific_name": "Viola cornuta",
+   "family": "제비꽃과",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ],
+   "bloom_label": "3~5월",
+   "season": "spring",
+   "color": "기타",
+   "rarity": "common",
+   "habitat": "화단·화분",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    73
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 75,
+   "name": "데이지",
+   "scientific_name": "Bellis perennis",
+   "family": "국화과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 2
+  },
+  {
+   "id": 76,
+   "name": "프리지어",
+   "scientific_name": "Freesia refracta",
+   "family": "붓꽃과",
+   "bloom_months": [
+    3,
+    4
+   ],
+   "bloom_label": "3~4월",
+   "season": "spring",
+   "color": "노랑",
+   "rarity": "normal",
+   "habitat": "화단·화분",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 77,
+   "name": "라넌큘러스",
+   "scientific_name": "Ranunculus asiaticus",
+   "family": "미나리아재비과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "기타",
+   "rarity": "normal",
+   "habitat": "화단·화분",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 78,
+   "name": "아네모네",
+   "scientific_name": "Anemone coronaria",
+   "family": "미나리아재비과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "기타",
+   "rarity": "normal",
+   "habitat": "화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 79,
+   "name": "꽃잔디",
+   "scientific_name": "Phlox subulata",
+   "family": "꽃고비과",
+   "bloom_months": [
+    4,
+    5
+   ],
+   "bloom_label": "4~5월",
+   "season": "spring",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "화단·경사면",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [],
+   "illust_batch": 1
+  },
+  {
+   "id": 80,
+   "name": "물망초",
+   "scientific_name": "Myosotis scorpioides",
+   "family": "지치과",
+   "bloom_months": [
+    5,
+    6
+   ],
+   "bloom_label": "5~6월",
+   "season": "spring",
+   "color": "파랑",
+   "rarity": "normal",
+   "habitat": "화단·물가",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    35
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 81,
+   "name": "장미",
+   "scientific_name": "Rosa hybrida",
+   "family": "장미과",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "5~10월",
+   "season": "summer",
+   "color": "붉은색",
+   "rarity": "common",
+   "habitat": "화단·담장",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    29,
+    82
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 82,
+   "name": "해당화",
+   "scientific_name": "Rosa rugosa",
+   "family": "장미과",
+   "bloom_months": [
+    5,
+    6,
+    7
+   ],
+   "bloom_label": "5~7월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "해안·공원",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    81,
+    29
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 83,
+   "name": "수국",
+   "scientific_name": "Hydrangea macrophylla",
+   "family": "수국과",
+   "bloom_months": [
+    6,
+    7
+   ],
+   "bloom_label": "6~7월",
+   "season": "summer",
+   "color": "파랑",
+   "rarity": "common",
+   "habitat": "공원·정원",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [
+    84,
+    85
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 84,
+   "name": "산수국",
+   "scientific_name": "Hydrangea serrata",
+   "family": "수국과",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "6~8월",
+   "season": "summer",
+   "color": "파랑",
+   "rarity": "normal",
+   "habitat": "산지 계곡",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    83
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 85,
+   "name": "나무수국",
+   "scientific_name": "Hydrangea paniculata",
+   "family": "수국과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "공원·정원",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    83
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 86,
+   "name": "능소화",
+   "scientific_name": "Campsis grandiflora",
+   "family": "능소화과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "주황",
+   "rarity": "common",
+   "habitat": "담장·아파트 화단",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [],
+   "illust_batch": 1
+  },
+  {
+   "id": 87,
+   "name": "배롱나무",
+   "scientific_name": "Lagerstroemia indica",
+   "family": "부처꽃과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "공원·가로수",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 1
+  },
+  {
+   "id": 88,
+   "name": "무궁화",
+   "scientific_name": "Hibiscus syriacus",
+   "family": "아욱과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "공원·학교·관공서",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    89,
+    117
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 89,
+   "name": "부용",
+   "scientific_name": "Hibiscus mutabilis",
+   "family": "아욱과",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "8~10월",
+   "season": "autumn",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "공원·정원",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    88,
+    117
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 90,
+   "name": "자귀나무",
+   "scientific_name": "Albizia julibrissin",
+   "family": "콩과",
+   "bloom_months": [
+    6,
+    7
+   ],
+   "bloom_label": "6~7월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "공원·도로변",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [],
+   "illust_batch": 1
+  },
+  {
+   "id": 91,
+   "name": "회화나무",
+   "scientific_name": "Styphnolobium japonicum",
+   "family": "콩과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "가로수·고궁",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    21
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 92,
+   "name": "싸리",
+   "scientific_name": "Lespedeza bicolor",
+   "family": "콩과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "보라",
+   "rarity": "common",
+   "habitat": "산기슭·도로 사면",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    93
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 93,
+   "name": "칡꽃",
+   "scientific_name": "Pueraria lobata",
+   "family": "콩과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "보라",
+   "rarity": "common",
+   "habitat": "산기슭·공터",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    92,
+    22
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 94,
+   "name": "인동덩굴",
+   "scientific_name": "Lonicera japonica",
+   "family": "인동과",
+   "bloom_months": [
+    5,
+    6,
+    7
+   ],
+   "bloom_label": "5~7월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "울타리·산기슭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 2
+  },
+  {
+   "id": 95,
+   "name": "치자나무",
+   "scientific_name": "Gardenia jasminoides",
+   "family": "꼭두서니과",
+   "bloom_months": [
+    6,
+    7
+   ],
+   "bloom_label": "6~7월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "정원 (남부)",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 96,
+   "name": "모감주나무",
+   "scientific_name": "Koelreuteria paniculata",
+   "family": "무환자나무과",
+   "bloom_months": [
+    6,
+    7
+   ],
+   "bloom_label": "6~7월",
+   "season": "summer",
+   "color": "노랑",
+   "rarity": "normal",
+   "habitat": "공원·해안",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 97,
+   "name": "개오동",
+   "scientific_name": "Catalpa ovata",
+   "family": "능소화과",
+   "bloom_months": [
+    6,
+    7
+   ],
+   "bloom_label": "6~7월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "공원·학교",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 98,
+   "name": "큰꽃으아리",
+   "scientific_name": "Clematis patens",
+   "family": "미나리아재비과",
+   "bloom_months": [
+    5,
+    6
+   ],
+   "bloom_label": "5~6월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "화단·울타리",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    100
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 99,
+   "name": "사위질빵",
+   "scientific_name": "Clematis apiifolia",
+   "family": "미나리아재비과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "산기슭·울타리",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    100
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 100,
+   "name": "으아리",
+   "scientific_name": "Clematis terniflora",
+   "family": "미나리아재비과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "산기슭",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    99
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 101,
+   "name": "개망초",
+   "scientific_name": "Erigeron annuus",
+   "family": "국화과",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "6~8월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "공터·길가",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    102,
+    103
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 102,
+   "name": "망초",
+   "scientific_name": "Conyza canadensis",
+   "family": "국화과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "공터·길가",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    101
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 103,
+   "name": "실망초",
+   "scientific_name": "Conyza bonariensis",
+   "family": "국화과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "공터",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    102
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 104,
+   "name": "큰금계국",
+   "scientific_name": "Coreopsis lanceolata",
+   "family": "국화과",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "6~8월",
+   "season": "summer",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "도로변·하천",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    105,
+    106
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 105,
+   "name": "금계국",
+   "scientific_name": "Coreopsis basalis",
+   "family": "국화과",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "6~8월",
+   "season": "summer",
+   "color": "노랑",
+   "rarity": "normal",
+   "habitat": "화단·도로변",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    104
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 106,
+   "name": "기생초",
+   "scientific_name": "Coreopsis tinctoria",
+   "family": "국화과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "summer",
+   "color": "노랑",
+   "rarity": "normal",
+   "habitat": "도로변·화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    105
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 107,
+   "name": "원추천인국",
+   "scientific_name": "Rudbeckia hirta",
+   "family": "국화과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "summer",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "화단·도로변",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    108,
+    109
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 108,
+   "name": "삼잎국화",
+   "scientific_name": "Rudbeckia laciniata",
+   "family": "국화과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "summer",
+   "color": "노랑",
+   "rarity": "normal",
+   "habitat": "하천변·공터",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    107
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 109,
+   "name": "해바라기",
+   "scientific_name": "Helianthus annuus",
+   "family": "국화과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "summer",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "밭·경관 화단",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [],
+   "illust_batch": 1
+  },
+  {
+   "id": 110,
+   "name": "코스모스",
+   "scientific_name": "Cosmos bipinnatus",
+   "family": "국화과",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "8~10월",
+   "season": "autumn",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "하천변·길가",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [
+    111
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 111,
+   "name": "노랑코스모스",
+   "scientific_name": "Cosmos sulphureus",
+   "family": "국화과",
+   "bloom_months": [
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "7~10월",
+   "season": "summer",
+   "color": "주황",
+   "rarity": "common",
+   "habitat": "도로변·하천",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    110,
+    105
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 112,
+   "name": "나팔꽃",
+   "scientific_name": "Ipomoea nil",
+   "family": "메꽃과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "summer",
+   "color": "보라",
+   "rarity": "common",
+   "habitat": "담장·울타리",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    113,
+    114
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 113,
+   "name": "메꽃",
+   "scientific_name": "Calystegia pubescens",
+   "family": "메꽃과",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "6~8월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "길가·논둑",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    112
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 114,
+   "name": "애기나팔꽃",
+   "scientific_name": "Ipomoea lacunosa",
+   "family": "메꽃과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "공터·하천",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    112
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 115,
+   "name": "달맞이꽃",
+   "scientific_name": "Oenothera biennis",
+   "family": "바늘꽃과",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "6~9월",
+   "season": "summer",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "하천변·공터",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    116
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 116,
+   "name": "낮달맞이꽃",
+   "scientific_name": "Oenothera speciosa",
+   "family": "바늘꽃과",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "5~9월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "화단·도로변",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [
+    115
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 117,
+   "name": "접시꽃",
+   "scientific_name": "Alcea rosea",
+   "family": "아욱과",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "6~8월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "화단·담장 밑",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    88,
+    89
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 118,
+   "name": "패랭이꽃",
+   "scientific_name": "Dianthus chinensis",
+   "family": "석죽과",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "6~8월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "화단·길가",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    119,
+    120
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 119,
+   "name": "수염패랭이꽃",
+   "scientific_name": "Dianthus barbatus",
+   "family": "석죽과",
+   "bloom_months": [
+    6,
+    7
+   ],
+   "bloom_label": "6~7월",
+   "season": "summer",
+   "color": "붉은색",
+   "rarity": "normal",
+   "habitat": "화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    118
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 120,
+   "name": "술패랭이꽃",
+   "scientific_name": "Dianthus longicalyx",
+   "family": "석죽과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "rare",
+   "habitat": "산지·풀밭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    118
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 121,
+   "name": "끈끈이대나물",
+   "scientific_name": "Silene armeria",
+   "family": "석죽과",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "6~8월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "길가·공터",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 122,
+   "name": "꿀풀",
+   "scientific_name": "Prunella vulgaris",
+   "family": "꿀풀과",
+   "bloom_months": [
+    5,
+    6,
+    7
+   ],
+   "bloom_label": "5~7월",
+   "season": "summer",
+   "color": "보라",
+   "rarity": "common",
+   "habitat": "풀밭·산기슭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    123
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 123,
+   "name": "배초향",
+   "scientific_name": "Agastache rugosa",
+   "family": "꿀풀과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "autumn",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "산기슭·밭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    122,
+    125
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 124,
+   "name": "익모초",
+   "scientific_name": "Leonurus japonicus",
+   "family": "꿀풀과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "길가·공터",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 125,
+   "name": "층층이꽃",
+   "scientific_name": "Clinopodium chinense",
+   "family": "꿀풀과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "산기슭·풀밭",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    123
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 126,
+   "name": "박하",
+   "scientific_name": "Mentha canadensis",
+   "family": "꿀풀과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "summer",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "물가·밭",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 127,
+   "name": "라벤더",
+   "scientific_name": "Lavandula angustifolia",
+   "family": "꿀풀과",
+   "bloom_months": [
+    6,
+    7
+   ],
+   "bloom_label": "6~7월",
+   "season": "summer",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "화단·허브 농원",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [],
+   "illust_batch": 2
+  },
+  {
+   "id": 128,
+   "name": "부처꽃",
+   "scientific_name": "Lythrum anceps",
+   "family": "부처꽃과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "습지·물가",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 129,
+   "name": "물봉선",
+   "scientific_name": "Impatiens textori",
+   "family": "봉선화과",
+   "bloom_months": [
+    8,
+    9
+   ],
+   "bloom_label": "8~9월",
+   "season": "autumn",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "산지 계곡",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    130
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 130,
+   "name": "봉선화",
+   "scientific_name": "Impatiens balsamina",
+   "family": "봉선화과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "화단·주택가",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    129,
+    166
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 131,
+   "name": "노루오줌",
+   "scientific_name": "Astilbe rubra",
+   "family": "범의귀과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "산지 계곡",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 132,
+   "name": "돌나물",
+   "scientific_name": "Sedum sarmentosum",
+   "family": "돌나물과",
+   "bloom_months": [
+    5,
+    6
+   ],
+   "bloom_label": "5~6월",
+   "season": "summer",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "담장·바위 틈",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    133
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 133,
+   "name": "기린초",
+   "scientific_name": "Phedimus kamtschaticus",
+   "family": "돌나물과",
+   "bloom_months": [
+    6,
+    7
+   ],
+   "bloom_label": "6~7월",
+   "season": "summer",
+   "color": "노랑",
+   "rarity": "normal",
+   "habitat": "바위·화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    132
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 134,
+   "name": "큰까치수염",
+   "scientific_name": "Lysimachia clethroides",
+   "family": "앵초과",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "6~8월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "산기슭·풀밭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    135
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 135,
+   "name": "까치수염",
+   "scientific_name": "Lysimachia barystachys",
+   "family": "앵초과",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "6~8월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "풀밭",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    134
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 136,
+   "name": "좁쌀풀",
+   "scientific_name": "Lysimachia vulgaris",
+   "family": "앵초과",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "6~8월",
+   "season": "summer",
+   "color": "노랑",
+   "rarity": "normal",
+   "habitat": "습지·풀밭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 137,
+   "name": "짚신나물",
+   "scientific_name": "Agrimonia pilosa",
+   "family": "장미과",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "6~8월",
+   "season": "summer",
+   "color": "노랑",
+   "rarity": "normal",
+   "habitat": "산기슭·길가",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 138,
+   "name": "이질풀",
+   "scientific_name": "Geranium thunbergii",
+   "family": "쥐손이풀과",
+   "bloom_months": [
+    8,
+    9
+   ],
+   "bloom_label": "8~9월",
+   "season": "autumn",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "산기슭·길가",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 139,
+   "name": "여뀌",
+   "scientific_name": "Persicaria hydropiper",
+   "family": "마디풀과",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "6~9월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "물가·논둑",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    140,
+    141
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 140,
+   "name": "개여뀌",
+   "scientific_name": "Persicaria longiseta",
+   "family": "마디풀과",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "6~9월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "길가·물가",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    139
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 141,
+   "name": "고마리",
+   "scientific_name": "Persicaria thunbergii",
+   "family": "마디풀과",
+   "bloom_months": [
+    8,
+    9
+   ],
+   "bloom_label": "8~9월",
+   "season": "autumn",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "물가·논둑",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    139
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 142,
+   "name": "이삭여뀌",
+   "scientific_name": "Persicaria filiformis",
+   "family": "마디풀과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "붉은색",
+   "rarity": "normal",
+   "habitat": "산지 숲",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    139
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 143,
+   "name": "도라지",
+   "scientific_name": "Platycodon grandiflorus",
+   "family": "초롱꽃과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "밭·화단",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [],
+   "illust_batch": 1
+  },
+  {
+   "id": 144,
+   "name": "초롱꽃",
+   "scientific_name": "Campanula punctata",
+   "family": "초롱꽃과",
+   "bloom_months": [
+    6,
+    7
+   ],
+   "bloom_label": "6~7월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "산기슭·화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    145
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 145,
+   "name": "섬초롱꽃",
+   "scientific_name": "Campanula takesimana",
+   "family": "초롱꽃과",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "6~8월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "rare",
+   "habitat": "울릉도·화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    144
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 146,
+   "name": "잔대",
+   "scientific_name": "Adenophora triphylla",
+   "family": "초롱꽃과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "summer",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "산지·풀밭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 147,
+   "name": "참나리",
+   "scientific_name": "Lilium lancifolium",
+   "family": "백합과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "주황",
+   "rarity": "normal",
+   "habitat": "산기슭·화단",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [
+    148
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 148,
+   "name": "백합",
+   "scientific_name": "Lilium longiflorum",
+   "family": "백합과",
+   "bloom_months": [
+    6,
+    7
+   ],
+   "bloom_label": "6~7월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "화단·화분",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    147
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 149,
+   "name": "원추리",
+   "scientific_name": "Hemerocallis fulva",
+   "family": "백합과",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "6~8월",
+   "season": "summer",
+   "color": "주황",
+   "rarity": "common",
+   "habitat": "도로변·공원",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    150,
+    147
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 150,
+   "name": "노랑원추리",
+   "scientific_name": "Hemerocallis thunbergii",
+   "family": "백합과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "노랑",
+   "rarity": "normal",
+   "habitat": "공원·화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    149
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 151,
+   "name": "옥잠화",
+   "scientific_name": "Hosta plantaginea",
+   "family": "백합과",
+   "bloom_months": [
+    8,
+    9
+   ],
+   "bloom_label": "8~9월",
+   "season": "autumn",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "화단·공원",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    152
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 152,
+   "name": "비비추",
+   "scientific_name": "Hosta longipes",
+   "family": "백합과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "보라",
+   "rarity": "common",
+   "habitat": "화단·공원 그늘",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    151
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 153,
+   "name": "상사화",
+   "scientific_name": "Lycoris squamigera",
+   "family": "수선화과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "공원·사찰",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [
+    188
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 154,
+   "name": "연꽃",
+   "scientific_name": "Nelumbo nucifera",
+   "family": "연꽃과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "연못·수생공원",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [
+    155
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 155,
+   "name": "수련",
+   "scientific_name": "Nymphaea tetragona",
+   "family": "수련과",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ],
+   "bloom_label": "6~8월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "연못",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [
+    154
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 156,
+   "name": "부추꽃",
+   "scientific_name": "Allium tuberosum",
+   "family": "백합과",
+   "bloom_months": [
+    8,
+    9
+   ],
+   "bloom_label": "8~9월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "밭·화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    198
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 157,
+   "name": "백일홍",
+   "scientific_name": "Zinnia elegans",
+   "family": "국화과",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "6~10월",
+   "season": "summer",
+   "color": "기타",
+   "rarity": "common",
+   "habitat": "화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    173
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 158,
+   "name": "채송화",
+   "scientific_name": "Portulaca grandiflora",
+   "family": "쇠비름과",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "6~9월",
+   "season": "summer",
+   "color": "기타",
+   "rarity": "common",
+   "habitat": "화단·화분",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    159
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 159,
+   "name": "송엽국",
+   "scientific_name": "Lampranthus spectabilis",
+   "family": "석류풀과",
+   "bloom_months": [
+    4,
+    5,
+    6
+   ],
+   "bloom_label": "4~6월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "화단·경사면",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    158
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 160,
+   "name": "페튜니아",
+   "scientific_name": "Petunia hybrida",
+   "family": "가지과",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "5~10월",
+   "season": "summer",
+   "color": "기타",
+   "rarity": "common",
+   "habitat": "화단·걸이 화분",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 1
+  },
+  {
+   "id": 161,
+   "name": "메리골드",
+   "scientific_name": "Tagetes erecta",
+   "family": "국화과",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "6~10월",
+   "season": "summer",
+   "color": "주황",
+   "rarity": "common",
+   "habitat": "화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    162
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 162,
+   "name": "만수국",
+   "scientific_name": "Tagetes patula",
+   "family": "국화과",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "6~10월",
+   "season": "summer",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "화단",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    161
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 163,
+   "name": "깨꽃",
+   "scientific_name": "Salvia splendens",
+   "family": "꿀풀과",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "6~10월",
+   "season": "summer",
+   "color": "붉은색",
+   "rarity": "common",
+   "habitat": "화단",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [],
+   "illust_batch": 1
+  },
+  {
+   "id": 164,
+   "name": "맨드라미",
+   "scientific_name": "Celosia cristata",
+   "family": "비름과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "summer",
+   "color": "붉은색",
+   "rarity": "normal",
+   "habitat": "화단",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [],
+   "illust_batch": 2
+  },
+  {
+   "id": 165,
+   "name": "제라늄",
+   "scientific_name": "Pelargonium inquinans",
+   "family": "쥐손이풀과",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "5~10월",
+   "season": "summer",
+   "color": "붉은색",
+   "rarity": "common",
+   "habitat": "화분·베란다",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 2
+  },
+  {
+   "id": 166,
+   "name": "임파첸스",
+   "scientific_name": "Impatiens walleriana",
+   "family": "봉선화과",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "6~10월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "화단 그늘",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    130,
+    167
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 167,
+   "name": "베고니아",
+   "scientific_name": "Begonia semperflorens",
+   "family": "베고니아과",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "5~10월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "common",
+   "habitat": "화단·화분",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    166
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 168,
+   "name": "버들마편초",
+   "scientific_name": "Verbena bonariensis",
+   "family": "마편초과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "summer",
+   "color": "보라",
+   "rarity": "common",
+   "habitat": "화단·경관 초지",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    169
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 169,
+   "name": "버베나",
+   "scientific_name": "Verbena hybrida",
+   "family": "마편초과",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "5~9월",
+   "season": "summer",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "화단·화분",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    168
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 170,
+   "name": "수레국화",
+   "scientific_name": "Centaurea cyanus",
+   "family": "국화과",
+   "bloom_months": [
+    6,
+    7
+   ],
+   "bloom_label": "6~7월",
+   "season": "summer",
+   "color": "파랑",
+   "rarity": "normal",
+   "habitat": "화단·경관 초지",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [],
+   "illust_batch": 2
+  },
+  {
+   "id": 171,
+   "name": "안개꽃",
+   "scientific_name": "Gypsophila elegans",
+   "family": "석죽과",
+   "bloom_months": [
+    6,
+    7
+   ],
+   "bloom_label": "6~7월",
+   "season": "summer",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "화단·꽃다발",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 172,
+   "name": "가자니아",
+   "scientific_name": "Gazania rigens",
+   "family": "국화과",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "6~9월",
+   "season": "summer",
+   "color": "노랑",
+   "rarity": "normal",
+   "habitat": "화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 173,
+   "name": "다알리아",
+   "scientific_name": "Dahlia pinnata",
+   "family": "국화과",
+   "bloom_months": [
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "7~10월",
+   "season": "summer",
+   "color": "기타",
+   "rarity": "normal",
+   "habitat": "화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    157
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 174,
+   "name": "글라디올러스",
+   "scientific_name": "Gladiolus hybridus",
+   "family": "붓꽃과",
+   "bloom_months": [
+    7,
+    8
+   ],
+   "bloom_label": "7~8월",
+   "season": "summer",
+   "color": "기타",
+   "rarity": "normal",
+   "habitat": "화단·밭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 175,
+   "name": "칸나",
+   "scientific_name": "Canna generalis",
+   "family": "홍초과",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "7~9월",
+   "season": "summer",
+   "color": "붉은색",
+   "rarity": "normal",
+   "habitat": "화단·공원",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [],
+   "illust_batch": 2
+  },
+  {
+   "id": 176,
+   "name": "한련화",
+   "scientific_name": "Tropaeolum majus",
+   "family": "한련과",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "6~9월",
+   "season": "summer",
+   "color": "주황",
+   "rarity": "normal",
+   "habitat": "화단·화분",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 177,
+   "name": "천일홍",
+   "scientific_name": "Gomphrena globosa",
+   "family": "비름과",
+   "bloom_months": [
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "7~10월",
+   "season": "summer",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "화단",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [],
+   "illust_batch": 2
+  },
+  {
+   "id": 178,
+   "name": "아게라텀",
+   "scientific_name": "Ageratum houstonianum",
+   "family": "국화과",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "bloom_label": "6~9월",
+   "season": "summer",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 179,
+   "name": "국화",
+   "scientific_name": "Chrysanthemum morifolium",
+   "family": "국화과",
+   "bloom_months": [
+    10,
+    11
+   ],
+   "bloom_label": "10~11월",
+   "season": "autumn",
+   "color": "기타",
+   "rarity": "common",
+   "habitat": "화단·전시·화분",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    180,
+    181
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 180,
+   "name": "산국",
+   "scientific_name": "Chrysanthemum boreale",
+   "family": "국화과",
+   "bloom_months": [
+    9,
+    10,
+    11
+   ],
+   "bloom_label": "9~11월",
+   "season": "autumn",
+   "color": "노랑",
+   "rarity": "normal",
+   "habitat": "산기슭·풀밭",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    181,
+    179
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 181,
+   "name": "감국",
+   "scientific_name": "Chrysanthemum indicum",
+   "family": "국화과",
+   "bloom_months": [
+    10,
+    11
+   ],
+   "bloom_label": "10~11월",
+   "season": "autumn",
+   "color": "노랑",
+   "rarity": "normal",
+   "habitat": "산기슭·해안",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    180
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 182,
+   "name": "구절초",
+   "scientific_name": "Dendranthema zawadskii",
+   "family": "국화과",
+   "bloom_months": [
+    9,
+    10
+   ],
+   "bloom_label": "9~10월",
+   "season": "autumn",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "산지·화단",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    184,
+    183
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 183,
+   "name": "벌개미취",
+   "scientific_name": "Aster koraiensis",
+   "family": "국화과",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "6~10월",
+   "season": "autumn",
+   "color": "보라",
+   "rarity": "common",
+   "habitat": "도로변·공원",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    184,
+    185
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 184,
+   "name": "쑥부쟁이",
+   "scientific_name": "Aster yomena",
+   "family": "국화과",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "8~10월",
+   "season": "autumn",
+   "color": "보라",
+   "rarity": "common",
+   "habitat": "길가·풀밭",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    183,
+    186
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 185,
+   "name": "개미취",
+   "scientific_name": "Aster tataricus",
+   "family": "국화과",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "8~10월",
+   "season": "autumn",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "산지·화단",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    183
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 186,
+   "name": "미국쑥부쟁이",
+   "scientific_name": "Symphyotrichum pilosum",
+   "family": "국화과",
+   "bloom_months": [
+    9,
+    10
+   ],
+   "bloom_label": "9~10월",
+   "season": "autumn",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "공터·도로변",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    184,
+    101
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 187,
+   "name": "참취",
+   "scientific_name": "Aster scaber",
+   "family": "국화과",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "8~10월",
+   "season": "autumn",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "산지 숲",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    186
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 188,
+   "name": "꽃무릇",
+   "scientific_name": "Lycoris radiata",
+   "family": "수선화과",
+   "bloom_months": [
+    9,
+    10
+   ],
+   "bloom_label": "9~10월",
+   "season": "autumn",
+   "color": "붉은색",
+   "rarity": "normal",
+   "habitat": "사찰·공원",
+   "ai_difficulty": "low",
+   "similar_flower_ids": [
+    153
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 189,
+   "name": "용담",
+   "scientific_name": "Gentiana scabra",
+   "family": "용담과",
+   "bloom_months": [
+    9,
+    10
+   ],
+   "bloom_label": "9~10월",
+   "season": "autumn",
+   "color": "파랑",
+   "rarity": "rare",
+   "habitat": "산지 풀밭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 190,
+   "name": "투구꽃",
+   "scientific_name": "Aconitum jaluense",
+   "family": "미나리아재비과",
+   "bloom_months": [
+    9,
+    10
+   ],
+   "bloom_label": "9~10월",
+   "season": "autumn",
+   "color": "보라",
+   "rarity": "rare",
+   "habitat": "산지 숲",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 191,
+   "name": "마타리",
+   "scientific_name": "Patrinia scabiosifolia",
+   "family": "마타리과",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "8~10월",
+   "season": "autumn",
+   "color": "노랑",
+   "rarity": "normal",
+   "habitat": "산기슭·풀밭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    192
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 192,
+   "name": "뚝갈",
+   "scientific_name": "Patrinia villosa",
+   "family": "마타리과",
+   "bloom_months": [
+    8,
+    9
+   ],
+   "bloom_label": "8~9월",
+   "season": "autumn",
+   "color": "흰색",
+   "rarity": "normal",
+   "habitat": "산기슭",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    191
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 193,
+   "name": "며느리밥풀꽃",
+   "scientific_name": "Melampyrum roseum",
+   "family": "현삼과",
+   "bloom_months": [
+    8,
+    9
+   ],
+   "bloom_label": "8~9월",
+   "season": "autumn",
+   "color": "분홍",
+   "rarity": "normal",
+   "habitat": "산지 숲",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 194,
+   "name": "왕고들빼기",
+   "scientific_name": "Lactuca indica",
+   "family": "국화과",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "8~10월",
+   "season": "autumn",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "공터·길가",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    46
+   ],
+   "illust_batch": 2
+  },
+  {
+   "id": 195,
+   "name": "방가지똥",
+   "scientific_name": "Sonchus oleraceus",
+   "family": "국화과",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "5~10월",
+   "season": "autumn",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "길가·화단 틈",
+   "ai_difficulty": "high",
+   "similar_flower_ids": [
+    45
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 196,
+   "name": "미국가막사리",
+   "scientific_name": "Bidens frondosa",
+   "family": "국화과",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "8~10월",
+   "season": "autumn",
+   "color": "노랑",
+   "rarity": "common",
+   "habitat": "물가·공터",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 3
+  },
+  {
+   "id": 197,
+   "name": "서양등골나물",
+   "scientific_name": "Ageratina altissima",
+   "family": "국화과",
+   "bloom_months": [
+    9,
+    10
+   ],
+   "bloom_label": "9~10월",
+   "season": "autumn",
+   "color": "흰색",
+   "rarity": "common",
+   "habitat": "산기슭·도심 숲",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [],
+   "illust_batch": 2
+  },
+  {
+   "id": 198,
+   "name": "산부추",
+   "scientific_name": "Allium thunbergii",
+   "family": "백합과",
+   "bloom_months": [
+    9,
+    10
+   ],
+   "bloom_label": "9~10월",
+   "season": "autumn",
+   "color": "보라",
+   "rarity": "normal",
+   "habitat": "산지·바위",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    156
+   ],
+   "illust_batch": 3
+  },
+  {
+   "id": 199,
+   "name": "억새",
+   "scientific_name": "Miscanthus sinensis",
+   "family": "벼과",
+   "bloom_months": [
+    9,
+    10
+   ],
+   "bloom_label": "9~10월",
+   "season": "autumn",
+   "color": "기타",
+   "rarity": "common",
+   "habitat": "산지·하천·억새밭",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    200
+   ],
+   "illust_batch": 1
+  },
+  {
+   "id": 200,
+   "name": "수크령",
+   "scientific_name": "Pennisetum alopecuroides",
+   "family": "벼과",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ],
+   "bloom_label": "8~10월",
+   "season": "autumn",
+   "color": "기타",
+   "rarity": "common",
+   "habitat": "길가·도로변",
+   "ai_difficulty": "mid",
+   "similar_flower_ids": [
+    199
+   ],
+   "illust_batch": 2
+  }
+ ]
+}

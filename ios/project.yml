@@ -1,0 +1,91 @@
+# 캐치플라워 iOS — XcodeGen 정의
+#
+# ⚠️ 이 파일이 원본이다. `.xcodeproj`를 직접 수정하지 않는다 (사까마까 유산 규칙).
+#    프로젝트를 다시 만들 때:  cd ios && xcodegen generate
+#
+# ⚠️ API 키는 소스에 넣지 않는다. 빌드 시점에 주입한다.
+#    Config/Secrets.xcconfig (gitignore) 또는 환경변수로 넣고 Info.plist를 거쳐 읽는다.
+
+name: CatchFlower
+
+options:
+  bundleIdPrefix: com.catchflower
+  deploymentTarget:
+    iOS: "17.0"          # E-2 권고(iOS 16)에서 한 단계 올림 — SwiftData·@Observable 사용
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    SWIFT_STRICT_CONCURRENCY: complete
+
+# 키는 여기 없다. Config/Secrets.xcconfig(gitignore)가 값을 들고 있고,
+# Info.plist가 그 변수를 받아서 AppSecrets가 읽는다.
+# 새 맥: cp Config/Secrets_TEMPLATE.xcconfig Config/Secrets.xcconfig
+configFiles:
+  Debug: Config/Secrets.xcconfig
+  Release: Config/Secrets.xcconfig
+
+targets:
+  CatchFlower:
+    type: application
+    platform: iOS
+    sources:
+      - path: CatchFlower
+        excludes:
+          - "**/.DS_Store"
+      # 도감 마스터 데이터. 원본은 공용_적재/build_flowers_json.py 가 만든다.
+      - path: ../공용_적재/flowers.json
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.catchflower.app
+        INFOPLIST_FILE: CatchFlower/Resources/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "1"        # iPhone 전용
+        SUPPORTS_MACCATALYST: NO
+        # E-3: 다크 모드 미대응. 시스템 다크에서도 라이트로 고정한다.
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+
+  CatchFlowerTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: CatchFlower
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+
+  # 화면 07~13 흐름 검증용. 시뮬레이터에 카메라가 없어서 픽스처 버튼을 눌러 흐름을 밟는다.
+  CatchFlowerUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: CatchFlower
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  CatchFlower:
+    build:
+      targets:
+        CatchFlower: all
+        CatchFlowerTests: [test]
+        CatchFlowerUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - CatchFlowerTests
+        - CatchFlowerUITests
