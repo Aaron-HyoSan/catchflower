@@ -251,17 +251,48 @@ struct CaptureFlow: View {
         // 실패 경로(화면 12)를 아예 밟을 수 없다 — 실제로 그랬다.
         var engine = session.recognizer
         #if DEBUG
-        if var mock = engine as? MockFlowerRecognizer, let fileName = taken.fileName {
+        // **실사진 픽스처는 실제 PlantNet으로 보낸다.** 시뮬레이터는 카메라가 없어서
+        // 인식기를 항상 Mock으로 두는데, 그러면 `PlantNetRecognizer`가
+        // **실기기 없이는 한 줄도 실행되지 않는다** — 실측(200장)은 스크립트로 했지만
+        // 그건 앱을 거치지 않은 것이다. 사진이 실제 바이트를 들고 있으면 실엔진을 쓴다.
+        //
+        // `#endif`를 `else`와 `if` 사이에 둘 수 없어서(전처리기는 구문을 모른다)
+        // 플래그로 받아서 아래 조건에 넣는다.
+        var usesRealEngine = false
+        if !taken.data.isEmpty, AppSecrets.hasPlantNetKey {
+            engine = PlantNetRecognizer(
+                scientificIndex: ScientificNameIndex(flowers: session.repository.flowers)
+            )
+            usesRealEngine = true
+        }
+        #else
+        let usesRealEngine = false
+        #endif
+
+        if !usesRealEngine,
+           var mock = engine as? MockFlowerRecognizer,
+           let fileName = taken.fileName {
             mock.fileName = fileName
             engine = mock
         }
-        #endif
 
         do {
             let result = try await engine.identify(
                 imageData: taken.data,
                 candidates: candidateIDs
             )
+            #if DEBUG
+            // 실호출 결과를 로그로 남긴다. 실사진 픽스처를 눌렀을 때
+            // **화면만 보고는 무엇이 왔는지 알 수 없다** — 후보가 걸러진 뒤라서
+            // 개화월 필터가 버린 건지 점수가 낮은 건지 구분이 안 된다.
+            if usesRealEngine {
+                let named = result.map {
+                    "\(session.repository[$0.flowerID]?.name ?? "?") \(String(format: "%.3f", $0.score))"
+                }
+                print("🌸 PlantNet 실호출 → 후보 \(result.count)개: \(named.joined(separator: " · ")) "
+                      + "(이번 달 후보 \(candidateIDs.count)종, floor \(GamePolicy.identifyFailureFloor))")
+            }
+            #endif
 
             // **취소를 눌렀으면 여기서 멈춘다.** 안 그러면 사용자가 화면 07로 돌아간 뒤
             // 판별이 뒤늦게 끝나면서 화면 09로 강제로 끌려간다.
@@ -277,6 +308,9 @@ struct CaptureFlow: View {
             candidates = result
             step = .confirm
         } catch {
+            #if DEBUG
+            if usesRealEngine { print("🌸 PlantNet 실호출 실패: \(error)") }
+            #endif
             guard !Task.isCancelled, step == .analyzing else { return }
             // **네트워크 오류는 판별 실패가 아니다.** 화면 12는 "사진을 다시 찍어주세요"라고
             // 하는데, 연결 문제로 그러면 **사용자 잘못이 아닌 걸 사용자 잘못으로 만든다**

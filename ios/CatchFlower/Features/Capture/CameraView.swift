@@ -217,6 +217,31 @@ enum FixtureShot: String, CaseIterable, Sendable {
     /// 후보 3개가 같은 크기로 놓여야 2순위를 **직접 고르는 행위**를 재현할 수 있다.
     case rareSecondLow = "fixture_low_rare2.jpg"
 
+    // MARK: 실사진 — **여기부터는 진짜 PlantNet을 부른다** (2026-08-05 추가)
+    //
+    // 위 픽스처들은 점수가 고정된 Mock이라 자동 테스트가 결정론적이다.
+    // 아래 세 장은 실제 JPEG를 들고 있어서 `CaptureFlow`가 실엔진으로 보낸다 —
+    // **시뮬레이터에서 `PlantNetRecognizer`를 실행할 수 있는 유일한 방법이다.**
+    // 네트워크를 타므로 점수가 흔들리고 일일 쿼터(500)를 쓴다. 손으로 눌러 보는 용도다.
+    // 근거·출처: `CatchFlower/Resources/RealFixtures/README.md`
+
+    /// 실측 0.994 — 확정 경로. 해바라기는 8월 개화 + 난이도 `하`(임계 0.60)다.
+    case realHigh = "real_sunflower_high.jpg"
+    /// 실측 0.570 — 같은 종인데 0.60 미달이라 애매 경로로 간다.
+    case realLow = "real_sunflower_low.jpg"
+    /// 실측 0.112 — **정답(민들레)인데 판별 실패로 간다.**
+    /// B-3 `identifyFailureFloor = 0.30`이 정답을 버리는 걸 눈으로 확인하는 버튼이다.
+    /// 임계값 답변(B-3-a)이 오면 이 버튼의 결과가 바뀐다.
+    case realFaint = "real_dandelion_faint.jpg"
+
+    /// 실사진인가. 이 경우 `data`에 실제 바이트가 들어가고 Mock 경로를 안 탄다.
+    var isRealPhoto: Bool {
+        switch self {
+        case .realHigh, .realLow, .realFaint: return true
+        default: return false
+        }
+    }
+
     var label: String {
         switch self {
         case .confident: return "찍기 (확정 · 0.82)"
@@ -224,14 +249,21 @@ enum FixtureShot: String, CaseIterable, Sendable {
         case .fail: return "찍기 (실패)"
         case .confidentElsewhere: return "찍기 (확정 · 다른 장소)"
         case .rareSecondLow: return "찍기 (애매 · 2순위 희귀종)"
+        case .realHigh: return "실호출 · 해바라기 (0.99)"
+        case .realLow: return "실호출 · 해바라기 (0.57)"
+        case .realFaint: return "실호출 · 민들레 (0.11)"
         }
     }
 
     /// 확정 경로를 밟으려면 임계값이 낮은 꽃(`하` 60)이 1순위여야 한다.
+    ///
+    /// **실사진은 nil이다.** 후보 순서를 손대면 실호출의 의미가 없어진다 —
+    /// PlantNet이 실제로 무엇을 몇 순위로 주는지 보려고 만든 버튼이다.
     private var preferredDifficulty: AIDifficulty? {
         switch self {
         case .confident, .confidentElsewhere: return .low
         case .low, .fail, .rareSecondLow: return nil
+        case .realHigh, .realLow, .realFaint: return nil
         }
     }
 
@@ -250,9 +282,26 @@ enum FixtureShot: String, CaseIterable, Sendable {
         }
     }
 
+    /// 실사진 픽스처의 바이트. 번들에서 읽는다.
+    ///
+    /// **읽기에 실패하면 빈 데이터를 준다** — 그러면 Mock 경로로 되돌아간다.
+    /// 픽스처 파일을 지웠거나 `project.yml`에 리소스 등록을 안 했을 때
+    /// 앱이 죽는 대신 조용히 Mock으로 도는 게 맞다(개발 편의 기능이라).
+    /// 다만 진짜로 실호출을 확인하려는 건데 Mock이 돌면 헷갈리니 로그를 남긴다.
+    private func loadRealPhotoData() -> Data {
+        let name = (rawValue as NSString).deletingPathExtension
+        guard let url = Bundle.main.url(forResource: name, withExtension: "jpg"),
+              let data = try? Data(contentsOf: url) else {
+            print("⚠️ 실사진 픽스처 \(rawValue)를 번들에서 못 찾았다 — Mock으로 되돌아간다. "
+                  + "project.yml의 RealFixtures 등록과 `xcodegen generate`를 확인한다.")
+            return Data()
+        }
+        return data
+    }
+
     func photo(at date: Date = Date()) -> CapturedPhoto {
         CapturedPhoto(
-            data: Data(),
+            data: isRealPhoto ? loadRealPhotoData() : Data(),
             fileName: rawValue,
             capturedAt: date,
             lat: coordinate.lat,

@@ -58,7 +58,16 @@ struct PlantNetRecognizer: FlowerRecognizer {
         var results: [RecognitionCandidate] = []
 
         for item in decoded.results {
-            guard let flowerID = scientificIndex.flowerID(for: item.species.scientificNameWithoutAuthor),
+            // **후보 집합 안에서 고르게 한다.** 색인에 `allowed`를 넘기는 이유는 실측이다 —
+            // 넘기지 않으면 속 대표를 도감번호 최솟값으로 정해 버려서,
+            // 8월에 `Rosa chinensis 0.606`(장미, 정답)이 `찔레꽃`(5~6월)으로 번역되고
+            // 개화월 필터에 탈락한다. 그 자리를 `Begonia grandis 0.003`이 차지했다.
+            // 200종 중 94종이 다종 속에 있고 그중 30속은 개화월이 서로 다르다 —
+            // 이건 예외가 아니라 절반의 문제였다.
+            guard let flowerID = scientificIndex.flowerID(
+                      for: item.species.scientificNameWithoutAuthor,
+                      preferring: allowed
+                  ),
                   allowed.contains(flowerID),
                   seen.insert(flowerID).inserted
             else { continue }
@@ -133,29 +142,44 @@ struct PlantNetRecognizer: FlowerRecognizer {
 struct ScientificNameIndex: Sendable {
 
     private let exact: [String: Int]
-    private let byGenus: [String: Int]
+    /// 속 → 그 속의 **모든** 종 id (도감번호 순).
+    ///
+    /// **하나만 담지 않는다.** 속 대표를 하나로 고정하면 개화월 필터와 싸운다 —
+    /// `Rosa`의 대표가 `찔레꽃`(5~6월)이면 8월 장미 사진은 전부 탈락한다.
+    /// 어느 종을 고를지는 색인이 아니라 **호출 시점의 후보 집합**이 정한다.
+    private let byGenus: [String: [Int]]
 
     init(flowers: [Flower]) {
         var exact: [String: Int] = [:]
-        var byGenus: [String: Int] = [:]
+        var byGenus: [String: [Int]] = [:]
         for flower in flowers {
             let name = Self.normalize(flower.scientificName)
             guard !name.isEmpty else { continue }
             exact[name] = flower.id
             if let genus = name.split(separator: " ").first {
-                // 같은 속이 여러 종이면 먼저 온 것을 남긴다 (CSV는 id 순이라 결정론적이다).
-                byGenus[String(genus)] = byGenus[String(genus)] ?? flower.id
+                byGenus[String(genus), default: []].append(flower.id)
             }
         }
         self.exact = exact
-        self.byGenus = byGenus
+        // CSV는 id 순이지만 의존하지 않고 정렬한다 — 동점일 때 결과가 결정론적이어야 한다.
+        self.byGenus = byGenus.mapValues { $0.sorted() }
     }
 
-    func flowerID(for scientificName: String) -> Int? {
+    /// - Parameter preferring: 이번 달 개화 종 등 **살아남을 수 있는 id 집합**.
+    ///   속에 여러 종이 있으면 이 집합에 든 종을 먼저 고른다.
+    ///   `nil`이면 예전처럼 도감번호가 가장 작은 종을 준다(테스트·비필터 경로용).
+    func flowerID(for scientificName: String, preferring: Set<Int>? = nil) -> Int? {
         let name = Self.normalize(scientificName)
-        if let hit = exact[name] { return hit }
-        guard let genus = name.split(separator: " ").first else { return nil }
-        return byGenus[String(genus)]
+        // exact가 후보 밖이면 속으로 내려간다 — `Bellis perennis`(4~5월)를 정확히
+        // 맞혔더라도 8월엔 쓸 수 없고, 같은 속의 다른 종이 개화 중일 수 있다.
+        if let hit = exact[name], preferring?.contains(hit) ?? true { return hit }
+        guard let genus = name.split(separator: " ").first,
+              let sameGenus = byGenus[String(genus)]
+        else { return exact[name] }
+        if let preferring {
+            return sameGenus.first(where: preferring.contains) ?? exact[name]
+        }
+        return sameGenus.first
     }
 
     /// 대소문자·여분 공백·품종 표기(`var.` 등)를 지운다.

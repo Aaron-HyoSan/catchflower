@@ -601,6 +601,82 @@ struct ScientificNameIndexTests {
         let first = try #require(repo.flowers.first { $0.scientificName.contains(" ") })
         #expect(index.flowerID(for: "\(first.scientificName) var. alba") != nil)
     }
+
+    // MARK: 후보 집합 우선 (A-1 실측 2026-08-05로 드러난 결함)
+
+    /// **실측이 잡은 것.** 8월 장미 사진에서 PlantNet은 `Rosa chinensis`를
+    /// 0.606으로 맞혔는데, 색인이 `Rosa` 대표를 도감번호 최솟값인
+    /// **찔레꽃(29, 5~6월)**로 번역해서 개화월 필터에 탈락했다.
+    /// 그 자리를 `Begonia grandis` 0.003이 차지했다 — 정답 0.606이 오답 0.003에게 진 것이다.
+    @Test("속에 여러 종이 있으면 후보 집합에 든 종을 고른다")
+    func genusPrefersCandidateSet() throws {
+        let rosa = repo.flowers.filter { $0.scientificName.hasPrefix("Rosa ") }
+        try #require(rosa.count > 1, "이 테스트는 Rosa가 2종 이상이어야 의미가 있다")
+        let august = Set(repo.flowers.filter { $0.bloomMonths.contains(8) }.map(\.id))
+        let hit = try #require(index.flowerID(for: "Rosa chinensis", preferring: august))
+        #expect(august.contains(hit), "8월에 안 피는 종을 골랐다: \(repo.flowers.first { $0.id == hit }?.name ?? "?")")
+    }
+
+    /// **정확히 맞혔더라도 그 종이 이번 달에 안 피면 쓸 수 없다.**
+    /// `Bellis perennis`(데이지 75, 4~5월)를 8월에 받으면 exact가 걸려도 탈락한다 —
+    /// 그때 같은 속을 훑어야 한다. exact를 무조건 반환하면 이 경로가 죽는다.
+    @Test("exact가 후보 밖이면 같은 속에서 다시 찾는다")
+    func exactOutOfSeasonFallsBackToGenus() throws {
+        let daisy = try #require(repo.flower(named: "데이지"))
+        try #require(!daisy.bloomMonths.contains(8))
+        // 8월 후보에 데이지가 없으니 exact 히트를 그대로 주면 안 된다.
+        let august = Set(repo.flowers.filter { $0.bloomMonths.contains(8) }.map(\.id))
+        let hit = index.flowerID(for: daisy.scientificName, preferring: august)
+        // 같은 속(Bellis)에 8월 종이 없으면 nil이 아니라 exact로 돌아온다 —
+        // 그건 호출처의 `allowed.contains` 가드가 버린다. 여기서 확인할 건
+        // **후보에 든 종이 있을 때 그것을 고르는가**다.
+        if let hit, august.contains(hit) {
+            #expect(hit != daisy.id)
+        } else {
+            #expect(hit == daisy.id, "후보 밖이면 exact로 돌려주고 호출처가 버린다")
+        }
+    }
+
+    /// `preferring`을 안 주면 예전 동작이어야 한다 — 다른 호출처를 깨지 않는다.
+    @Test("후보 집합 없이 부르면 도감번호가 작은 종을 준다")
+    func withoutPreferringKeepsLowestID() {
+        #expect(index.flowerID(for: "Rosa nonexistentspecies")
+                == repo.flowers.filter { $0.scientificName.hasPrefix("Rosa ") }.map(\.id).min())
+    }
+
+    /// **실측이 잡은 버그의 회귀 테스트.** 이게 이 수정의 요점이다.
+    ///
+    /// 속 대표를 도감번호 최솟값으로 고정하면, **그 대표의 개화기가 끝나는 달부터
+    /// 그 속 전체가 판별 불가**가 된다. 라벨 200장 실측에서:
+    /// - 장미: 7~10월 Top-1 **0%** → 62% (대표 `찔레꽃`이 6월에 끝난다)
+    /// - 민들레: 6~9월 Top-1 **0%** → 85% (대표 `민들레`가 5월에 끝난다)
+    ///
+    /// 앱을 켜서는 못 본다 — 8월에 장미를 찍으면 `베고니아`가 뜨는데
+    /// 그게 그냥 "AI가 틀렸네"로 보인다. 달을 바꿔 재야 드러난다.
+    @Test("속 대표의 개화기가 끝난 달에도 같은 속을 찾는다", arguments: [
+        ("Rosa chinensis", "장미", 8),        // 대표 찔레꽃 5~6월 → 8월에 죽었다
+        ("Rosa chinensis", "장미", 10),
+        ("Taraxacum officinale", "서양민들레", 8),  // 대표 민들레 3~5월 → 8월에 죽었다
+        ("Taraxacum officinale", "서양민들레", 6),
+    ])
+    func genusSurvivesRepresentativeGoingOutOfSeason(
+        plantNetName: String, expectedKoreanName: String, month: Int
+    ) throws {
+        let expected = try #require(repo.flower(named: expectedKoreanName))
+        try #require(expected.bloomMonths.contains(month), "테스트 전제가 깨졌다: \(expectedKoreanName)")
+        let season = Set(repo.flowers.filter { $0.bloomMonths.contains(month) }.map(\.id))
+        #expect(index.flowerID(for: plantNetName, preferring: season) == expected.id)
+    }
+
+    /// 후보 집합이 그 속을 하나도 안 담고 있으면 **없는 종을 억지로 만들지 않는다.**
+    @Test("후보 집합이 그 속을 비우면 후보 밖 id를 주고 호출처가 버린다")
+    func emptyIntersectionDoesNotInvent() throws {
+        let rosaIDs = Set(repo.flowers.filter { $0.scientificName.hasPrefix("Rosa ") }.map(\.id))
+        let allowed = Set(repo.flowers.map(\.id)).subtracting(rosaIDs)
+        let hit = index.flowerID(for: "Rosa chinensis", preferring: allowed)
+        // Rosa chinensis는 우리 도감에 없으니 exact도 없다 → nil이어야 한다.
+        #expect(hit == nil || !allowed.contains(hit!))
+    }
 }
 
 // MARK: - 키 주입 (2026-08-05 추가)

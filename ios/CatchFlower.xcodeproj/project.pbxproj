@@ -33,21 +33,26 @@
 		89E0D211C138695E8EBA2CC3 /* AppSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7723E0192769FA34BD206235 /* AppSecrets.swift */; };
 		89F57041DCEAE7C381E623F5 /* CaptureFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A454A401121A5ADE51BAEC /* CaptureFlow.swift */; };
 		8CE69AE6F354B7BAC5EA88BC /* IdentifyConfirmView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4822CCD5E69C285F4A7C910E /* IdentifyConfirmView.swift */; };
+		95A2AF53DCC272171C767244 /* real_sunflower_low.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 5CEC708715D1F5DAC81301F2 /* real_sunflower_low.jpg */; };
+		99BABFE3D7BD8B5B08333165 /* real_sunflower_high.jpg in Resources */ = {isa = PBXBuildFile; fileRef = DC40A2D50C9E1087E761EC4B /* real_sunflower_high.jpg */; };
 		9CE9F39DB93454A2539707BA /* AppSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC6F850C32CF6193E1556785 /* AppSession.swift */; };
 		A027455B8926835536D6540C /* Toast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6FEA2E6FE52C9CBFEEBDB6 /* Toast.swift */; };
 		A563354B760E2680EEB08F71 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BA00CBF9845D370EC7D423B /* Theme.swift */; };
 		A6B7FD2F84FE1C087003856E /* DuplicateTodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7CB8BA362B21B0E44D555A /* DuplicateTodayView.swift */; };
 		A92177E29DE680B0C252A33A /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3EAF9295BB65856AB6C3E3B /* Enums.swift */; };
+		B2609DDA7C4267F55397028B /* RealRecognitionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1536A5E8DF7005F2D204E84E /* RealRecognitionUITests.swift */; };
 		B6626775CC7EBC1B2B7842D7 /* GamePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBD75EEF7F54D921F05DB71 /* GamePolicy.swift */; };
 		B8C1D44EE7470F7133770999 /* PermissionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31CC4A2E30C1AAFEB941B237 /* PermissionSheet.swift */; };
 		B8E7B55F8F1A9AABD9BDE610 /* CatchFlowerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A4DC407B1BAC5FB52E049AD /* CatchFlowerApp.swift */; };
 		BFD7598EA025C0E644A198EA /* IdentifyFailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A950DF22FE511F29F5B64A /* IdentifyFailedView.swift */; };
+		C2E7701EE16BEF2B207E2AFE /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 468070B9AE521E044D01393C /* README.md */; };
 		C36D196090E8BB6A3294D83B /* RareFlowerExtraPhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8FF2E69B4FF87A8F5018EAE /* RareFlowerExtraPhotoView.swift */; };
 		C5EEB35F9575F42B5F6E532B /* PlaceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A316EBF49263E7E0ADCC59 /* PlaceService.swift */; };
 		C9AEFF41C148B868C38551EC /* FlowerSymbol.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC437A281D43A3B8D0B7FBF5 /* FlowerSymbol.swift */; };
 		D8755D1D00780F7DD8AD4E79 /* DiscoveryResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3758625B25F2852E57DABD /* DiscoveryResultView.swift */; };
 		E3853E1662FE1C67FF372190 /* PermissionIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E74514DEB7FA20EB0120B8B3 /* PermissionIntroView.swift */; };
 		EA9E11E8D84BD997CDB1EFEB /* Discovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C650224A44277D32113E63A /* Discovery.swift */; };
+		F18B6BEDD2F7A3FE9B3D0C3F /* real_dandelion_faint.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 1CADCAC22AEB187AC25305D2 /* real_dandelion_faint.jpg */; };
 		F2306882DBB08E754BE5115E /* CatchFlowerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B58A7978D13CC7087F715CEB /* CatchFlowerTests.swift */; };
 		F4C38FD49B7ABFA87380447E /* FlowerRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB8032F0E83F63BAF1A8AEA9 /* FlowerRepository.swift */; };
 		F7628DAEA65B031FBA5BA7C7 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0580348A039C9310CC5089AE /* CameraView.swift */; };
@@ -77,9 +82,11 @@
 		0580348A039C9310CC5089AE /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
 		05BB52D300959CC7A41E4292 /* PreviewSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewSupport.swift; sourceTree = "<group>"; };
 		07A316EBF49263E7E0ADCC59 /* PlaceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceService.swift; sourceTree = "<group>"; };
+		1536A5E8DF7005F2D204E84E /* RealRecognitionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealRecognitionUITests.swift; sourceTree = "<group>"; };
 		174D7BB0456E182958647D27 /* OnboardingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingUITests.swift; sourceTree = "<group>"; };
 		189D35A3D46806FA6A10AA30 /* LaunchArgument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchArgument.swift; sourceTree = "<group>"; };
 		1A7CB8BA362B21B0E44D555A /* DuplicateTodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicateTodayView.swift; sourceTree = "<group>"; };
+		1CADCAC22AEB187AC25305D2 /* real_dandelion_faint.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = real_dandelion_faint.jpg; sourceTree = "<group>"; };
 		1D1547D1D31B0E5CDC250481 /* Buttons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Buttons.swift; sourceTree = "<group>"; };
 		2A3758625B25F2852E57DABD /* DiscoveryResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryResultView.swift; sourceTree = "<group>"; };
 		2BA00CBF9845D370EC7D423B /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
@@ -87,10 +94,12 @@
 		31CC4A2E30C1AAFEB941B237 /* PermissionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionSheet.swift; sourceTree = "<group>"; };
 		35F1DDEEA9657054846EA4C6 /* CatchFlower.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CatchFlower.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		36B4E8B3591A789BB7D31735 /* Flower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Flower.swift; sourceTree = "<group>"; };
+		468070B9AE521E044D01393C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		47E3495DA3450A29392DA1FF /* CatchFlowerUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CatchFlowerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4822CCD5E69C285F4A7C910E /* IdentifyConfirmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentifyConfirmView.swift; sourceTree = "<group>"; };
 		4A65CFBF66ADD2AA4CF8540E /* EmptyCodexView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyCodexView.swift; sourceTree = "<group>"; };
 		4E4659C52E57CEE5AF4029F3 /* KoreanText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KoreanText.swift; sourceTree = "<group>"; };
+		5CEC708715D1F5DAC81301F2 /* real_sunflower_low.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = real_sunflower_low.jpg; sourceTree = "<group>"; };
 		63843B591EA919888A2D951C /* CodexFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexFilter.swift; sourceTree = "<group>"; };
 		6D6FEA2E6FE52C9CBFEEBDB6 /* Toast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Toast.swift; sourceTree = "<group>"; };
 		705B183FACA915B73600C83C /* CameraController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraController.swift; sourceTree = "<group>"; };
@@ -119,6 +128,7 @@
 		D48198DCEFAA1EF7B0BA2A2D /* CodexHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexHomeView.swift; sourceTree = "<group>"; };
 		DB5AFA7C15B8A2925B5F2F26 /* ConfirmDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmDialog.swift; sourceTree = "<group>"; };
 		DBE515C9E8C1C59323982AAC /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		DC40A2D50C9E1087E761EC4B /* real_sunflower_high.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = real_sunflower_high.jpg; sourceTree = "<group>"; };
 		DEF9F398688AD796BA90023E /* LocationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationProvider.swift; sourceTree = "<group>"; };
 		E4A950DF22FE511F29F5B64A /* IdentifyFailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentifyFailedView.swift; sourceTree = "<group>"; };
 		E74514DEB7FA20EB0120B8B3 /* PermissionIntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionIntroView.swift; sourceTree = "<group>"; };
@@ -208,6 +218,7 @@
 			isa = PBXGroup;
 			children = (
 				7A3B0C753ABE239171A349A8 /* Info.plist */,
+				E63F40E6C0304938B9618FE1 /* RealFixtures */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -350,6 +361,7 @@
 				2C648E0F236C0EEF2302CEEB /* CaptureFlowUITests.swift */,
 				189D35A3D46806FA6A10AA30 /* LaunchArgument.swift */,
 				174D7BB0456E182958647D27 /* OnboardingUITests.swift */,
+				1536A5E8DF7005F2D204E84E /* RealRecognitionUITests.swift */,
 			);
 			path = UITests;
 			sourceTree = "<group>";
@@ -362,6 +374,17 @@
 				47E3495DA3450A29392DA1FF /* CatchFlowerUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		E63F40E6C0304938B9618FE1 /* RealFixtures */ = {
+			isa = PBXGroup;
+			children = (
+				468070B9AE521E044D01393C /* README.md */,
+				1CADCAC22AEB187AC25305D2 /* real_dandelion_faint.jpg */,
+				DC40A2D50C9E1087E761EC4B /* real_sunflower_high.jpg */,
+				5CEC708715D1F5DAC81301F2 /* real_sunflower_low.jpg */,
+			);
+			path = RealFixtures;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -431,16 +454,16 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					076062CECC89D9AD6E22186A = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = "$(CF_DEVELOPMENT_TEAM)";
 						ProvisioningStyle = Automatic;
 					};
 					30BE5642167F1EFFE3ECD102 = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = "$(CF_DEVELOPMENT_TEAM)";
 						ProvisioningStyle = Automatic;
 						TestTargetID = 076062CECC89D9AD6E22186A;
 					};
 					4F68410C7864CF9BFB4127B0 = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = "$(CF_DEVELOPMENT_TEAM)";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -471,7 +494,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C2E7701EE16BEF2B207E2AFE /* README.md in Resources */,
 				FE555A98354E15D4B44A9786 /* flowers.json in Resources */,
+				F18B6BEDD2F7A3FE9B3D0C3F /* real_dandelion_faint.jpg in Resources */,
+				99BABFE3D7BD8B5B08333165 /* real_sunflower_high.jpg in Resources */,
+				95A2AF53DCC272171C767244 /* real_sunflower_low.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -534,6 +561,7 @@
 				240A3E105084AD75D37974F7 /* CaptureFlowUITests.swift in Sources */,
 				1C96556AAE9FE8FF67C92D46 /* LaunchArgument.swift in Sources */,
 				2FEA91F580B45BE0FAB13CCE /* OnboardingUITests.swift in Sources */,
+				B2609DDA7C4267F55397028B /* RealRecognitionUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -615,7 +643,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = "$(CF_DEVELOPMENT_TEAM)";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -729,7 +757,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = "$(CF_DEVELOPMENT_TEAM)";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;

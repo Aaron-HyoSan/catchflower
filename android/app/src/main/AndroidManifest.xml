@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- 화면 07. 앨범 읽기 권한은 **요청하지 않는다** — 직접 촬영만 등록 가능한 규칙이라
+         권한을 안 받는 게 곧 규칙의 보장이다. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- 화면 19 친구 초대. 화면 03(권한 안내)에서는 **요청하지 않는다** —
+         iOS 세션이 같은 결론을 냈다(진행 기록 (16)): 쓰는 화면에서 받아야
+         왜 필요한지 설명할 수 있다. 거부하면 초대 링크 단독 화면으로 대체한다. -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <!-- 카메라 없는 기기(TV 등)에 설치되지 않게. required=false로 두면
+         촬영이 앱의 핵심인데 못 쓰는 설치가 생긴다. -->
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="true" />
+
     <application
         android:name=".CatchFlowerApp"
         android:label="@string/app_name"
