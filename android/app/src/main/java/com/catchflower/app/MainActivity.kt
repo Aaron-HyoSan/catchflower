@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.catchflower.app.core.AppSecrets
 import com.catchflower.app.ui.capture.CaptureFlow
 import com.catchflower.app.ui.component.CfBottomNav
 import com.catchflower.app.ui.component.NavTab
@@ -40,7 +41,23 @@ import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
 import com.catchflower.app.ui.theme.CfText
 
-class CatchFlowerApp : Application()
+class CatchFlowerApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        // 어떤 키가 들어왔는지 **실행 시점에** 남긴다.
+        //
+        // ⚠️ 키가 없으면 앱은 조용히 Mock으로 돈다 — 그게 설계지만, 로그가 없으면
+        //    "실인식이 도는 줄 알았는데 Mock이었다"를 알 방법이 없다. iOS는 그 상태로
+        //    `PlantNetRecognizer`를 한 번도 실행하지 않은 채 커밋까지 갔다.
+        //    **값은 절대 찍지 않는다** — 있음/없음만 남긴다.
+        android.util.Log.i(
+            "CatchFlower",
+            "키 상태: PlantNet=${AppSecrets.hasPlantNetKey} " +
+                "Kakao=${AppSecrets.hasKakaoKey} Supabase=${AppSecrets.hasSupabase}" +
+                if (AppSecrets.missingKeys.isEmpty()) "" else " · 없는 키 ${AppSecrets.missingKeys}",
+        )
+    }
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

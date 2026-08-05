@@ -3,6 +3,7 @@ package com.catchflower.app.ui.capture
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.catchflower.app.core.AppSecrets
 import com.catchflower.app.core.GamePolicy
 import com.catchflower.app.data.DummyDiscoveries
 import com.catchflower.app.data.FlowerRepository
@@ -12,7 +13,11 @@ import com.catchflower.app.recognizer.IdentifyFlow
 import com.catchflower.app.recognizer.IdentifyOutcome
 import com.catchflower.app.recognizer.MlKitFlowerPreFilter
 import com.catchflower.app.recognizer.MockFlowerRecognizer
+import com.catchflower.app.recognizer.PlantNetRecognizer
 import com.catchflower.app.recognizer.RankedCandidate
+import com.catchflower.app.recognizer.RecognitionError
+import com.catchflower.app.recognizer.ScientificNameIndex
+import com.catchflower.app.ui.component.CfToast
 import java.util.Calendar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -90,7 +95,7 @@ sealed interface CaptureState {
  */
 class CaptureViewModel @JvmOverloads constructor(
     app: Application,
-    private val recognizer: FlowerRecognizer = MockFlowerRecognizer(),
+    recognizer: FlowerRecognizer? = null,
     /**
      * 1차 필터. 실측 결과 재현율 100%·차단율 92.4%로 확정했다
      * ([MlKitFlowerPreFilter] 주석 참조).
@@ -101,8 +106,55 @@ class CaptureViewModel @JvmOverloads constructor(
     private val repository = FlowerRepository.get(app)
     private val flow = IdentifyFlow(repository)
 
+    /**
+     * 실제 인식기를 쓸 수 있으면 쓰고, **키가 없으면 Mock으로 돈다.**
+     *
+     * ⚠️ 키가 없다고 촬영 흐름을 못 쓰게 만들지 않는다 ([AppSecrets] 규칙).
+     *    반대로 키가 있는데 Mock으로 계속 돌면 **`PlantNetRecognizer`가 한 줄도
+     *    실행되지 않는다** — 컴파일과 테스트만 통과한 코드가 된다. iOS가 그 함정에
+     *    빠져서 `#if DEBUG` 우회로를 따로 만들었다.
+     */
+    private val recognizer: FlowerRecognizer = recognizer ?: defaultRecognizer()
+
+    private fun defaultRecognizer(): FlowerRecognizer =
+        if (AppSecrets.hasPlantNetKey) {
+            PlantNetRecognizer(
+                index = ScientificNameIndex(repository.flowers),
+                apiKey = AppSecrets.plantNetApiKey,
+            )
+        } else {
+            MockFlowerRecognizer()
+        }
+
+    /**
+     * 지금 어떤 인식기로 도는가. **테스트와 로그가 이걸 본다.**
+     *
+     * ⚠️ 이게 없으면 "키가 있으면 실엔진을 쓴다"를 검증할 방법이 없다 —
+     *    `AppSecrets.hasPlantNetKey`를 두 번 확인하는 동어반복 테스트가 된다.
+     *    실제로 그렇게 짰다가 고쳤다.
+     */
+    val recognizerName: String get() = recognizer::class.simpleName ?: "?"
+
+    init {
+        android.util.Log.i("CatchFlower", "인식기: $recognizerName")
+    }
+
     var state by mutableStateOf<CaptureState>(CaptureState.Camera)
         private set
+
+    /**
+     * 화면에 띄울 토스트. 소비하면 [consumeToast]로 지운다.
+     *
+     * **왜 상태로 두는가**: 네트워크 오류를 화면 12(판별 실패)로 보내면
+     * `사진을 다시 찍어주세요`라고 말하게 되는데, 그건 **사용자 잘못이 아닌 걸
+     * 사용자 잘못으로 만든다** (A 문서 0절 원칙). 원인을 토스트로 알리고 촬영 화면에 남긴다.
+     */
+    var toast by mutableStateOf<CfToast?>(null)
+        private set
+
+    fun consumeToast() {
+        toast = null
+    }
 
     /** 연속 판별 실패. 성공하면 0으로 돌아간다. */
     private var failStreak = 0
@@ -137,11 +189,26 @@ class CaptureViewModel @JvmOverloads constructor(
         }
 
         // ② 개화월 하드 필터 (A-1 필수 구현).
-        //    ⚠️ 서버가 붙으면 서버가 한다. 지금은 Mock이라 여기서 후보를 만든다.
+        //    ⚠️ 서버가 붙으면 서버가 한다. 지금은 클라이언트가 후보를 만든다.
         val month = Calendar.getInstance().get(Calendar.MONTH) + 1
         val candidates = flow.candidatesForMonth(month)
 
-        val result = recognizer.identify(jpeg, candidates, debugLabel)
+        val result = try {
+            recognizer.identify(jpeg, candidates, debugLabel)
+        } catch (e: RecognitionError) {
+            // **통신 오류는 판별 실패가 아니다.** 화면 12는 "사진을 다시 찍어주세요"라고
+            // 하는데, 연결 문제로 그러면 사용자가 멀쩡한 사진을 계속 다시 찍는다.
+            // 연속 실패(B-11)로도 세지 않는다 — 통신 문제로 `꽃이 아닐 수도 있어요`가
+            // 뜨면 엉뚱한 안내가 된다.
+            //
+            // 일일 한도 초과도 같이 묶는다. 사용자가 할 수 있는 게 "잠시 후 다시"인 건 같고
+            // **한도 전용 문구는 A 문서에 없다** — 없는 문구를 만들지 않는다.
+            android.util.Log.w("CatchFlower", "인식기 호출 실패", e)
+            toast = CfToast.NETWORK_ERROR
+            state = CaptureState.Camera
+            return
+        }
+
         when (val outcome = flow.decide(result)) {
             is IdentifyOutcome.Failed -> {
                 failStreak++

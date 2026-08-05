@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- ⚠️ PlantNet·Supabase 호출에 필요하다. **없으면 컴파일은 되고 실행만 죽는다** —
+         `HttpURLConnection`이 SecurityException("Permission denied")을 던진다.
+         지금까지 Mock 인식기만 돌아서 아무도 눈치채지 못했다. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- 화면 07. 앨범 읽기 권한은 **요청하지 않는다** — 직접 촬영만 등록 가능한 규칙이라
          권한을 안 받는 게 곧 규칙의 보장이다. -->
     <uses-permission android:name="android.permission.CAMERA" />

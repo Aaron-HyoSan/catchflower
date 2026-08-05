@@ -1,0 +1,6412 @@
+{
+ "note": "iOS 실측(진행 (19)) 캐시에서 생성. 재생성: python3 android/_tools/build_plantnet_replay_fixture.py",
+ "class_to_genera": {
+  "dandelion": [
+   "Taraxacum"
+  ],
+  "roses": [
+   "Rosa"
+  ],
+  "sunflowers": [
+   "Helianthus"
+  ],
+  "tulips": [
+   "Tulipa"
+  ],
+  "daisy": [
+   "Bellis",
+   "Leucanthemum",
+   "Chrysanthemum",
+   "Argyranthemum",
+   "Aster"
+  ]
+ },
+ "class_peak_month": {
+  "dandelion": 4,
+  "roses": 6,
+  "sunflowers": 8,
+  "tulips": 4,
+  "daisy": 5
+ },
+ "flowers": [
+  {
+   "id": 1,
+   "name": "개나리",
+   "scientific_name": "Forsythia koreana",
+   "bloom_months": [
+    3,
+    4
+   ]
+  },
+  {
+   "id": 2,
+   "name": "진달래",
+   "scientific_name": "Rhododendron mucronulatum",
+   "bloom_months": [
+    3,
+    4
+   ]
+  },
+  {
+   "id": 3,
+   "name": "철쭉",
+   "scientific_name": "Rhododendron schlippenbachii",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 4,
+   "name": "영산홍",
+   "scientific_name": "Rhododendron indicum",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 5,
+   "name": "벚꽃",
+   "scientific_name": "Prunus × yedoensis",
+   "bloom_months": [
+    4
+   ]
+  },
+  {
+   "id": 6,
+   "name": "매화",
+   "scientific_name": "Prunus mume",
+   "bloom_months": [
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "id": 7,
+   "name": "살구꽃",
+   "scientific_name": "Prunus armeniaca",
+   "bloom_months": [
+    4
+   ]
+  },
+  {
+   "id": 8,
+   "name": "복사꽃",
+   "scientific_name": "Prunus persica",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 9,
+   "name": "자두꽃",
+   "scientific_name": "Prunus salicina",
+   "bloom_months": [
+    4
+   ]
+  },
+  {
+   "id": 10,
+   "name": "백목련",
+   "scientific_name": "Magnolia denudata",
+   "bloom_months": [
+    3,
+    4
+   ]
+  },
+  {
+   "id": 11,
+   "name": "목련",
+   "scientific_name": "Magnolia kobus",
+   "bloom_months": [
+    3,
+    4
+   ]
+  },
+  {
+   "id": 12,
+   "name": "자목련",
+   "scientific_name": "Magnolia liliiflora",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 13,
+   "name": "산수유",
+   "scientific_name": "Cornus officinalis",
+   "bloom_months": [
+    3,
+    4
+   ]
+  },
+  {
+   "id": 14,
+   "name": "생강나무",
+   "scientific_name": "Lindera obtusiloba",
+   "bloom_months": [
+    3
+   ]
+  },
+  {
+   "id": 15,
+   "name": "동백꽃",
+   "scientific_name": "Camellia japonica",
+   "bloom_months": [
+    12,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "id": 16,
+   "name": "애기동백",
+   "scientific_name": "Camellia sasanqua",
+   "bloom_months": [
+    10,
+    11,
+    12
+   ]
+  },
+  {
+   "id": 17,
+   "name": "명자나무꽃",
+   "scientific_name": "Chaenomeles speciosa",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 18,
+   "name": "조팝나무",
+   "scientific_name": "Spiraea prunifolia",
+   "bloom_months": [
+    4
+   ]
+  },
+  {
+   "id": 19,
+   "name": "수수꽃다리",
+   "scientific_name": "Syringa dilatata",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 20,
+   "name": "이팝나무",
+   "scientific_name": "Chionanthus retusus",
+   "bloom_months": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": 21,
+   "name": "아까시나무",
+   "scientific_name": "Robinia pseudoacacia",
+   "bloom_months": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": 22,
+   "name": "등나무",
+   "scientific_name": "Wisteria floribunda",
+   "bloom_months": [
+    5
+   ]
+  },
+  {
+   "id": 23,
+   "name": "병꽃나무",
+   "scientific_name": "Weigela subsessilis",
+   "bloom_months": [
+    5
+   ]
+  },
+  {
+   "id": 24,
+   "name": "황매화",
+   "scientific_name": "Kerria japonica",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 25,
+   "name": "산딸나무",
+   "scientific_name": "Cornus kousa",
+   "bloom_months": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": 26,
+   "name": "쥐똥나무",
+   "scientific_name": "Ligustrum obtusifolium",
+   "bloom_months": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": 27,
+   "name": "모란",
+   "scientific_name": "Paeonia suffruticosa",
+   "bloom_months": [
+    5
+   ]
+  },
+  {
+   "id": 28,
+   "name": "작약",
+   "scientific_name": "Paeonia lactiflora",
+   "bloom_months": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": 29,
+   "name": "찔레꽃",
+   "scientific_name": "Rosa multiflora",
+   "bloom_months": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": 30,
+   "name": "마가목",
+   "scientific_name": "Sorbus commixta",
+   "bloom_months": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": 31,
+   "name": "민들레",
+   "scientific_name": "Taraxacum platycarpum",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "id": 32,
+   "name": "서양민들레",
+   "scientific_name": "Taraxacum officinale",
+   "bloom_months": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 33,
+   "name": "제비꽃",
+   "scientific_name": "Viola mandshurica",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 34,
+   "name": "남산제비꽃",
+   "scientific_name": "Viola albida",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 35,
+   "name": "꽃마리",
+   "scientific_name": "Trigonotis peduncularis",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 36,
+   "name": "큰개불알풀",
+   "scientific_name": "Veronica persica",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "id": 37,
+   "name": "봄맞이꽃",
+   "scientific_name": "Androsace umbellata",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 38,
+   "name": "별꽃",
+   "scientific_name": "Stellaria media",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "id": 39,
+   "name": "쇠별꽃",
+   "scientific_name": "Stellaria aquatica",
+   "bloom_months": [
+    4,
+    5,
+    6
+   ]
+  },
+  {
+   "id": 40,
+   "name": "개별꽃",
+   "scientific_name": "Pseudostellaria heterophylla",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 41,
+   "name": "광대나물",
+   "scientific_name": "Lamium amplexicaule",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "id": 42,
+   "name": "자주광대나물",
+   "scientific_name": "Lamium purpureum",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "id": 43,
+   "name": "냉이",
+   "scientific_name": "Capsella bursa-pastoris",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "id": 44,
+   "name": "애기똥풀",
+   "scientific_name": "Chelidonium majus",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 45,
+   "name": "씀바귀",
+   "scientific_name": "Ixeris dentata",
+   "bloom_months": [
+    5,
+    6,
+    7
+   ]
+  },
+  {
+   "id": 46,
+   "name": "고들빼기",
+   "scientific_name": "Crepidiastrum sonchifolium",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 47,
+   "name": "뽀리뱅이",
+   "scientific_name": "Youngia japonica",
+   "bloom_months": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": 48,
+   "name": "지칭개",
+   "scientific_name": "Hemistepta lyrata",
+   "bloom_months": [
+    5,
+    6,
+    7
+   ]
+  },
+  {
+   "id": 49,
+   "name": "엉겅퀴",
+   "scientific_name": "Cirsium japonicum",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 50,
+   "name": "유채꽃",
+   "scientific_name": "Brassica napus",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "id": 51,
+   "name": "토끼풀",
+   "scientific_name": "Trifolium repens",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 52,
+   "name": "붉은토끼풀",
+   "scientific_name": "Trifolium pratense",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 53,
+   "name": "살갈퀴",
+   "scientific_name": "Vicia angustifolia",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 54,
+   "name": "자운영",
+   "scientific_name": "Astragalus sinicus",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 55,
+   "name": "벌노랑이",
+   "scientific_name": "Lotus corniculatus",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 56,
+   "name": "금낭화",
+   "scientific_name": "Lamprocapnos spectabilis",
+   "bloom_months": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": 57,
+   "name": "현호색",
+   "scientific_name": "Corydalis remota",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 58,
+   "name": "할미꽃",
+   "scientific_name": "Pulsatilla koreana",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 59,
+   "name": "노루귀",
+   "scientific_name": "Hepatica asiatica",
+   "bloom_months": [
+    3,
+    4
+   ]
+  },
+  {
+   "id": 60,
+   "name": "복수초",
+   "scientific_name": "Adonis amurensis",
+   "bloom_months": [
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "id": 61,
+   "name": "변산바람꽃",
+   "scientific_name": "Eranthis byunsanensis",
+   "bloom_months": [
+    2,
+    3
+   ]
+  },
+  {
+   "id": 62,
+   "name": "앵초",
+   "scientific_name": "Primula sieboldii",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 63,
+   "name": "은방울꽃",
+   "scientific_name": "Convallaria keiskei",
+   "bloom_months": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": 64,
+   "name": "붓꽃",
+   "scientific_name": "Iris sanguinea",
+   "bloom_months": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": 65,
+   "name": "꽃창포",
+   "scientific_name": "Iris ensata",
+   "bloom_months": [
+    6,
+    7
+   ]
+  },
+  {
+   "id": 66,
+   "name": "노랑꽃창포",
+   "scientific_name": "Iris pseudacorus",
+   "bloom_months": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": 67,
+   "name": "등심붓꽃",
+   "scientific_name": "Sisyrinchium rosulatum",
+   "bloom_months": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": 68,
+   "name": "튤립",
+   "scientific_name": "Tulipa gesneriana",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 69,
+   "name": "수선화",
+   "scientific_name": "Narcissus tazetta",
+   "bloom_months": [
+    3,
+    4
+   ]
+  },
+  {
+   "id": 70,
+   "name": "히아신스",
+   "scientific_name": "Hyacinthus orientalis",
+   "bloom_months": [
+    4
+   ]
+  },
+  {
+   "id": 71,
+   "name": "무스카리",
+   "scientific_name": "Muscari armeniacum",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 72,
+   "name": "크로커스",
+   "scientific_name": "Crocus vernus",
+   "bloom_months": [
+    3,
+    4
+   ]
+  },
+  {
+   "id": 73,
+   "name": "팬지",
+   "scientific_name": "Viola × wittrockiana",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "id": 74,
+   "name": "비올라",
+   "scientific_name": "Viola cornuta",
+   "bloom_months": [
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "id": 75,
+   "name": "데이지",
+   "scientific_name": "Bellis perennis",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 76,
+   "name": "프리지어",
+   "scientific_name": "Freesia refracta",
+   "bloom_months": [
+    3,
+    4
+   ]
+  },
+  {
+   "id": 77,
+   "name": "라넌큘러스",
+   "scientific_name": "Ranunculus asiaticus",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 78,
+   "name": "아네모네",
+   "scientific_name": "Anemone coronaria",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 79,
+   "name": "꽃잔디",
+   "scientific_name": "Phlox subulata",
+   "bloom_months": [
+    4,
+    5
+   ]
+  },
+  {
+   "id": 80,
+   "name": "물망초",
+   "scientific_name": "Myosotis scorpioides",
+   "bloom_months": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": 81,
+   "name": "장미",
+   "scientific_name": "Rosa hybrida",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 82,
+   "name": "해당화",
+   "scientific_name": "Rosa rugosa",
+   "bloom_months": [
+    5,
+    6,
+    7
+   ]
+  },
+  {
+   "id": 83,
+   "name": "수국",
+   "scientific_name": "Hydrangea macrophylla",
+   "bloom_months": [
+    6,
+    7
+   ]
+  },
+  {
+   "id": 84,
+   "name": "산수국",
+   "scientific_name": "Hydrangea serrata",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 85,
+   "name": "나무수국",
+   "scientific_name": "Hydrangea paniculata",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 86,
+   "name": "능소화",
+   "scientific_name": "Campsis grandiflora",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 87,
+   "name": "배롱나무",
+   "scientific_name": "Lagerstroemia indica",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 88,
+   "name": "무궁화",
+   "scientific_name": "Hibiscus syriacus",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 89,
+   "name": "부용",
+   "scientific_name": "Hibiscus mutabilis",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 90,
+   "name": "자귀나무",
+   "scientific_name": "Albizia julibrissin",
+   "bloom_months": [
+    6,
+    7
+   ]
+  },
+  {
+   "id": 91,
+   "name": "회화나무",
+   "scientific_name": "Styphnolobium japonicum",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 92,
+   "name": "싸리",
+   "scientific_name": "Lespedeza bicolor",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 93,
+   "name": "칡꽃",
+   "scientific_name": "Pueraria lobata",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 94,
+   "name": "인동덩굴",
+   "scientific_name": "Lonicera japonica",
+   "bloom_months": [
+    5,
+    6,
+    7
+   ]
+  },
+  {
+   "id": 95,
+   "name": "치자나무",
+   "scientific_name": "Gardenia jasminoides",
+   "bloom_months": [
+    6,
+    7
+   ]
+  },
+  {
+   "id": 96,
+   "name": "모감주나무",
+   "scientific_name": "Koelreuteria paniculata",
+   "bloom_months": [
+    6,
+    7
+   ]
+  },
+  {
+   "id": 97,
+   "name": "개오동",
+   "scientific_name": "Catalpa ovata",
+   "bloom_months": [
+    6,
+    7
+   ]
+  },
+  {
+   "id": 98,
+   "name": "큰꽃으아리",
+   "scientific_name": "Clematis patens",
+   "bloom_months": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": 99,
+   "name": "사위질빵",
+   "scientific_name": "Clematis apiifolia",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 100,
+   "name": "으아리",
+   "scientific_name": "Clematis terniflora",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 101,
+   "name": "개망초",
+   "scientific_name": "Erigeron annuus",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 102,
+   "name": "망초",
+   "scientific_name": "Conyza canadensis",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 103,
+   "name": "실망초",
+   "scientific_name": "Conyza bonariensis",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 104,
+   "name": "큰금계국",
+   "scientific_name": "Coreopsis lanceolata",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 105,
+   "name": "금계국",
+   "scientific_name": "Coreopsis basalis",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 106,
+   "name": "기생초",
+   "scientific_name": "Coreopsis tinctoria",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 107,
+   "name": "원추천인국",
+   "scientific_name": "Rudbeckia hirta",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 108,
+   "name": "삼잎국화",
+   "scientific_name": "Rudbeckia laciniata",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 109,
+   "name": "해바라기",
+   "scientific_name": "Helianthus annuus",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 110,
+   "name": "코스모스",
+   "scientific_name": "Cosmos bipinnatus",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 111,
+   "name": "노랑코스모스",
+   "scientific_name": "Cosmos sulphureus",
+   "bloom_months": [
+    7,
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 112,
+   "name": "나팔꽃",
+   "scientific_name": "Ipomoea nil",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 113,
+   "name": "메꽃",
+   "scientific_name": "Calystegia pubescens",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 114,
+   "name": "애기나팔꽃",
+   "scientific_name": "Ipomoea lacunosa",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 115,
+   "name": "달맞이꽃",
+   "scientific_name": "Oenothera biennis",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 116,
+   "name": "낮달맞이꽃",
+   "scientific_name": "Oenothera speciosa",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 117,
+   "name": "접시꽃",
+   "scientific_name": "Alcea rosea",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 118,
+   "name": "패랭이꽃",
+   "scientific_name": "Dianthus chinensis",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 119,
+   "name": "수염패랭이꽃",
+   "scientific_name": "Dianthus barbatus",
+   "bloom_months": [
+    6,
+    7
+   ]
+  },
+  {
+   "id": 120,
+   "name": "술패랭이꽃",
+   "scientific_name": "Dianthus longicalyx",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 121,
+   "name": "끈끈이대나물",
+   "scientific_name": "Silene armeria",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 122,
+   "name": "꿀풀",
+   "scientific_name": "Prunella vulgaris",
+   "bloom_months": [
+    5,
+    6,
+    7
+   ]
+  },
+  {
+   "id": 123,
+   "name": "배초향",
+   "scientific_name": "Agastache rugosa",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 124,
+   "name": "익모초",
+   "scientific_name": "Leonurus japonicus",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 125,
+   "name": "층층이꽃",
+   "scientific_name": "Clinopodium chinense",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 126,
+   "name": "박하",
+   "scientific_name": "Mentha canadensis",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 127,
+   "name": "라벤더",
+   "scientific_name": "Lavandula angustifolia",
+   "bloom_months": [
+    6,
+    7
+   ]
+  },
+  {
+   "id": 128,
+   "name": "부처꽃",
+   "scientific_name": "Lythrum anceps",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 129,
+   "name": "물봉선",
+   "scientific_name": "Impatiens textori",
+   "bloom_months": [
+    8,
+    9
+   ]
+  },
+  {
+   "id": 130,
+   "name": "봉선화",
+   "scientific_name": "Impatiens balsamina",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 131,
+   "name": "노루오줌",
+   "scientific_name": "Astilbe rubra",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 132,
+   "name": "돌나물",
+   "scientific_name": "Sedum sarmentosum",
+   "bloom_months": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": 133,
+   "name": "기린초",
+   "scientific_name": "Phedimus kamtschaticus",
+   "bloom_months": [
+    6,
+    7
+   ]
+  },
+  {
+   "id": 134,
+   "name": "큰까치수염",
+   "scientific_name": "Lysimachia clethroides",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 135,
+   "name": "까치수염",
+   "scientific_name": "Lysimachia barystachys",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 136,
+   "name": "좁쌀풀",
+   "scientific_name": "Lysimachia vulgaris",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 137,
+   "name": "짚신나물",
+   "scientific_name": "Agrimonia pilosa",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 138,
+   "name": "이질풀",
+   "scientific_name": "Geranium thunbergii",
+   "bloom_months": [
+    8,
+    9
+   ]
+  },
+  {
+   "id": 139,
+   "name": "여뀌",
+   "scientific_name": "Persicaria hydropiper",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 140,
+   "name": "개여뀌",
+   "scientific_name": "Persicaria longiseta",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 141,
+   "name": "고마리",
+   "scientific_name": "Persicaria thunbergii",
+   "bloom_months": [
+    8,
+    9
+   ]
+  },
+  {
+   "id": 142,
+   "name": "이삭여뀌",
+   "scientific_name": "Persicaria filiformis",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 143,
+   "name": "도라지",
+   "scientific_name": "Platycodon grandiflorus",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 144,
+   "name": "초롱꽃",
+   "scientific_name": "Campanula punctata",
+   "bloom_months": [
+    6,
+    7
+   ]
+  },
+  {
+   "id": 145,
+   "name": "섬초롱꽃",
+   "scientific_name": "Campanula takesimana",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 146,
+   "name": "잔대",
+   "scientific_name": "Adenophora triphylla",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 147,
+   "name": "참나리",
+   "scientific_name": "Lilium lancifolium",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 148,
+   "name": "백합",
+   "scientific_name": "Lilium longiflorum",
+   "bloom_months": [
+    6,
+    7
+   ]
+  },
+  {
+   "id": 149,
+   "name": "원추리",
+   "scientific_name": "Hemerocallis fulva",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 150,
+   "name": "노랑원추리",
+   "scientific_name": "Hemerocallis thunbergii",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 151,
+   "name": "옥잠화",
+   "scientific_name": "Hosta plantaginea",
+   "bloom_months": [
+    8,
+    9
+   ]
+  },
+  {
+   "id": 152,
+   "name": "비비추",
+   "scientific_name": "Hosta longipes",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 153,
+   "name": "상사화",
+   "scientific_name": "Lycoris squamigera",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 154,
+   "name": "연꽃",
+   "scientific_name": "Nelumbo nucifera",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 155,
+   "name": "수련",
+   "scientific_name": "Nymphaea tetragona",
+   "bloom_months": [
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 156,
+   "name": "부추꽃",
+   "scientific_name": "Allium tuberosum",
+   "bloom_months": [
+    8,
+    9
+   ]
+  },
+  {
+   "id": 157,
+   "name": "백일홍",
+   "scientific_name": "Zinnia elegans",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 158,
+   "name": "채송화",
+   "scientific_name": "Portulaca grandiflora",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 159,
+   "name": "송엽국",
+   "scientific_name": "Lampranthus spectabilis",
+   "bloom_months": [
+    4,
+    5,
+    6
+   ]
+  },
+  {
+   "id": 160,
+   "name": "페튜니아",
+   "scientific_name": "Petunia hybrida",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 161,
+   "name": "메리골드",
+   "scientific_name": "Tagetes erecta",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 162,
+   "name": "만수국",
+   "scientific_name": "Tagetes patula",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 163,
+   "name": "깨꽃",
+   "scientific_name": "Salvia splendens",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 164,
+   "name": "맨드라미",
+   "scientific_name": "Celosia cristata",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 165,
+   "name": "제라늄",
+   "scientific_name": "Pelargonium inquinans",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 166,
+   "name": "임파첸스",
+   "scientific_name": "Impatiens walleriana",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 167,
+   "name": "베고니아",
+   "scientific_name": "Begonia semperflorens",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 168,
+   "name": "버들마편초",
+   "scientific_name": "Verbena bonariensis",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 169,
+   "name": "버베나",
+   "scientific_name": "Verbena hybrida",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 170,
+   "name": "수레국화",
+   "scientific_name": "Centaurea cyanus",
+   "bloom_months": [
+    6,
+    7
+   ]
+  },
+  {
+   "id": 171,
+   "name": "안개꽃",
+   "scientific_name": "Gypsophila elegans",
+   "bloom_months": [
+    6,
+    7
+   ]
+  },
+  {
+   "id": 172,
+   "name": "가자니아",
+   "scientific_name": "Gazania rigens",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 173,
+   "name": "다알리아",
+   "scientific_name": "Dahlia pinnata",
+   "bloom_months": [
+    7,
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 174,
+   "name": "글라디올러스",
+   "scientific_name": "Gladiolus hybridus",
+   "bloom_months": [
+    7,
+    8
+   ]
+  },
+  {
+   "id": 175,
+   "name": "칸나",
+   "scientific_name": "Canna generalis",
+   "bloom_months": [
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 176,
+   "name": "한련화",
+   "scientific_name": "Tropaeolum majus",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 177,
+   "name": "천일홍",
+   "scientific_name": "Gomphrena globosa",
+   "bloom_months": [
+    7,
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 178,
+   "name": "아게라텀",
+   "scientific_name": "Ageratum houstonianum",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "id": 179,
+   "name": "국화",
+   "scientific_name": "Chrysanthemum morifolium",
+   "bloom_months": [
+    10,
+    11
+   ]
+  },
+  {
+   "id": 180,
+   "name": "산국",
+   "scientific_name": "Chrysanthemum boreale",
+   "bloom_months": [
+    9,
+    10,
+    11
+   ]
+  },
+  {
+   "id": 181,
+   "name": "감국",
+   "scientific_name": "Chrysanthemum indicum",
+   "bloom_months": [
+    10,
+    11
+   ]
+  },
+  {
+   "id": 182,
+   "name": "구절초",
+   "scientific_name": "Dendranthema zawadskii",
+   "bloom_months": [
+    9,
+    10
+   ]
+  },
+  {
+   "id": 183,
+   "name": "벌개미취",
+   "scientific_name": "Aster koraiensis",
+   "bloom_months": [
+    6,
+    7,
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 184,
+   "name": "쑥부쟁이",
+   "scientific_name": "Aster yomena",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 185,
+   "name": "개미취",
+   "scientific_name": "Aster tataricus",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 186,
+   "name": "미국쑥부쟁이",
+   "scientific_name": "Symphyotrichum pilosum",
+   "bloom_months": [
+    9,
+    10
+   ]
+  },
+  {
+   "id": 187,
+   "name": "참취",
+   "scientific_name": "Aster scaber",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 188,
+   "name": "꽃무릇",
+   "scientific_name": "Lycoris radiata",
+   "bloom_months": [
+    9,
+    10
+   ]
+  },
+  {
+   "id": 189,
+   "name": "용담",
+   "scientific_name": "Gentiana scabra",
+   "bloom_months": [
+    9,
+    10
+   ]
+  },
+  {
+   "id": 190,
+   "name": "투구꽃",
+   "scientific_name": "Aconitum jaluense",
+   "bloom_months": [
+    9,
+    10
+   ]
+  },
+  {
+   "id": 191,
+   "name": "마타리",
+   "scientific_name": "Patrinia scabiosifolia",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 192,
+   "name": "뚝갈",
+   "scientific_name": "Patrinia villosa",
+   "bloom_months": [
+    8,
+    9
+   ]
+  },
+  {
+   "id": 193,
+   "name": "며느리밥풀꽃",
+   "scientific_name": "Melampyrum roseum",
+   "bloom_months": [
+    8,
+    9
+   ]
+  },
+  {
+   "id": 194,
+   "name": "왕고들빼기",
+   "scientific_name": "Lactuca indica",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 195,
+   "name": "방가지똥",
+   "scientific_name": "Sonchus oleraceus",
+   "bloom_months": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 196,
+   "name": "미국가막사리",
+   "scientific_name": "Bidens frondosa",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ]
+  },
+  {
+   "id": 197,
+   "name": "서양등골나물",
+   "scientific_name": "Ageratina altissima",
+   "bloom_months": [
+    9,
+    10
+   ]
+  },
+  {
+   "id": 198,
+   "name": "산부추",
+   "scientific_name": "Allium thunbergii",
+   "bloom_months": [
+    9,
+    10
+   ]
+  },
+  {
+   "id": 199,
+   "name": "억새",
+   "scientific_name": "Miscanthus sinensis",
+   "bloom_months": [
+    9,
+    10
+   ]
+  },
+  {
+   "id": 200,
+   "name": "수크령",
+   "scientific_name": "Pennisetum alopecuroides",
+   "bloom_months": [
+    8,
+    9,
+    10
+   ]
+  }
+ ],
+ "photos": [
+  {
+   "cls": "daisy",
+   "file": "100080576_f52e8ee070_n.jpg",
+   "results": [
+    {
+     "score": 0.07508,
+     "name": "Chrysanthemum indicum"
+    },
+    {
+     "score": 0.01666,
+     "name": "Callistephus chinensis"
+    },
+    {
+     "score": 0.01451,
+     "name": "Bellis perennis"
+    },
+    {
+     "score": 0.01134,
+     "name": "Chrysanthemum × morifolium"
+    },
+    {
+     "score": 0.00633,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.00596,
+     "name": "Artemisia absinthium"
+    },
+    {
+     "score": 0.00539,
+     "name": "Paeonia lactiflora"
+    },
+    {
+     "score": 0.00275,
+     "name": "Chrysanthemum zawadzkii"
+    },
+    {
+     "score": 0.00233,
+     "name": "Anthemis arvensis"
+    },
+    {
+     "score": 0.002,
+     "name": "Nelumbo nucifera"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10140303196_b88d3d6cec.jpg",
+   "results": [
+    {
+     "score": 0.00762,
+     "name": "Anthemis arvensis"
+    },
+    {
+     "score": 0.0057,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.00443,
+     "name": "Chrysanthemum zawadzkii"
+    },
+    {
+     "score": 0.00393,
+     "name": "Tanacetum cinerariifolium"
+    },
+    {
+     "score": 0.00118,
+     "name": "Chrysanthemum japonense"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10172379554_b296050f82_n.jpg",
+   "results": [
+    {
+     "score": 0.09902,
+     "name": "Bellis perennis"
+    },
+    {
+     "score": 0.04091,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.00886,
+     "name": "Chrysanthemum zawadzkii"
+    },
+    {
+     "score": 0.00327,
+     "name": "Anthemis cotula"
+    },
+    {
+     "score": 0.00225,
+     "name": "Matricaria chamomilla"
+    },
+    {
+     "score": 0.00126,
+     "name": "Azolla filiculoides"
+    },
+    {
+     "score": 0.00125,
+     "name": "Anthemis arvensis"
+    },
+    {
+     "score": 0.00106,
+     "name": "Callistephus chinensis"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10172567486_2748826a8b.jpg",
+   "results": [
+    {
+     "score": 0.04942,
+     "name": "Bellis perennis"
+    },
+    {
+     "score": 0.0102,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.0074,
+     "name": "Chrysanthemum zawadzkii"
+    },
+    {
+     "score": 0.00295,
+     "name": "Chrysanthemum yoshinaganthum"
+    },
+    {
+     "score": 0.00235,
+     "name": "Anthemis cotula"
+    },
+    {
+     "score": 0.00195,
+     "name": "Chrysanthemum arcticum"
+    },
+    {
+     "score": 0.00161,
+     "name": "Chrysanthemum × morifolium"
+    },
+    {
+     "score": 0.00146,
+     "name": "Bidens bipinnata"
+    },
+    {
+     "score": 0.00131,
+     "name": "Callistephus chinensis"
+    },
+    {
+     "score": 0.00112,
+     "name": "Aster koraiensis"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10172636503_21bededa75_n.jpg",
+   "results": []
+  },
+  {
+   "cls": "daisy",
+   "file": "102841525_bd6628ae3c.jpg",
+   "results": [
+    {
+     "score": 0.02161,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.00323,
+     "name": "Nipponanthemum nipponicum"
+    },
+    {
+     "score": 0.00228,
+     "name": "Anthemis cotula"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "1031799732_e7f4008c03.jpg",
+   "results": [
+    {
+     "score": 0.19122,
+     "name": "Gerbera jamesonii"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10391248763_1d16681106_n.jpg",
+   "results": [
+    {
+     "score": 0.85975,
+     "name": "Bellis perennis"
+    },
+    {
+     "score": 0.00495,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.00217,
+     "name": "Taraxacum sect. Taraxacum"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10437754174_22ec990b77_m.jpg",
+   "results": [
+    {
+     "score": 0.57303,
+     "name": "Matricaria chamomilla"
+    },
+    {
+     "score": 0.0585,
+     "name": "Tripleurospermum inodorum"
+    },
+    {
+     "score": 0.0357,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.02274,
+     "name": "Anthemis arvensis"
+    },
+    {
+     "score": 0.01434,
+     "name": "Anthemis cotula"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10437770546_8bb6f7bdd3_m.jpg",
+   "results": [
+    {
+     "score": 0.30865,
+     "name": "Matricaria chamomilla"
+    },
+    {
+     "score": 0.21568,
+     "name": "Tripleurospermum inodorum"
+    },
+    {
+     "score": 0.03051,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.0077,
+     "name": "Anthemis cotula"
+    },
+    {
+     "score": 0.00448,
+     "name": "Anthemis arvensis"
+    },
+    {
+     "score": 0.00108,
+     "name": "Rudbeckia laciniata"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10437929963_bc13eebe0c.jpg",
+   "results": [
+    {
+     "score": 0.51093,
+     "name": "Matricaria chamomilla"
+    },
+    {
+     "score": 0.15262,
+     "name": "Tripleurospermum inodorum"
+    },
+    {
+     "score": 0.05416,
+     "name": "Anthemis cotula"
+    },
+    {
+     "score": 0.00628,
+     "name": "Anthemis arvensis"
+    },
+    {
+     "score": 0.004,
+     "name": "Leucanthemum vulgare"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10466290366_cc72e33532.jpg",
+   "results": []
+  },
+  {
+   "cls": "daisy",
+   "file": "10466558316_a7198b87e2.jpg",
+   "results": [
+    {
+     "score": 0.00373,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.00264,
+     "name": "Calendula arvensis"
+    },
+    {
+     "score": 0.00144,
+     "name": "Calendula officinalis"
+    },
+    {
+     "score": 0.00117,
+     "name": "Nipponanthemum nipponicum"
+    },
+    {
+     "score": 0.00111,
+     "name": "Gazania rigens"
+    },
+    {
+     "score": 0.00108,
+     "name": "Aster arenarius"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10555749515_13a12a026e.jpg",
+   "results": [
+    {
+     "score": 0.75095,
+     "name": "Symphyotrichum novi-belgii"
+    },
+    {
+     "score": 0.00935,
+     "name": "Tripolium pannonicum"
+    },
+    {
+     "score": 0.00259,
+     "name": "Symphyotrichum pilosum"
+    },
+    {
+     "score": 0.00115,
+     "name": "Aster maackii"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10555815624_dc211569b0.jpg",
+   "results": [
+    {
+     "score": 0.63056,
+     "name": "Symphyotrichum novi-belgii"
+    },
+    {
+     "score": 0.0083,
+     "name": "Tripolium pannonicum"
+    },
+    {
+     "score": 0.00329,
+     "name": "Aster maackii"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10555826524_423eb8bf71_n.jpg",
+   "results": [
+    {
+     "score": 0.56031,
+     "name": "Symphyotrichum novi-belgii"
+    },
+    {
+     "score": 0.01359,
+     "name": "Aster maackii"
+    },
+    {
+     "score": 0.00378,
+     "name": "Tripolium pannonicum"
+    },
+    {
+     "score": 0.00294,
+     "name": "Aster incisus"
+    },
+    {
+     "score": 0.0016,
+     "name": "Aster ageratoides"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10559679065_50d2b16f6d.jpg",
+   "results": [
+    {
+     "score": 0.41393,
+     "name": "Bellis perennis"
+    },
+    {
+     "score": 0.00151,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.00134,
+     "name": "Erigeron annuus"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "105806915_a9c13e2106_n.jpg",
+   "results": [
+    {
+     "score": 0.8104,
+     "name": "Bellis perennis"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10712722853_5632165b04.jpg",
+   "results": [
+    {
+     "score": 0.84848,
+     "name": "Bellis perennis"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "107592979_aaa9cdfe78_m.jpg",
+   "results": [
+    {
+     "score": 0.11815,
+     "name": "Gerbera jamesonii"
+    },
+    {
+     "score": 0.00194,
+     "name": "Calendula officinalis"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10770585085_4742b9dac3_n.jpg",
+   "results": [
+    {
+     "score": 0.00117,
+     "name": "Eurybia sibirica"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10841136265_af473efc60.jpg",
+   "results": [
+    {
+     "score": 0.84705,
+     "name": "Bellis perennis"
+    },
+    {
+     "score": 0.00117,
+     "name": "Cerastium fontanum"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10993710036_2033222c91.jpg",
+   "results": [
+    {
+     "score": 0.00283,
+     "name": "Calendula arvensis"
+    },
+    {
+     "score": 0.002,
+     "name": "Gazania rigens"
+    },
+    {
+     "score": 0.00165,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.00119,
+     "name": "Calendula officinalis"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10993818044_4c19b86c82.jpg",
+   "results": [
+    {
+     "score": 0.00255,
+     "name": "Calendula arvensis"
+    },
+    {
+     "score": 0.00205,
+     "name": "Gazania rigens"
+    },
+    {
+     "score": 0.00162,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.00117,
+     "name": "Calendula officinalis"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "10994032453_ac7f8d9e2e.jpg",
+   "results": []
+  },
+  {
+   "cls": "daisy",
+   "file": "11023214096_b5b39fab08.jpg",
+   "results": [
+    {
+     "score": 0.0856,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.01641,
+     "name": "Tanacetum cinerariifolium"
+    },
+    {
+     "score": 0.00591,
+     "name": "Nipponanthemum nipponicum"
+    },
+    {
+     "score": 0.00249,
+     "name": "Chrysanthemum indicum"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "11023272144_fce94401f2_m.jpg",
+   "results": [
+    {
+     "score": 0.06799,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.03463,
+     "name": "Tanacetum cinerariifolium"
+    },
+    {
+     "score": 0.00575,
+     "name": "Nipponanthemum nipponicum"
+    },
+    {
+     "score": 0.00314,
+     "name": "Callistephus chinensis"
+    },
+    {
+     "score": 0.00235,
+     "name": "Bellis perennis"
+    },
+    {
+     "score": 0.00173,
+     "name": "Erigeron strigosus"
+    },
+    {
+     "score": 0.00145,
+     "name": "Chrysanthemum indicum"
+    },
+    {
+     "score": 0.00135,
+     "name": "Tripleurospermum inodorum"
+    },
+    {
+     "score": 0.00111,
+     "name": "Chrysanthemum × morifolium"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "11023277956_8980d53169_m.jpg",
+   "results": [
+    {
+     "score": 0.09682,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.00864,
+     "name": "Tanacetum cinerariifolium"
+    },
+    {
+     "score": 0.0079,
+     "name": "Nipponanthemum nipponicum"
+    },
+    {
+     "score": 0.00124,
+     "name": "Callistephus chinensis"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "11124324295_503f3a0804.jpg",
+   "results": [
+    {
+     "score": 0.01749,
+     "name": "Bellis perennis"
+    },
+    {
+     "score": 0.00153,
+     "name": "Chrysanthemum zawadzkii"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "1140299375_3aa7024466.jpg",
+   "results": [
+    {
+     "score": 0.11683,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.05886,
+     "name": "Chrysanthemum makinoi"
+    },
+    {
+     "score": 0.03676,
+     "name": "Chrysanthemum zawadzkii"
+    },
+    {
+     "score": 0.01353,
+     "name": "Nipponanthemum nipponicum"
+    },
+    {
+     "score": 0.01006,
+     "name": "Chrysanthemum arcticum"
+    },
+    {
+     "score": 0.00739,
+     "name": "Bellis perennis"
+    },
+    {
+     "score": 0.00641,
+     "name": "Anthemis arvensis"
+    },
+    {
+     "score": 0.0034,
+     "name": "Anthemis cotula"
+    },
+    {
+     "score": 0.0033,
+     "name": "Chrysanthemum yoshinaganthum"
+    },
+    {
+     "score": 0.00202,
+     "name": "Chrysanthemum japonense"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "11439894966_dca877f0cd.jpg",
+   "results": [
+    {
+     "score": 0.23955,
+     "name": "Viola tricolor"
+    },
+    {
+     "score": 0.00674,
+     "name": "Viola arvensis"
+    },
+    {
+     "score": 0.00125,
+     "name": "Tagetes erecta"
+    },
+    {
+     "score": 0.001,
+     "name": "Bidens bipinnata"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "1150395827_6f94a5c6e4_n.jpg",
+   "results": [
+    {
+     "score": 0.21986,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.00496,
+     "name": "Chrysanthemum arcticum"
+    },
+    {
+     "score": 0.00201,
+     "name": "Nipponanthemum nipponicum"
+    },
+    {
+     "score": 0.00194,
+     "name": "Chrysanthemum zawadzkii"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "11642632_1e7627a2cc.jpg",
+   "results": [
+    {
+     "score": 0.34796,
+     "name": "Chrysanthemum indicum"
+    },
+    {
+     "score": 0.02093,
+     "name": "Chrysanthemum × morifolium"
+    },
+    {
+     "score": 0.01364,
+     "name": "Tanacetum cinerariifolium"
+    },
+    {
+     "score": 0.00754,
+     "name": "Tripleurospermum inodorum"
+    },
+    {
+     "score": 0.00703,
+     "name": "Rudbeckia laciniata"
+    },
+    {
+     "score": 0.00573,
+     "name": "Anthemis cotula"
+    },
+    {
+     "score": 0.00493,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.00302,
+     "name": "Euphorbia hypericifolia"
+    },
+    {
+     "score": 0.00279,
+     "name": "Callistephus chinensis"
+    },
+    {
+     "score": 0.00247,
+     "name": "Anthemis arvensis"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "11834945233_a53b7a92ac_m.jpg",
+   "results": [
+    {
+     "score": 0.40593,
+     "name": "Anthemis cotula"
+    },
+    {
+     "score": 0.16008,
+     "name": "Matricaria chamomilla"
+    },
+    {
+     "score": 0.05159,
+     "name": "Anthemis arvensis"
+    },
+    {
+     "score": 0.03957,
+     "name": "Tripleurospermum inodorum"
+    },
+    {
+     "score": 0.00142,
+     "name": "Glebionis coronaria"
+    },
+    {
+     "score": 0.00117,
+     "name": "Matricaria discoidea"
+    },
+    {
+     "score": 0.00117,
+     "name": "Leucanthemum vulgare"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "11870378973_2ec1919f12.jpg",
+   "results": [
+    {
+     "score": 0.75337,
+     "name": "Bellis perennis"
+    },
+    {
+     "score": 0.00159,
+     "name": "Leucanthemum vulgare"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "11891885265_ccefec7284_n.jpg",
+   "results": [
+    {
+     "score": 0.1708,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.04086,
+     "name": "Bellis perennis"
+    },
+    {
+     "score": 0.03493,
+     "name": "Anthemis cotula"
+    },
+    {
+     "score": 0.02042,
+     "name": "Anthemis arvensis"
+    },
+    {
+     "score": 0.00329,
+     "name": "Aster iinumae"
+    },
+    {
+     "score": 0.0023,
+     "name": "Stellaria graminea"
+    },
+    {
+     "score": 0.00169,
+     "name": "Tripleurospermum inodorum"
+    },
+    {
+     "score": 0.00107,
+     "name": "Chrysanthemum japonense"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "12193032636_b50ae7db35_n.jpg",
+   "results": [
+    {
+     "score": 0.01154,
+     "name": "Bellis perennis"
+    },
+    {
+     "score": 0.0099,
+     "name": "Symphyotrichum novi-belgii"
+    },
+    {
+     "score": 0.00723,
+     "name": "Callistephus chinensis"
+    },
+    {
+     "score": 0.00217,
+     "name": "Symphyotrichum pilosum"
+    },
+    {
+     "score": 0.00159,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.00133,
+     "name": "Gerbera jamesonii"
+    },
+    {
+     "score": 0.00104,
+     "name": "Nipponanthemum nipponicum"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "12348343085_d4c396e5b5_m.jpg",
+   "results": [
+    {
+     "score": 0.09785,
+     "name": "Callistephus chinensis"
+    },
+    {
+     "score": 0.0717,
+     "name": "Bellis perennis"
+    },
+    {
+     "score": 0.0595,
+     "name": "Chrysanthemum indicum"
+    },
+    {
+     "score": 0.01551,
+     "name": "Cosmos bipinnatus"
+    },
+    {
+     "score": 0.01417,
+     "name": "Chrysanthemum zawadzkii"
+    },
+    {
+     "score": 0.0104,
+     "name": "Chrysanthemum × morifolium"
+    },
+    {
+     "score": 0.00789,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.00302,
+     "name": "Symphyotrichum novi-belgii"
+    },
+    {
+     "score": 0.00165,
+     "name": "Nelumbo nucifera"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "12585131704_0f64b17059_m.jpg",
+   "results": [
+    {
+     "score": 0.60135,
+     "name": "Chrysanthemum indicum"
+    },
+    {
+     "score": 0.03363,
+     "name": "Chrysanthemum × morifolium"
+    },
+    {
+     "score": 0.01262,
+     "name": "Callistephus chinensis"
+    },
+    {
+     "score": 0.00822,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.00754,
+     "name": "Tanacetum cinerariifolium"
+    },
+    {
+     "score": 0.00538,
+     "name": "Bellis perennis"
+    },
+    {
+     "score": 0.00287,
+     "name": "Chrysanthemum zawadzkii"
+    },
+    {
+     "score": 0.00167,
+     "name": "Nipponanthemum nipponicum"
+    },
+    {
+     "score": 0.00146,
+     "name": "Rudbeckia laciniata"
+    },
+    {
+     "score": 0.00121,
+     "name": "Chrysanthemum japonense"
+    }
+   ]
+  },
+  {
+   "cls": "daisy",
+   "file": "12601254324_3cb62c254a_m.jpg",
+   "results": [
+    {
+     "score": 0.48521,
+     "name": "Bellis perennis"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "10043234166_e6dd915111_n.jpg",
+   "results": [
+    {
+     "score": 0.1124,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.07607,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00956,
+     "name": "Lactuca serriola"
+    },
+    {
+     "score": 0.0063,
+     "name": "Tragopogon dubius"
+    },
+    {
+     "score": 0.00494,
+     "name": "Hypochaeris glabra"
+    },
+    {
+     "score": 0.00388,
+     "name": "Tragopogon porrifolius"
+    },
+    {
+     "score": 0.00381,
+     "name": "Leontodon saxatilis"
+    },
+    {
+     "score": 0.00239,
+     "name": "Epilobium angustifolium"
+    },
+    {
+     "score": 0.00189,
+     "name": "Ixeris japonica"
+    },
+    {
+     "score": 0.00187,
+     "name": "Taraxacum mongolicum"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "10200780773_c6051a7d71_n.jpg",
+   "results": [
+    {
+     "score": 0.05776,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.04898,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.02791,
+     "name": "Senecio vulgaris"
+    },
+    {
+     "score": 0.009,
+     "name": "Leucanthemum vulgare"
+    },
+    {
+     "score": 0.00815,
+     "name": "Sonchus oleraceus"
+    },
+    {
+     "score": 0.00392,
+     "name": "Sonchus asper"
+    },
+    {
+     "score": 0.00349,
+     "name": "Adenostemma viscosum"
+    },
+    {
+     "score": 0.00313,
+     "name": "Vitis vinifera"
+    },
+    {
+     "score": 0.00295,
+     "name": "Bellis perennis"
+    },
+    {
+     "score": 0.0024,
+     "name": "Gynura formosana"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "10294487385_92a0676c7d_m.jpg",
+   "results": [
+    {
+     "score": 0.33865,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.00341,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00234,
+     "name": "Sonchus asper"
+    },
+    {
+     "score": 0.00141,
+     "name": "Allium cepa"
+    },
+    {
+     "score": 0.00122,
+     "name": "Eriophorum scheuchzeri"
+    },
+    {
+     "score": 0.00113,
+     "name": "Sonchus arvensis"
+    },
+    {
+     "score": 0.00113,
+     "name": "Tragopogon dubius"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "10437652486_aa86c14985.jpg",
+   "results": [
+    {
+     "score": 0.18473,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.00676,
+     "name": "Tragopogon porrifolius"
+    },
+    {
+     "score": 0.00669,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00459,
+     "name": "Taraxacum mongolicum"
+    },
+    {
+     "score": 0.00213,
+     "name": "Daucus carota"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "10443973_aeb97513fc_m.jpg",
+   "results": [
+    {
+     "score": 0.25585,
+     "name": "Tragopogon dubius"
+    },
+    {
+     "score": 0.21139,
+     "name": "Tragopogon porrifolius"
+    },
+    {
+     "score": 0.04699,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.00344,
+     "name": "Asclepias curassavica"
+    },
+    {
+     "score": 0.00201,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00137,
+     "name": "Cirsium arvense"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "10477378514_9ffbcec4cf_m.jpg",
+   "results": []
+  },
+  {
+   "cls": "dandelion",
+   "file": "10486992895_20b344ce2d_n.jpg",
+   "results": [
+    {
+     "score": 0.3539,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.00506,
+     "name": "Sonchus oleraceus"
+    },
+    {
+     "score": 0.00476,
+     "name": "Sonchus asper"
+    },
+    {
+     "score": 0.00268,
+     "name": "Taraxacum mongolicum"
+    },
+    {
+     "score": 0.00151,
+     "name": "Tragopogon porrifolius"
+    },
+    {
+     "score": 0.00131,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00105,
+     "name": "Tragopogon dubius"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "10617162044_8740d4dd9f_n.jpg",
+   "results": [
+    {
+     "score": 0.13313,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.00196,
+     "name": "Taraxacum erythrospermum"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "10617191174_9a01753241_n.jpg",
+   "results": [
+    {
+     "score": 0.09292,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.00168,
+     "name": "Taraxacum erythrospermum"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "10683189_bd6e371b97.jpg",
+   "results": [
+    {
+     "score": 0.19778,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.06897,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00683,
+     "name": "Taraxacum albidum"
+    },
+    {
+     "score": 0.00636,
+     "name": "Tragopogon porrifolius"
+    },
+    {
+     "score": 0.00198,
+     "name": "Sonchus oleraceus"
+    },
+    {
+     "score": 0.00196,
+     "name": "Thalictrum aquilegiifolium"
+    },
+    {
+     "score": 0.00142,
+     "name": "Trifolium repens"
+    },
+    {
+     "score": 0.00127,
+     "name": "Anthriscus sylvestris"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "1074999133_1e4a1e042e.jpg",
+   "results": [
+    {
+     "score": 0.4681,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.00425,
+     "name": "Tragopogon porrifolius"
+    },
+    {
+     "score": 0.00339,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00245,
+     "name": "Tragopogon dubius"
+    },
+    {
+     "score": 0.00122,
+     "name": "Taraxacum mongolicum"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "10777398353_5a20bb218c.jpg",
+   "results": [
+    {
+     "score": 0.54043,
+     "name": "Eriophorum scheuchzeri"
+    },
+    {
+     "score": 0.02509,
+     "name": "Eriophorum vaginatum"
+    },
+    {
+     "score": 0.01914,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.01881,
+     "name": "Eriophorum angustifolium"
+    },
+    {
+     "score": 0.0163,
+     "name": "Eriophorum chamissonis"
+    },
+    {
+     "score": 0.00222,
+     "name": "Pulsatilla dahurica"
+    },
+    {
+     "score": 0.00222,
+     "name": "Cirsium arvense"
+    },
+    {
+     "score": 0.00206,
+     "name": "Imperata cylindrica"
+    },
+    {
+     "score": 0.00201,
+     "name": "Sonchus arvensis"
+    },
+    {
+     "score": 0.0016,
+     "name": "Tragopogon dubius"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "10778387133_9141024b10.jpg",
+   "results": [
+    {
+     "score": 0.14282,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.05892,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00478,
+     "name": "Eriophorum scheuchzeri"
+    },
+    {
+     "score": 0.00328,
+     "name": "Taraxacum mongolicum"
+    },
+    {
+     "score": 0.00318,
+     "name": "Eriophorum vaginatum"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "10779476016_9130714dc0.jpg",
+   "results": [
+    {
+     "score": 0.03084,
+     "name": "Hieracium umbellatum"
+    },
+    {
+     "score": 0.01699,
+     "name": "Symphyotrichum subulatum"
+    },
+    {
+     "score": 0.01662,
+     "name": "Erigeron acris"
+    },
+    {
+     "score": 0.00903,
+     "name": "Jacobaea erucifolia"
+    },
+    {
+     "score": 0.00799,
+     "name": "Hypochaeris glabra"
+    },
+    {
+     "score": 0.00359,
+     "name": "Sonchus oleraceus"
+    },
+    {
+     "score": 0.00299,
+     "name": "Erigeron bonariensis"
+    },
+    {
+     "score": 0.00285,
+     "name": "Lactuca serriola"
+    },
+    {
+     "score": 0.0019,
+     "name": "Solidago virgaurea"
+    },
+    {
+     "score": 0.00173,
+     "name": "Cirsium lineare"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "1080179756_5f05350a59.jpg",
+   "results": [
+    {
+     "score": 0.0071,
+     "name": "Leontodon saxatilis"
+    },
+    {
+     "score": 0.00499,
+     "name": "Hypochaeris glabra"
+    },
+    {
+     "score": 0.0044,
+     "name": "Crepis tectorum"
+    },
+    {
+     "score": 0.00174,
+     "name": "Hieracium umbellatum"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "10828951106_c3cd47983f.jpg",
+   "results": [
+    {
+     "score": 0.19183,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.07245,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.01239,
+     "name": "Tragopogon dubius"
+    },
+    {
+     "score": 0.01088,
+     "name": "Taraxacum mongolicum"
+    },
+    {
+     "score": 0.00873,
+     "name": "Tragopogon porrifolius"
+    },
+    {
+     "score": 0.0053,
+     "name": "Lactuca serriola"
+    },
+    {
+     "score": 0.00289,
+     "name": "Takhtajaniantha austriaca"
+    },
+    {
+     "score": 0.00189,
+     "name": "Hieracium umbellatum"
+    },
+    {
+     "score": 0.00182,
+     "name": "Pilosella aurantiaca"
+    },
+    {
+     "score": 0.00152,
+     "name": "Sonchus oleraceus"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "10919961_0af657c4e8.jpg",
+   "results": [
+    {
+     "score": 0.49007,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.01687,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00706,
+     "name": "Senecio vulgaris"
+    },
+    {
+     "score": 0.00363,
+     "name": "Taraxacum mongolicum"
+    },
+    {
+     "score": 0.00212,
+     "name": "Lactuca serriola"
+    },
+    {
+     "score": 0.00153,
+     "name": "Sonchus oleraceus"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "10946896405_81d2d50941_m.jpg",
+   "results": [
+    {
+     "score": 0.39062,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.0655,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00659,
+     "name": "Sonchus oleraceus"
+    },
+    {
+     "score": 0.00463,
+     "name": "Senecio vulgaris"
+    },
+    {
+     "score": 0.003,
+     "name": "Sonchus asper"
+    },
+    {
+     "score": 0.00261,
+     "name": "Tragopogon porrifolius"
+    },
+    {
+     "score": 0.00243,
+     "name": "Tragopogon dubius"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "11124381625_24b17662bd_n.jpg",
+   "results": [
+    {
+     "score": 0.14466,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.04984,
+     "name": "Lactuca serriola"
+    },
+    {
+     "score": 0.01428,
+     "name": "Eupatorium cannabinum"
+    },
+    {
+     "score": 0.00883,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00667,
+     "name": "Senecio vulgaris"
+    },
+    {
+     "score": 0.00455,
+     "name": "Youngia japonica"
+    },
+    {
+     "score": 0.00444,
+     "name": "Taraxacum mongolicum"
+    },
+    {
+     "score": 0.0032,
+     "name": "Hieracium umbellatum"
+    },
+    {
+     "score": 0.00274,
+     "name": "Cirsium vulgare"
+    },
+    {
+     "score": 0.00216,
+     "name": "Silybum marianum"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "1128626197_3f52424215_n.jpg",
+   "results": [
+    {
+     "score": 0.36734,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.00583,
+     "name": "Taraxacum erythrospermum"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "11296320473_1d9261ddcb.jpg",
+   "results": [
+    {
+     "score": 0.08707,
+     "name": "Hypochaeris glabra"
+    },
+    {
+     "score": 0.03061,
+     "name": "Leontodon saxatilis"
+    },
+    {
+     "score": 0.01335,
+     "name": "Taraxacum japonicum"
+    },
+    {
+     "score": 0.0019,
+     "name": "Lapsana communis"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "11405573_24a8a838cc_n.jpg",
+   "results": [
+    {
+     "score": 0.31309,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.11244,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.02302,
+     "name": "Taraxacum mongolicum"
+    },
+    {
+     "score": 0.00155,
+     "name": "Senecio vulgaris"
+    },
+    {
+     "score": 0.00102,
+     "name": "Lactuca serriola"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "11465213433_847c4fa261.jpg",
+   "results": [
+    {
+     "score": 0.35384,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.01405,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.01369,
+     "name": "Taraxacum mongolicum"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "11545123_50a340b473_m.jpg",
+   "results": [
+    {
+     "score": 0.27771,
+     "name": "Cirsium arvense"
+    },
+    {
+     "score": 0.01622,
+     "name": "Hieracium umbellatum"
+    },
+    {
+     "score": 0.01594,
+     "name": "Sonchus oleraceus"
+    },
+    {
+     "score": 0.01419,
+     "name": "Cirsium vulgare"
+    },
+    {
+     "score": 0.01187,
+     "name": "Sonchus asper"
+    },
+    {
+     "score": 0.00955,
+     "name": "Sonchus arvensis"
+    },
+    {
+     "score": 0.00872,
+     "name": "Senecio vulgaris"
+    },
+    {
+     "score": 0.0057,
+     "name": "Tragopogon porrifolius"
+    },
+    {
+     "score": 0.00533,
+     "name": "Emilia sonchifolia"
+    },
+    {
+     "score": 0.00461,
+     "name": "Taraxacum sect. Taraxacum"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "11595255065_d9550012fc.jpg",
+   "results": [
+    {
+     "score": 0.22996,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.14537,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00817,
+     "name": "Taraxacum mongolicum"
+    },
+    {
+     "score": 0.00373,
+     "name": "Senecio vulgaris"
+    },
+    {
+     "score": 0.00347,
+     "name": "Eriophorum vaginatum"
+    },
+    {
+     "score": 0.00305,
+     "name": "Takhtajaniantha austriaca"
+    },
+    {
+     "score": 0.00171,
+     "name": "Taraxacum ceratophorum"
+    },
+    {
+     "score": 0.00134,
+     "name": "Hypochaeris glabra"
+    },
+    {
+     "score": 0.00133,
+     "name": "Eriophorum scheuchzeri"
+    },
+    {
+     "score": 0.0011,
+     "name": "Hieracium umbellatum"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "11768468623_9399b5111b_n.jpg",
+   "results": [
+    {
+     "score": 0.15343,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.01987,
+     "name": "Taraxacum mongolicum"
+    },
+    {
+     "score": 0.00792,
+     "name": "Taraxacum platycarpum"
+    },
+    {
+     "score": 0.00479,
+     "name": "Taraxacum erythrospermum"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "11775820493_10fedf4bff_n.jpg",
+   "results": [
+    {
+     "score": 0.3906,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.03933,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00653,
+     "name": "Sonchus oleraceus"
+    },
+    {
+     "score": 0.00449,
+     "name": "Taraxacum mongolicum"
+    },
+    {
+     "score": 0.00242,
+     "name": "Sonchus asper"
+    },
+    {
+     "score": 0.00194,
+     "name": "Lactuca serriola"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "1193386857_3ae53574f2_m.jpg",
+   "results": [
+    {
+     "score": 0.31115,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.01842,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00676,
+     "name": "Sonchus asper"
+    },
+    {
+     "score": 0.00541,
+     "name": "Sonchus oleraceus"
+    },
+    {
+     "score": 0.00308,
+     "name": "Taraxacum mongolicum"
+    },
+    {
+     "score": 0.00197,
+     "name": "Tragopogon dubius"
+    },
+    {
+     "score": 0.00182,
+     "name": "Tragopogon porrifolius"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "1195255751_d58b3d3076.jpg",
+   "results": [
+    {
+     "score": 0.29379,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.00182,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00159,
+     "name": "Taraxacum platycarpum"
+    },
+    {
+     "score": 0.0015,
+     "name": "Taraxacum mongolicum"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "12094442595_297494dba4_m.jpg",
+   "results": [
+    {
+     "score": 0.14841,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.02625,
+     "name": "Sonchus asper"
+    },
+    {
+     "score": 0.01051,
+     "name": "Senecio vulgaris"
+    },
+    {
+     "score": 0.00608,
+     "name": "Cirsium lineare"
+    },
+    {
+     "score": 0.00543,
+     "name": "Papaver rhoeas"
+    },
+    {
+     "score": 0.00398,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00328,
+     "name": "Sonchus oleraceus"
+    },
+    {
+     "score": 0.0031,
+     "name": "Carduus nutans"
+    },
+    {
+     "score": 0.00278,
+     "name": "Matricaria chamomilla"
+    },
+    {
+     "score": 0.00242,
+     "name": "Synurus excelsus"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "1241011700_261ae180ca.jpg",
+   "results": [
+    {
+     "score": 0.03975,
+     "name": "Hypochaeris glabra"
+    },
+    {
+     "score": 0.00756,
+     "name": "Lapsana communis"
+    },
+    {
+     "score": 0.00464,
+     "name": "Leontodon saxatilis"
+    },
+    {
+     "score": 0.00246,
+     "name": "Crepis tectorum"
+    },
+    {
+     "score": 0.00226,
+     "name": "Taraxacum japonicum"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "126012913_edf771c564_n.jpg",
+   "results": [
+    {
+     "score": 0.03601,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.00648,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00521,
+     "name": "Hypochaeris glabra"
+    },
+    {
+     "score": 0.0036,
+     "name": "Morus alba"
+    },
+    {
+     "score": 0.00265,
+     "name": "Broussonetia papyrifera"
+    },
+    {
+     "score": 0.0023,
+     "name": "Bellis perennis"
+    },
+    {
+     "score": 0.00208,
+     "name": "Sonchus oleraceus"
+    },
+    {
+     "score": 0.00183,
+     "name": "Leontodon saxatilis"
+    },
+    {
+     "score": 0.00179,
+     "name": "Calendula officinalis"
+    },
+    {
+     "score": 0.0014,
+     "name": "Eucommia ulmoides"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "1273326361_b90ea56d0d_m.jpg",
+   "results": [
+    {
+     "score": 0.0275,
+     "name": "Tragopogon dubius"
+    },
+    {
+     "score": 0.01636,
+     "name": "Tragopogon porrifolius"
+    },
+    {
+     "score": 0.00857,
+     "name": "Hieracium umbellatum"
+    },
+    {
+     "score": 0.0037,
+     "name": "Hypochaeris glabra"
+    },
+    {
+     "score": 0.00259,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.00221,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00116,
+     "name": "Calendula officinalis"
+    },
+    {
+     "score": 0.00104,
+     "name": "Leontodon saxatilis"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "129019877_8eea2978ca_m.jpg",
+   "results": [
+    {
+     "score": 0.19426,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.00225,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00158,
+     "name": "Sonchus asper"
+    },
+    {
+     "score": 0.00136,
+     "name": "Taraxacum mongolicum"
+    },
+    {
+     "score": 0.00123,
+     "name": "Leontodon saxatilis"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "1297972485_33266a18d9.jpg",
+   "results": [
+    {
+     "score": 0.00817,
+     "name": "Crepidiastrum lanceolatum"
+    },
+    {
+     "score": 0.00627,
+     "name": "Leontodon saxatilis"
+    },
+    {
+     "score": 0.00483,
+     "name": "Lapsana communis"
+    },
+    {
+     "score": 0.00481,
+     "name": "Taraxacum japonicum"
+    },
+    {
+     "score": 0.00335,
+     "name": "Lactuca sativa"
+    },
+    {
+     "score": 0.00324,
+     "name": "Crepidiastrum denticulatum"
+    },
+    {
+     "score": 0.00195,
+     "name": "Hypochaeris glabra"
+    },
+    {
+     "score": 0.00173,
+     "name": "Ixeris japonica"
+    },
+    {
+     "score": 0.00143,
+     "name": "Hieracium umbellatum"
+    },
+    {
+     "score": 0.00128,
+     "name": "Ixeris stolonifera"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "12998979765_3de89e7195_n.jpg",
+   "results": [
+    {
+     "score": 0.25822,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.03048,
+     "name": "Lactuca serriola"
+    },
+    {
+     "score": 0.00854,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00635,
+     "name": "Cirsium arvense"
+    },
+    {
+     "score": 0.00503,
+     "name": "Senecio vulgaris"
+    },
+    {
+     "score": 0.00304,
+     "name": "Taraxacum mongolicum"
+    },
+    {
+     "score": 0.00278,
+     "name": "Tragopogon porrifolius"
+    },
+    {
+     "score": 0.00265,
+     "name": "Cotinus coggygria"
+    },
+    {
+     "score": 0.00262,
+     "name": "Hypochaeris glabra"
+    },
+    {
+     "score": 0.00233,
+     "name": "Lactuca sativa"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "130733200_fbe28eea19.jpg",
+   "results": [
+    {
+     "score": 0.3955,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.01258,
+     "name": "Sonchus arvensis"
+    },
+    {
+     "score": 0.00349,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00129,
+     "name": "Hypochaeris glabra"
+    },
+    {
+     "score": 0.00127,
+     "name": "Sonchus asper"
+    },
+    {
+     "score": 0.00122,
+     "name": "Sonchus oleraceus"
+    },
+    {
+     "score": 0.00119,
+     "name": "Taraxacum mongolicum"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "13290033_ebd7c7abba_n.jpg",
+   "results": [
+    {
+     "score": 0.31896,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.02619,
+     "name": "Papaver rhoeas"
+    },
+    {
+     "score": 0.00361,
+     "name": "Plantago lanceolata"
+    },
+    {
+     "score": 0.00339,
+     "name": "Senecio vulgaris"
+    },
+    {
+     "score": 0.00295,
+     "name": "Taraxacum mongolicum"
+    },
+    {
+     "score": 0.00222,
+     "name": "Capsicum annuum"
+    },
+    {
+     "score": 0.00166,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.00129,
+     "name": "Zea mays"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "13331969914_890082d898_n.jpg",
+   "results": [
+    {
+     "score": 0.32371,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.01125,
+     "name": "Taraxacum erythrospermum"
+    },
+    {
+     "score": 0.0034,
+     "name": "Sonchus asper"
+    },
+    {
+     "score": 0.00274,
+     "name": "Hypochaeris glabra"
+    },
+    {
+     "score": 0.00136,
+     "name": "Leontodon saxatilis"
+    }
+   ]
+  },
+  {
+   "cls": "dandelion",
+   "file": "13386618495_3df1f1330d.jpg",
+   "results": [
+    {
+     "score": 0.48261,
+     "name": "Bellis perennis"
+    },
+    {
+     "score": 0.00216,
+     "name": "Aster spathulifolius"
+    },
+    {
+     "score": 0.00109,
+     "name": "Stellaria media"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "10090824183_d02c613f10_m.jpg",
+   "results": [
+    {
+     "score": 0.17076,
+     "name": "Rosa xanthina"
+    },
+    {
+     "score": 0.1437,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.01015,
+     "name": "Rosa multiflora"
+    },
+    {
+     "score": 0.00154,
+     "name": "Rosa lucieae"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "102501987_3cdb8e5394_n.jpg",
+   "results": [
+    {
+     "score": 0.60606,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.1688,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.00294,
+     "name": "Begonia grandis"
+    },
+    {
+     "score": 0.00136,
+     "name": "Rosa indica"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "10503217854_e66a804309.jpg",
+   "results": [
+    {
+     "score": 0.1101,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.01979,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.00297,
+     "name": "Rosa indica"
+    },
+    {
+     "score": 0.00265,
+     "name": "Begonia grandis"
+    },
+    {
+     "score": 0.00177,
+     "name": "Rosa multiflora"
+    },
+    {
+     "score": 0.00101,
+     "name": "Rhododendron japonicum"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "10894627425_ec76bbc757_n.jpg",
+   "results": [
+    {
+     "score": 0.01227,
+     "name": "Tulipa gesneriana"
+    },
+    {
+     "score": 0.01034,
+     "name": "Oenothera stricta"
+    },
+    {
+     "score": 0.00699,
+     "name": "Dianthus caryophyllus"
+    },
+    {
+     "score": 0.00562,
+     "name": "Freesia refracta"
+    },
+    {
+     "score": 0.00262,
+     "name": "Lilium longiflorum"
+    },
+    {
+     "score": 0.002,
+     "name": "Zea mays"
+    },
+    {
+     "score": 0.00197,
+     "name": "Lolium perenne"
+    },
+    {
+     "score": 0.00196,
+     "name": "Eschscholzia californica"
+    },
+    {
+     "score": 0.0019,
+     "name": "Iris × germanica"
+    },
+    {
+     "score": 0.00131,
+     "name": "Oenothera biennis"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "110472418_87b6a3aa98_m.jpg",
+   "results": [
+    {
+     "score": 0.0917,
+     "name": "Begonia grandis"
+    },
+    {
+     "score": 0.05341,
+     "name": "Hydrangea macrophylla"
+    },
+    {
+     "score": 0.05103,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.03711,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.02954,
+     "name": "Brassica oleracea"
+    },
+    {
+     "score": 0.01774,
+     "name": "Camellia japonica"
+    },
+    {
+     "score": 0.01627,
+     "name": "Hydrangea arborescens"
+    },
+    {
+     "score": 0.00554,
+     "name": "Paeonia lactiflora"
+    },
+    {
+     "score": 0.00439,
+     "name": "Rosa multiflora"
+    },
+    {
+     "score": 0.00344,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "11102341464_508d558dfc_n.jpg",
+   "results": [
+    {
+     "score": 0.00354,
+     "name": "Salix babylonica"
+    },
+    {
+     "score": 0.00161,
+     "name": "Styphnolobium japonicum"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "11233672494_d8bf0a3dbf_n.jpg",
+   "results": [
+    {
+     "score": 0.00692,
+     "name": "Freesia refracta"
+    },
+    {
+     "score": 0.00526,
+     "name": "Tulipa gesneriana"
+    },
+    {
+     "score": 0.0016,
+     "name": "Dianthus caryophyllus"
+    },
+    {
+     "score": 0.00127,
+     "name": "Nerium oleander"
+    },
+    {
+     "score": 0.00117,
+     "name": "Coix lacryma-jobi"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "11694025703_9a906fedc1_n.jpg",
+   "results": [
+    {
+     "score": 0.02027,
+     "name": "Cocos nucifera"
+    },
+    {
+     "score": 0.0113,
+     "name": "Cycas revoluta"
+    },
+    {
+     "score": 0.00928,
+     "name": "Delonix regia"
+    },
+    {
+     "score": 0.00441,
+     "name": "Aloe arborescens"
+    },
+    {
+     "score": 0.00373,
+     "name": "Trachycarpus fortunei"
+    },
+    {
+     "score": 0.0022,
+     "name": "Livistona chinensis"
+    },
+    {
+     "score": 0.00194,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.00179,
+     "name": "Celosia argentea"
+    },
+    {
+     "score": 0.00168,
+     "name": "Bougainvillea spectabilis"
+    },
+    {
+     "score": 0.0012,
+     "name": "Colocasia esculenta"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "118974357_0faa23cce9_n.jpg",
+   "results": [
+    {
+     "score": 0.15213,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.0353,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.00331,
+     "name": "Rhododendron indicum"
+    },
+    {
+     "score": 0.00292,
+     "name": "Camellia japonica"
+    },
+    {
+     "score": 0.00136,
+     "name": "Chamaerhodos erecta"
+    },
+    {
+     "score": 0.00134,
+     "name": "Impatiens balsamina"
+    },
+    {
+     "score": 0.00106,
+     "name": "Picea abies"
+    },
+    {
+     "score": 0.00105,
+     "name": "Rhododendron simsii"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "11944957684_2cc806276e.jpg",
+   "results": [
+    {
+     "score": 0.13391,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.1088,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.0021,
+     "name": "Rosa indica"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "12045735155_42547ce4e9_n.jpg",
+   "results": []
+  },
+  {
+   "cls": "roses",
+   "file": "12165480946_c4a3fe182d_n.jpg",
+   "results": []
+  },
+  {
+   "cls": "roses",
+   "file": "12202373204_34fb07205b.jpg",
+   "results": [
+    {
+     "score": 0.69427,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.06877,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.00718,
+     "name": "Rosa indica"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "12238827553_cf427bfd51_n.jpg",
+   "results": [
+    {
+     "score": 0.21057,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.01621,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.00219,
+     "name": "Rosa banksiae"
+    },
+    {
+     "score": 0.00206,
+     "name": "Rosa xanthina"
+    },
+    {
+     "score": 0.00117,
+     "name": "Rosa indica"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "12240165555_98625b1e88_n.jpg",
+   "results": [
+    {
+     "score": 0.12574,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.08925,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.00881,
+     "name": "Rosa multiflora"
+    },
+    {
+     "score": 0.00237,
+     "name": "Rosa rugosa"
+    },
+    {
+     "score": 0.00196,
+     "name": "Rosa indica"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "12240303_80d87f77a3_n.jpg",
+   "results": [
+    {
+     "score": 0.43391,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.0608,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.01225,
+     "name": "Camellia japonica"
+    },
+    {
+     "score": 0.0067,
+     "name": "Paeonia × suffruticosa"
+    },
+    {
+     "score": 0.00523,
+     "name": "Paeonia lactiflora"
+    },
+    {
+     "score": 0.00305,
+     "name": "Prunus serrulata"
+    },
+    {
+     "score": 0.00215,
+     "name": "Rosa indica"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "12240577184_b0de0e53ea_n.jpg",
+   "results": [
+    {
+     "score": 0.02034,
+     "name": "Rosa multiflora"
+    },
+    {
+     "score": 0.01509,
+     "name": "Rosa banksiae"
+    },
+    {
+     "score": 0.01307,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.01144,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.00592,
+     "name": "Prunus serrulata"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "12243068283_ee4c2683e2_n.jpg",
+   "results": [
+    {
+     "score": 0.17869,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.01768,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.00394,
+     "name": "Rosa xanthina"
+    },
+    {
+     "score": 0.00157,
+     "name": "Rosa indica"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "12243069253_e512464095_n.jpg",
+   "results": [
+    {
+     "score": 0.10862,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.04684,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.00341,
+     "name": "Rosa banksiae"
+    },
+    {
+     "score": 0.00223,
+     "name": "Rosa indica"
+    },
+    {
+     "score": 0.00102,
+     "name": "Helianthus annuus"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "123128873_546b8b7355_n.jpg",
+   "results": [
+    {
+     "score": 0.07425,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.0132,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.00552,
+     "name": "Begonia grandis"
+    },
+    {
+     "score": 0.00376,
+     "name": "Rosa indica"
+    },
+    {
+     "score": 0.00294,
+     "name": "Papaver rhoeas"
+    },
+    {
+     "score": 0.00121,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "12323085443_8ac0cdb713_n.jpg",
+   "results": [
+    {
+     "score": 0.00955,
+     "name": "Mangifera indica"
+    },
+    {
+     "score": 0.00423,
+     "name": "Cocos nucifera"
+    },
+    {
+     "score": 0.00177,
+     "name": "Zea mays"
+    },
+    {
+     "score": 0.00135,
+     "name": "Hoya carnosa"
+    },
+    {
+     "score": 0.00122,
+     "name": "Samanea saman"
+    },
+    {
+     "score": 0.00113,
+     "name": "Zelkova serrata"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "12338444334_72fcc2fc58_m.jpg",
+   "results": [
+    {
+     "score": 0.21842,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.16872,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.00663,
+     "name": "Rosa indica"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "12395698413_c0388278f7.jpg",
+   "results": [
+    {
+     "score": 0.00316,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.00216,
+     "name": "Rosa lucieae"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "12406229175_82e2ac649c_n.jpg",
+   "results": [
+    {
+     "score": 0.71253,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.1148,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.00429,
+     "name": "Rosa indica"
+    },
+    {
+     "score": 0.00183,
+     "name": "Camellia japonica"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "12406418663_af20dc225f_n.jpg",
+   "results": [
+    {
+     "score": 0.75286,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.05162,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.00319,
+     "name": "Rosa indica"
+    },
+    {
+     "score": 0.00116,
+     "name": "Papaver rhoeas"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "12407768513_3440238148_n.jpg",
+   "results": []
+  },
+  {
+   "cls": "roses",
+   "file": "12434194695_a7c4e73c6b_n.jpg",
+   "results": []
+  },
+  {
+   "cls": "roses",
+   "file": "12450781274_eb78723921.jpg",
+   "results": [
+    {
+     "score": 0.0234,
+     "name": "Alcea rosea"
+    },
+    {
+     "score": 0.00665,
+     "name": "Mangifera indica"
+    },
+    {
+     "score": 0.00499,
+     "name": "Symphyotrichum subulatum"
+    },
+    {
+     "score": 0.00439,
+     "name": "Pittosporum tobira"
+    },
+    {
+     "score": 0.00393,
+     "name": "Cocos nucifera"
+    },
+    {
+     "score": 0.0036,
+     "name": "Zea mays"
+    },
+    {
+     "score": 0.00331,
+     "name": "Vitis vinifera"
+    },
+    {
+     "score": 0.00303,
+     "name": "Prunus serrulata"
+    },
+    {
+     "score": 0.00272,
+     "name": "Taraxacum sect. Taraxacum"
+    },
+    {
+     "score": 0.00242,
+     "name": "Daucus carota"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "12562723334_a2e0a9e3c8_n.jpg",
+   "results": [
+    {
+     "score": 0.20241,
+     "name": "Lilium longiflorum"
+    },
+    {
+     "score": 0.00929,
+     "name": "Tulipa gesneriana"
+    },
+    {
+     "score": 0.0013,
+     "name": "Hyacinthus orientalis"
+    },
+    {
+     "score": 0.0011,
+     "name": "Hemerocallis citrina"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "12572786553_634868f7f2_n.jpg",
+   "results": []
+  },
+  {
+   "cls": "roses",
+   "file": "13231224664_4af5293a37.jpg",
+   "results": [
+    {
+     "score": 0.08106,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.07802,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.00504,
+     "name": "Rosa xanthina"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "13235124703_a7e1266e44.jpg",
+   "results": [
+    {
+     "score": 0.33379,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.07475,
+     "name": "Betula pendula"
+    },
+    {
+     "score": 0.03105,
+     "name": "Pyrus communis"
+    },
+    {
+     "score": 0.01962,
+     "name": "Betula ermanii"
+    },
+    {
+     "score": 0.01671,
+     "name": "Prunus serrulata"
+    },
+    {
+     "score": 0.00956,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.00875,
+     "name": "Camellia japonica"
+    },
+    {
+     "score": 0.00563,
+     "name": "Prunus armeniaca"
+    },
+    {
+     "score": 0.00558,
+     "name": "Cornus kousa"
+    },
+    {
+     "score": 0.00496,
+     "name": "Ficus benjamina"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "13264214185_d6aa79b3bd.jpg",
+   "results": [
+    {
+     "score": 0.26345,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.09414,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.00519,
+     "name": "Rosa banksiae"
+    },
+    {
+     "score": 0.00357,
+     "name": "Rosa xanthina"
+    },
+    {
+     "score": 0.00205,
+     "name": "Rosa indica"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "13279526615_a3b0059bec.jpg",
+   "results": [
+    {
+     "score": 0.10436,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.07237,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.0029,
+     "name": "Rosa indica"
+    },
+    {
+     "score": 0.00139,
+     "name": "Rosa multiflora"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "13342823005_16d3df58df_n.jpg",
+   "results": [
+    {
+     "score": 0.16516,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.15977,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.01134,
+     "name": "Rosa multiflora"
+    },
+    {
+     "score": 0.00333,
+     "name": "Hydrangea arborescens"
+    },
+    {
+     "score": 0.0026,
+     "name": "Dianthus caryophyllus"
+    },
+    {
+     "score": 0.00159,
+     "name": "Brassica oleracea"
+    },
+    {
+     "score": 0.00154,
+     "name": "Pyrus communis"
+    },
+    {
+     "score": 0.00152,
+     "name": "Hydrangea macrophylla"
+    },
+    {
+     "score": 0.00142,
+     "name": "Camellia japonica"
+    },
+    {
+     "score": 0.00115,
+     "name": "Pyrus calleryana"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "1392579828_ab5a139052.jpg",
+   "results": []
+  },
+  {
+   "cls": "roses",
+   "file": "13929462317_96342a9a44.jpg",
+   "results": []
+  },
+  {
+   "cls": "roses",
+   "file": "13979889721_42a59ca9fa_m.jpg",
+   "results": [
+    {
+     "score": 0.67688,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.02511,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.00323,
+     "name": "Rosa rugosa"
+    },
+    {
+     "score": 0.00129,
+     "name": "Camellia japonica"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "14001990976_bd2da42dbc.jpg",
+   "results": [
+    {
+     "score": 0.70533,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.06212,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.00134,
+     "name": "Rosa indica"
+    }
+   ]
+  },
+  {
+   "cls": "roses",
+   "file": "14019883858_e5d2a0ec10_n.jpg",
+   "results": [
+    {
+     "score": 0.25438,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.01526,
+     "name": "Rosa lucieae"
+    },
+    {
+     "score": 0.00467,
+     "name": "Rosa indica"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "1008566138_6927679c8a.jpg",
+   "results": [
+    {
+     "score": 0.77178,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.0013,
+     "name": "Heliopsis helianthoides"
+    },
+    {
+     "score": 0.00122,
+     "name": "Helianthus debilis"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "1022552002_2b93faf9e7_n.jpg",
+   "results": [
+    {
+     "score": 0.9514,
+     "name": "Helianthus annuus"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "1022552036_67d33d5bd8_n.jpg",
+   "results": [
+    {
+     "score": 0.93818,
+     "name": "Helianthus annuus"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "10386503264_e05387e1f7_m.jpg",
+   "results": [
+    {
+     "score": 0.53153,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.03427,
+     "name": "Rudbeckia hirta"
+    },
+    {
+     "score": 0.02278,
+     "name": "Helianthus debilis"
+    },
+    {
+     "score": 0.00251,
+     "name": "Helianthus tuberosus"
+    },
+    {
+     "score": 0.00203,
+     "name": "Gaillardia pulchella"
+    },
+    {
+     "score": 0.00166,
+     "name": "Chenopodium album"
+    },
+    {
+     "score": 0.0013,
+     "name": "Heliopsis helianthoides"
+    },
+    {
+     "score": 0.00118,
+     "name": "Bidens bipinnata"
+    },
+    {
+     "score": 0.00101,
+     "name": "Echinacea purpurea"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "10386522775_4f8c616999_m.jpg",
+   "results": [
+    {
+     "score": 0.69563,
+     "name": "Parthenocissus quinquefolia"
+    },
+    {
+     "score": 0.06742,
+     "name": "Vitis vinifera"
+    },
+    {
+     "score": 0.00389,
+     "name": "Euphorbia pulcherrima"
+    },
+    {
+     "score": 0.00185,
+     "name": "Parthenocissus tricuspidata"
+    },
+    {
+     "score": 0.00161,
+     "name": "Rosa chinensis"
+    },
+    {
+     "score": 0.00135,
+     "name": "Euphorbia heterophylla"
+    },
+    {
+     "score": 0.00112,
+     "name": "Ricinus communis"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "10386525005_fd0b7d6c55_n.jpg",
+   "results": [
+    {
+     "score": 0.19344,
+     "name": "Helianthus debilis"
+    },
+    {
+     "score": 0.12577,
+     "name": "Ismelia carinata"
+    },
+    {
+     "score": 0.06633,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.01449,
+     "name": "Echinacea purpurea"
+    },
+    {
+     "score": 0.01397,
+     "name": "Gerbera jamesonii"
+    },
+    {
+     "score": 0.01065,
+     "name": "Rudbeckia hirta"
+    },
+    {
+     "score": 0.00202,
+     "name": "Callistephus chinensis"
+    },
+    {
+     "score": 0.00135,
+     "name": "Zinnia elegans"
+    },
+    {
+     "score": 0.00117,
+     "name": "Leucanthemum vulgare"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "10386525695_2c38fea555_n.jpg",
+   "results": [
+    {
+     "score": 0.57016,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.00298,
+     "name": "Gerbera jamesonii"
+    },
+    {
+     "score": 0.00194,
+     "name": "Ismelia carinata"
+    },
+    {
+     "score": 0.0012,
+     "name": "Echinacea purpurea"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "10386540106_1431e73086_m.jpg",
+   "results": [
+    {
+     "score": 0.55076,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.11856,
+     "name": "Helianthus debilis"
+    },
+    {
+     "score": 0.01508,
+     "name": "Helianthus tuberosus"
+    },
+    {
+     "score": 0.00496,
+     "name": "Rudbeckia hirta"
+    },
+    {
+     "score": 0.00221,
+     "name": "Gazania rigens"
+    },
+    {
+     "score": 0.00207,
+     "name": "Tithonia diversifolia"
+    },
+    {
+     "score": 0.00169,
+     "name": "Rudbeckia laciniata"
+    },
+    {
+     "score": 0.00165,
+     "name": "Bidens bipinnata"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "10386540696_0a95ee53a8_n.jpg",
+   "results": [
+    {
+     "score": 0.72913,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.00394,
+     "name": "Helianthus debilis"
+    },
+    {
+     "score": 0.00227,
+     "name": "Rudbeckia hirta"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "10386702973_e74a34c806_n.jpg",
+   "results": [
+    {
+     "score": 0.70366,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.02217,
+     "name": "Helianthus debilis"
+    },
+    {
+     "score": 0.0154,
+     "name": "Rudbeckia hirta"
+    },
+    {
+     "score": 0.00229,
+     "name": "Ismelia carinata"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "1043442695_4556c4c13d_n.jpg",
+   "results": [
+    {
+     "score": 0.56943,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.01543,
+     "name": "Helianthus debilis"
+    },
+    {
+     "score": 0.00251,
+     "name": "Helianthus tuberosus"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "1044296388_912143e1d4.jpg",
+   "results": [
+    {
+     "score": 0.60247,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.01257,
+     "name": "Helianthus debilis"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "1064662314_c5a7891b9f_m.jpg",
+   "results": [
+    {
+     "score": 0.99343,
+     "name": "Helianthus annuus"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "10862313945_e8ed9202d9_m.jpg",
+   "results": [
+    {
+     "score": 0.56867,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.00223,
+     "name": "Pentanema britannica"
+    },
+    {
+     "score": 0.00164,
+     "name": "Rudbeckia hirta"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "11881770944_22b4f2f8f6_n.jpg",
+   "results": [
+    {
+     "score": 0.67785,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.00848,
+     "name": "Helianthus debilis"
+    },
+    {
+     "score": 0.00313,
+     "name": "Echinacea purpurea"
+    },
+    {
+     "score": 0.00204,
+     "name": "Rudbeckia hirta"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "1217254584_4b3028b93d.jpg",
+   "results": [
+    {
+     "score": 0.70742,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.00105,
+     "name": "Helianthus debilis"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "12282924083_fb80aa17d4_n.jpg",
+   "results": [
+    {
+     "score": 0.85963,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.0018,
+     "name": "Helianthus debilis"
+    },
+    {
+     "score": 0.00125,
+     "name": "Rudbeckia hirta"
+    },
+    {
+     "score": 0.00117,
+     "name": "Echinacea purpurea"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "1240624822_4111dde542.jpg",
+   "results": [
+    {
+     "score": 0.65072,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.00399,
+     "name": "Helianthus debilis"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "1240625276_fb3bd0c7b1.jpg",
+   "results": [
+    {
+     "score": 0.71138,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.00199,
+     "name": "Helianthus debilis"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "1240626292_52cd5d7fb1_m.jpg",
+   "results": [
+    {
+     "score": 0.95969,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.00391,
+     "name": "Abutilon theophrasti"
+    },
+    {
+     "score": 0.00218,
+     "name": "Helianthus tuberosus"
+    },
+    {
+     "score": 0.00129,
+     "name": "Helianthus debilis"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "1244774242_25a20d99a9.jpg",
+   "results": [
+    {
+     "score": 0.2664,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.00809,
+     "name": "Helianthus debilis"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "12471290635_1f9e3aae16_n.jpg",
+   "results": [
+    {
+     "score": 0.61044,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.07524,
+     "name": "Helianthus debilis"
+    },
+    {
+     "score": 0.00101,
+     "name": "Echinacea purpurea"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "12471441503_d188b5f31a_m.jpg",
+   "results": [
+    {
+     "score": 0.61535,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.07283,
+     "name": "Helianthus debilis"
+    },
+    {
+     "score": 0.00253,
+     "name": "Rudbeckia hirta"
+    },
+    {
+     "score": 0.00235,
+     "name": "Solanum lycopersicum"
+    },
+    {
+     "score": 0.00109,
+     "name": "Helianthus tuberosus"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "12471443383_b71e7a7480_m.jpg",
+   "results": [
+    {
+     "score": 0.54026,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.1109,
+     "name": "Helianthus debilis"
+    },
+    {
+     "score": 0.00485,
+     "name": "Rudbeckia hirta"
+    },
+    {
+     "score": 0.00256,
+     "name": "Echinacea purpurea"
+    },
+    {
+     "score": 0.0021,
+     "name": "Coreopsis tinctoria"
+    },
+    {
+     "score": 0.00151,
+     "name": "Inula helenium"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "12471791574_bb1be83df4.jpg",
+   "results": [
+    {
+     "score": 0.4728,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.04419,
+     "name": "Helianthus debilis"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "1267876087_a1b3c63dc9.jpg",
+   "results": [
+    {
+     "score": 0.97215,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.00225,
+     "name": "Helianthus debilis"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "127192624_afa3d9cb84.jpg",
+   "results": [
+    {
+     "score": 0.99354,
+     "name": "Helianthus annuus"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "1297092593_e573c0a3d6.jpg",
+   "results": [
+    {
+     "score": 0.84335,
+     "name": "Helianthus annuus"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "13095941995_9a66faa713_n.jpg",
+   "results": [
+    {
+     "score": 0.61576,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.02622,
+     "name": "Helianthus debilis"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "13096076565_72c2c60875_n.jpg",
+   "results": [
+    {
+     "score": 0.60061,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.04778,
+     "name": "Helianthus debilis"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "13117907313_86c99c6441.jpg",
+   "results": [
+    {
+     "score": 0.39665,
+     "name": "Helianthus debilis"
+    },
+    {
+     "score": 0.37898,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.00261,
+     "name": "Rudbeckia hirta"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "1314584013_fe935fdeb1_n.jpg",
+   "results": [
+    {
+     "score": 0.99142,
+     "name": "Helianthus annuus"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "13354458753_7b586f7c95_n.jpg",
+   "results": [
+    {
+     "score": 0.36987,
+     "name": "Gardenia jasminoides"
+    },
+    {
+     "score": 0.06056,
+     "name": "Lonicera japonica"
+    },
+    {
+     "score": 0.02733,
+     "name": "Chaenomeles japonica"
+    },
+    {
+     "score": 0.02563,
+     "name": "Ehretia microphylla"
+    },
+    {
+     "score": 0.01617,
+     "name": "Allamanda cathartica"
+    },
+    {
+     "score": 0.01244,
+     "name": "Ligustrum ovalifolium"
+    },
+    {
+     "score": 0.00614,
+     "name": "Duranta erecta"
+    },
+    {
+     "score": 0.00596,
+     "name": "Viburnum suspensum"
+    },
+    {
+     "score": 0.00406,
+     "name": "Chaenomeles speciosa"
+    },
+    {
+     "score": 0.00405,
+     "name": "Hibiscus × rosa-sinensis"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "13648603305_1268eda8b7_n.jpg",
+   "results": [
+    {
+     "score": 0.74121,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.00197,
+     "name": "Xerochrysum bracteatum"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "1379256773_bb2eb0d95b_n.jpg",
+   "results": [
+    {
+     "score": 0.93681,
+     "name": "Helianthus annuus"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "13959937305_2f5c532886_n.jpg",
+   "results": [
+    {
+     "score": 0.85003,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.00119,
+     "name": "Helianthus tuberosus"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "14121915990_4b76718077_m.jpg",
+   "results": [
+    {
+     "score": 0.83819,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.00149,
+     "name": "Helianthus debilis"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "14144522269_bc20029375_m.jpg",
+   "results": [
+    {
+     "score": 0.7296,
+     "name": "Helianthus annuus"
+    },
+    {
+     "score": 0.00992,
+     "name": "Helianthus debilis"
+    },
+    {
+     "score": 0.00141,
+     "name": "Solanum lycopersicum"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "1419608016_707b887337_n.jpg",
+   "results": [
+    {
+     "score": 0.97269,
+     "name": "Helianthus annuus"
+    }
+   ]
+  },
+  {
+   "cls": "sunflowers",
+   "file": "14244273988_a7484f18b7_m.jpg",
+   "results": [
+    {
+     "score": 0.82829,
+     "name": "Helianthus annuus"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "100930342_92e8746431_n.jpg",
+   "results": [
+    {
+     "score": 0.18483,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "10094729603_eeca3f2cb6.jpg",
+   "results": [
+    {
+     "score": 0.01134,
+     "name": "Hyacinthus orientalis"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "10094731133_94a942463c.jpg",
+   "results": []
+  },
+  {
+   "cls": "tulips",
+   "file": "10128546863_8de70c610d.jpg",
+   "results": [
+    {
+     "score": 0.55642,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "10163955604_ae0b830975_n.jpg",
+   "results": [
+    {
+     "score": 0.15682,
+     "name": "Tulipa gesneriana"
+    },
+    {
+     "score": 0.0015,
+     "name": "Papaver rhoeas"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "10164073235_f29931d91e.jpg",
+   "results": [
+    {
+     "score": 0.18586,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "10686568196_b1915544a8.jpg",
+   "results": [
+    {
+     "score": 0.20095,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "107693873_86021ac4ea_n.jpg",
+   "results": [
+    {
+     "score": 0.44734,
+     "name": "Tulipa gesneriana"
+    },
+    {
+     "score": 0.0128,
+     "name": "Capsicum annuum"
+    },
+    {
+     "score": 0.00307,
+     "name": "Freesia refracta"
+    },
+    {
+     "score": 0.00165,
+     "name": "Aspidistra elatior"
+    },
+    {
+     "score": 0.00135,
+     "name": "Lilium longiflorum"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "10791227_7168491604.jpg",
+   "results": [
+    {
+     "score": 0.7717,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "10995953955_089572caf0.jpg",
+   "results": [
+    {
+     "score": 0.40839,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "110147301_ad921e2828.jpg",
+   "results": [
+    {
+     "score": 0.12467,
+     "name": "Tulipa gesneriana"
+    },
+    {
+     "score": 0.00344,
+     "name": "Freesia refracta"
+    },
+    {
+     "score": 0.00291,
+     "name": "Dianthus caryophyllus"
+    },
+    {
+     "score": 0.00178,
+     "name": "Hyacinthus orientalis"
+    },
+    {
+     "score": 0.00143,
+     "name": "Kalmia angustifolia"
+    },
+    {
+     "score": 0.00131,
+     "name": "Capsicum annuum"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "112334842_3ecf7585dd.jpg",
+   "results": [
+    {
+     "score": 0.60158,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "112428665_d8f3632f36_n.jpg",
+   "results": [
+    {
+     "score": 0.77133,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "112428919_f0c5ad7d9d_n.jpg",
+   "results": [
+    {
+     "score": 0.2546,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "112650879_82adc2cc04_n.jpg",
+   "results": [
+    {
+     "score": 0.36933,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "112651128_7b5d39a346_m.jpg",
+   "results": [
+    {
+     "score": 0.34452,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "112951022_4892b1348b_n.jpg",
+   "results": [
+    {
+     "score": 0.24252,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "112951086_150a59d499_n.jpg",
+   "results": [
+    {
+     "score": 0.49234,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "113291410_1bdc718ed8_n.jpg",
+   "results": [
+    {
+     "score": 0.86552,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "113902743_8f537f769b_n.jpg",
+   "results": [
+    {
+     "score": 0.22238,
+     "name": "Tulipa gesneriana"
+    },
+    {
+     "score": 0.00167,
+     "name": "Curcuma longa"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "113960470_38fab8f2fb_m.jpg",
+   "results": [
+    {
+     "score": 0.21303,
+     "name": "Tulipa gesneriana"
+    },
+    {
+     "score": 0.0013,
+     "name": "Lilium longiflorum"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "11441893003_ab83672800.jpg",
+   "results": [
+    {
+     "score": 0.52038,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "11614202956_1dcf1c96a1.jpg",
+   "results": [
+    {
+     "score": 0.28202,
+     "name": "Tulipa gesneriana"
+    },
+    {
+     "score": 0.00103,
+     "name": "Dianthus caryophyllus"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "116343334_9cb4acdc57_n.jpg",
+   "results": [
+    {
+     "score": 0.06237,
+     "name": "Tulipa gesneriana"
+    },
+    {
+     "score": 0.00166,
+     "name": "Calanthe discolor"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "11746080_963537acdc.jpg",
+   "results": [
+    {
+     "score": 0.53955,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "11746276_de3dec8201.jpg",
+   "results": [
+    {
+     "score": 0.67035,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "11746367_d23a35b085_n.jpg",
+   "results": [
+    {
+     "score": 0.50638,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "11746452_5bc1749a36.jpg",
+   "results": [
+    {
+     "score": 0.60908,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "11746548_26b3256922_n.jpg",
+   "results": [
+    {
+     "score": 0.65726,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "12024561754_ce9667e4dc_n.jpg",
+   "results": [
+    {
+     "score": 0.4702,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "12025038686_7f10811d4b_n.jpg",
+   "results": [
+    {
+     "score": 0.32704,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "12025042086_78bafc0eb6_n.jpg",
+   "results": [
+    {
+     "score": 0.60139,
+     "name": "Tulipa gesneriana"
+    },
+    {
+     "score": 0.00113,
+     "name": "Bellis perennis"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "12163418275_bd6a1edd61.jpg",
+   "results": [
+    {
+     "score": 0.58988,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "122450705_9885fff3c4_n.jpg",
+   "results": [
+    {
+     "score": 0.34491,
+     "name": "Tulipa gesneriana"
+    },
+    {
+     "score": 0.00829,
+     "name": "Syringa vulgaris"
+    },
+    {
+     "score": 0.00457,
+     "name": "Hyacinthus orientalis"
+    },
+    {
+     "score": 0.00175,
+     "name": "Cymbidium faberi"
+    },
+    {
+     "score": 0.00171,
+     "name": "Akebia quinata"
+    },
+    {
+     "score": 0.00103,
+     "name": "Dianthus caryophyllus"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "12517756805_56b74be742.jpg",
+   "results": [
+    {
+     "score": 0.32262,
+     "name": "Tulipa gesneriana"
+    },
+    {
+     "score": 0.00271,
+     "name": "Hyacinthus orientalis"
+    },
+    {
+     "score": 0.00261,
+     "name": "Dianthus caryophyllus"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "12548574923_5e90f4ceea.jpg",
+   "results": [
+    {
+     "score": 0.61339,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "12557176134_ecbf15885b.jpg",
+   "results": [
+    {
+     "score": 0.28417,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "12584810723_c97d00fcfd.jpg",
+   "results": [
+    {
+     "score": 0.21535,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "12616825773_9aa4245b57_n.jpg",
+   "results": [
+    {
+     "score": 0.24577,
+     "name": "Tulipa gesneriana"
+    },
+    {
+     "score": 0.00726,
+     "name": "Asclepias curassavica"
+    },
+    {
+     "score": 0.00266,
+     "name": "Juncus triglumis"
+    },
+    {
+     "score": 0.00144,
+     "name": "Dianthus caryophyllus"
+    },
+    {
+     "score": 0.00143,
+     "name": "Trollius chinensis"
+    }
+   ]
+  },
+  {
+   "cls": "tulips",
+   "file": "12764617214_12211c6a0c_m.jpg",
+   "results": [
+    {
+     "score": 0.81283,
+     "name": "Tulipa gesneriana"
+    }
+   ]
+  }
+ ]
+}

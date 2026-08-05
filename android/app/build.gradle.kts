@@ -1,7 +1,34 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // Kotlin 플러그인은 선언하지 않는다 (AGP 9 내장). 단 Compose Compiler는 필요하다.
     id("org.jetbrains.kotlin.plugin.compose")
+}
+
+// ── 키 주입 ──────────────────────────────────────────────────────────
+// **키는 소스에 없다.** `local.properties`(.gitignore에 걸려 있다 — `git check-ignore`로
+// 확인함) → `buildConfigField` → `AppSecrets`. iOS의 Secrets.xcconfig → Info.plist →
+// AppSecrets와 같은 구조다.
+//
+// ⚠️ 없으면 **빌드를 깨지 않고 빈 문자열을 넣는다.** 키 하나 빠졌다고 도감을 못 보게
+//    만들 이유가 없다 — 그 기능만 꺼지고 `AppSecrets.missingKeys`가 알린다.
+//    새 맥에서는 `android/local.properties.template`을 복사해 값을 채운다.
+val secrets = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
+/**
+ * `buildConfigField`에 넣을 문자열 리터럴을 만든다.
+ *
+ * ⚠️ 반드시 따옴표로 감싸고 이스케이프한다. 값을 그대로 넣으면 키에 `"`나 `\`가
+ *    있을 때 **생성된 자바 코드가 깨져서** "키가 틀렸다"가 아니라 "빌드가 안 된다"가 된다.
+ */
+fun secret(name: String): String {
+    val raw = (secrets.getProperty(name) ?: System.getenv(name) ?: "").trim()
+    val escaped = raw.replace("\\", "\\\\").replace("\"", "\\\"")
+    return "\"$escaped\""
 }
 
 android {
@@ -18,10 +45,19 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // 공유계약과 같은 이름을 쓴다. iOS는 같은 값을 xcconfig에서 읽는다.
+        buildConfigField("String", "SUPABASE_URL", secret("SUPABASE_URL"))
+        buildConfigField("String", "SUPABASE_ANON_KEY", secret("SUPABASE_ANON_KEY"))
+        buildConfigField("String", "PLANTNET_API_KEY", secret("PLANTNET_API_KEY"))
+        buildConfigField("String", "KAKAO_REST_API_KEY", secret("KAKAO_REST_API_KEY"))
+        buildConfigField("String", "KAKAO_NATIVE_APP_KEY", secret("KAKAO_NATIVE_APP_KEY"))
     }
 
     buildFeatures {
         compose = true
+        // buildConfigField를 쓰려면 명시해야 한다 (AGP 8부터 기본 off).
+        buildConfig = true
     }
 
 }
@@ -92,6 +128,14 @@ dependencies {
     // DexFilter·GamePolicy는 안드로이드 의존이 없는 순수 Kotlin이라 JVM 테스트로 돈다
     // (에뮬레이터 불필요).
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+
+    // ⚠️ `org.json`은 android.jar에 **껍데기만** 있어서 JVM 테스트에서 호출하면
+    //    "Method optJSONArray in org.json.JSONObject not mocked"로 던진다.
+    //    실물을 테스트 클래스패스에 넣는다 (android.jar보다 앞에 놓인다).
+    //    `unitTests.isReturnDefaultValues = true`로 덮으면 파싱이 조용히 null을 돌려주고
+    //    **테스트가 초록으로 통과한다** — 그게 더 위험하다.
+    testImplementation("org.json:json:20250517")
 
     // 1차 필터 실측은 실기기/에뮬레이터가 필요하다 (ML Kit 추론).
     androidTestImplementation("androidx.test:runner:1.7.0")

@@ -1,0 +1,26 @@
+# 새 맥에서 개발을 시작할 때 이 파일을 `local.properties`로 복사해 값을 채운다.
+#
+#   cp android/local.properties.template android/local.properties
+#
+# **값을 여기에 채우지 않는다.** 이 파일은 커밋되고, local.properties는 안 된다
+# (.gitignore 7행). iOS 쪽 대응물은 `ios/Config/Secrets_TEMPLATE.xcconfig`다.
+#
+# ⚠️ 비워 둬도 빌드는 되고 앱도 안 죽는다 — 그 기능만 꺼진다.
+#    무엇이 빠졌는지는 `AppSecrets.missingKeys`가 알려준다.
+
+# Android SDK 경로. 보통 Android Studio가 자동으로 넣는다.
+# 이 맥에서는: /Users/<사용자>/Library/Android/sdk
+sdk.dir=
+
+# Supabase 대시보드 > Settings > API
+# ⚠️ SUPABASE_URL은 **프로젝트 루트만** 넣는다 — `https://xxxxx.supabase.co`
+#    `/rest/v1/`까지 붙이면 클라이언트가 경로를 또 붙여서 404가 난다.
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+
+# https://my.plantnet.org > Settings
+PLANTNET_API_KEY=
+
+# 카카오 개발자 콘솔 > 내 애플리케이션 > 앱 키
+KAKAO_REST_API_KEY=
+KAKAO_NATIVE_APP_KEY=

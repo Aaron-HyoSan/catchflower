@@ -1,8 +1,10 @@
 package com.catchflower.app.ui.capture
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.catchflower.app.data.FlowerRepository
@@ -25,7 +27,22 @@ fun CaptureFlow(
     modifier: Modifier = Modifier,
     vm: CaptureViewModel = viewModel(),
 ) {
-    val repository = FlowerRepository.get(LocalContext.current)
+    val context = LocalContext.current
+    val repository = FlowerRepository.get(context)
+
+    // 네트워크 오류 안내 (A 문서 3절 토스트). **화면 12로 보내지 않는다** —
+    // `CaptureViewModel.toast` 주석 참조.
+    //
+    // ⚠️ 플랫폼 [Toast]를 쓴다. Compose `Snackbar`는 `Scaffold`가 있어야 자리가 잡히는데
+    //    이 흐름은 하단 내비 바깥이라 `Scaffold`가 없다. 여기서 스낵바 호스트를 새로 세우면
+    //    촬영 화면 전체 레이아웃을 건드려야 한다.
+    val toast = vm.toast
+    LaunchedEffect(toast) {
+        if (toast != null) {
+            Toast.makeText(context, toast.message, Toast.LENGTH_LONG).show()
+            vm.consumeToast()
+        }
+    }
 
     // ⚠️ 이 흐름은 **하단 내비 바깥**이라 셸(`MainActivity`)의 시스템 여백을 물려받지 못한다.
     //    빼면 화면 12의 제목이 시계와 맞붙고, 하단 버튼이 제스처 바에 닿는다.
