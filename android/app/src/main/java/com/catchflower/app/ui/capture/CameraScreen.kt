@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.catchflower.app.data.LocationPermissionPrompt
 import com.catchflower.app.ui.component.CfPrimaryButton
 import com.catchflower.app.ui.component.CfTextButton
 import com.catchflower.app.ui.theme.CfColor
@@ -90,6 +91,32 @@ fun CameraScreen(
 
     LaunchedEffect(Unit) {
         if (!granted) permissionLauncher.launch(Manifest.permission.CAMERA)
+    }
+
+    // --- 위치 (선택) ---
+    // ⚠️ **매니페스트 선언만으로는 아무 일도 안 일어난다.** 요청을 아무도 하지 않으면
+    //    `checkSelfPermission`이 영구히 DENIED고, `PlatformLocationSource`는 늘 null을
+    //    돌려준다 — 등록은 정상으로 보이고 `place_name`·`dong_code`만 조용히 빈다.
+    //    그러면 B-6 랭킹이 통째로 죽는데 화면에는 증상이 없다.
+    val locationLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { /* 거부해도 등록은 그대로 된다 — 결과로 흐름을 바꾸지 않는다 */ }
+
+    LaunchedEffect(Unit) {
+        // ⚠️ **한 번만 묻는다.** 촬영마다 다시 물으면 화면 03의 약속
+        //    (`허용하지 않아도 도감은 쓸 수 있지만 일부 기능이 제한돼요`)이
+        //    안내가 아니라 강요가 된다. 거부한 사람에게 재요청은 설정 화면에서 한다.
+        if (LocationPermissionPrompt.shouldAsk(context)) {
+            LocationPermissionPrompt.markAsked(context)
+            // ⚠️ COARSE와 FINE을 **함께** 요청한다. API 31+에서 FINE만 요청하면
+            //    `대략적 위치` 선택지가 나오지 않는다. 동 단위·100m면 대략도 충분하다.
+            locationLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                )
+            )
+        }
     }
 
     var capture by remember { mutableStateOf<ImageCapture?>(null) }

@@ -2,12 +2,14 @@ package com.catchflower.app.ui.dex
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.catchflower.app.core.GamePolicy
 import com.catchflower.app.core.Rarity
 import com.catchflower.app.core.Season
 import com.catchflower.app.data.CollectState
 import com.catchflower.app.data.DexFilter
-import com.catchflower.app.data.DummyDiscoveries
+import com.catchflower.app.data.DiscoveryRepository
+import com.catchflower.app.data.DiscoveryRules
 import com.catchflower.app.data.FlowerRepository
 import com.catchflower.app.data.model.Discovery
 import com.catchflower.app.data.model.Flower
@@ -15,16 +17,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import java.util.Calendar
+import kotlinx.coroutines.launch
 
 /**
  * 도감 화면 상태 (화면 04·05·06·22 공용).
  *
- * 서버가 없으므로 발견 기록은 [DummyDiscoveries]에서 온다.
- * 서버가 붙으면 그 부분만 갈아 끼운다 — 화면은 이 ViewModel만 본다.
+ * **발견 기록은 [DiscoveryRepository]에서 온다** — 기기에 저장된 실제 기록이다.
+ * 촬영 흐름도 같은 저장소에 쓰므로, 등록한 꽃이 바로 도감에 나타난다.
+ *
+ * ⚠️ 숫자 계산은 [DiscoveryRules]가 한다. 여기서 다시 세지 않는다 —
+ *    `모은 꽃 37 / 200종`은 **틀려도 화면에는 예쁘게 나오는** 종류라서
+ *    JVM 테스트가 있는 순수 함수에 둔다.
  */
 class DexViewModel(app: Application) : AndroidViewModel(app) {
 
     private val repository = FlowerRepository.get(app)
+    private val discoveries = DiscoveryRepository.get(app)
 
     /** 지금. 상대 날짜(`오늘`, `3일 전`) 계산의 기준이다. */
     private val now: Long = System.currentTimeMillis()
@@ -38,19 +46,65 @@ class DexViewModel(app: Application) : AndroidViewModel(app) {
         private set
 
     /**
+     * 저장된 기록. Compose가 다시 그리도록 상태로 미러한다.
+     *
+     * ⚠️ **`StateFlow`를 그냥 읽으면 화면이 갱신되지 않는다.** `collectAsState`를
+     *    화면마다 부르게 하면 ViewModel의 파생 숫자(`collectedCount` 등)는 여전히
+     *    옛 값을 본다 — 화면 04의 그리드는 새 꽃이 채워지는데 현황 카드는 37에 멈춘다.
+     */
+    private var records by mutableStateOf<List<Discovery>>(emptyList())
+
+    /**
+     * 파일을 아직 읽는 중인가.
+     *
+     * ⚠️ **화면 22(빈 상태)와 구분해야 한다.** 로딩 중을 0종으로 그리면
+     *    도감을 채운 사용자에게 `처음이라면 이 꽃부터`가 한 프레임 깜빡인다.
+     */
+    var loading by mutableStateOf(true)
+        private set
+
+    init {
+        viewModelScope.launch {
+            discoveries.load()
+            loading = false
+            // 참조 없는 사진을 정리한다.
+            //
+            // **왜 여기인가.** `prunePhotos`는 기록을 다 읽은 뒤에만 안전하다
+            // (안 읽은 상태에서는 모든 사진이 "참조 없음"이다). `load()` 직후가
+            // 그 조건이 보장되는 유일한 자리다. `Application.onCreate`에 두면
+            // 로드 완료를 기다려야 하고, 기다리는 코드를 잊으면 **사진이 전부 날아간다.**
+            //
+            // 남는 경우: 등록 중에 앱이 죽어 사진은 저장됐고 기록은 안 된 때.
+            // 그대로 두면 기기에 계속 쌓이는데, 사용자에게는 아무 증상이 없어서
+            // 저장공간 문제로만 뒤늦게 드러난다.
+            val removed = discoveries.prunePhotos()
+            if (removed > 0) {
+                android.util.Log.i("CatchFlower", "참조 없는 사진 ${removed}장 정리")
+            }
+        }
+        viewModelScope.launch {
+            discoveries.discoveries.collect { records = it }
+        }
+    }
+
+    /**
      * 빈 상태(화면 22) 확인용 토글.
      * 0종 화면은 가입 직후에만 보이므로, 없으면 개발 중에 한 번도 못 본다.
      */
     var forceEmptyState by mutableStateOf(false)
         private set
 
+    /** 화면이 그릴 기록. 빈 상태 미리보기면 비어 있는 것처럼 본다. */
+    private val visibleRecords: List<Discovery>
+        get() = if (forceEmptyState) emptyList() else records
+
     val collectedIds: Set<Int>
-        get() = if (forceEmptyState) emptySet() else DummyDiscoveries.collectedIds
+        get() = DiscoveryRules.collectedIds(visibleRecords)
 
     val collectedCount: Int get() = collectedIds.size
 
     val thisSeasonCount: Int
-        get() = if (forceEmptyState) 0 else DummyDiscoveries.thisSeasonIds.size
+        get() = DiscoveryRules.seasonCollectedCount(visibleRecords, currentMonth)
 
     /** `도감 18% 완성` — 소수점 버린 정수 퍼센트. */
     val completionPercent: Int
@@ -69,7 +123,7 @@ class DexViewModel(app: Application) : AndroidViewModel(app) {
         get() = BADGE_STEP - (collectedCount % BADGE_STEP)
 
     val recentDiscoveries: List<Discovery>
-        get() = if (forceEmptyState) emptyList() else DummyDiscoveries.recent(now)
+        get() = DiscoveryRules.recentDiscoveries(visibleRecords, RECENT_LIMIT)
 
     /** 필터가 적용된 그리드. 화면 04의 3열 그리드가 이걸 그린다. */
     val visibleFlowers: List<Flower>
@@ -92,8 +146,13 @@ class DexViewModel(app: Application) : AndroidViewModel(app) {
             }
 
     fun discoveriesFor(flowerId: Int): List<Discovery> =
-        if (forceEmptyState) emptyList()
-        else DummyDiscoveries.forFlower(flowerId, now).sortedByDescending { it.createdAt }
+        DiscoveryRules.forFlower(visibleRecords, flowerId)
+
+    /** 화면 05 썸네일. 파일명 → 실제 파일. 없으면 실루엣을 그린다. */
+    fun photoFile(discovery: Discovery): java.io.File? =
+        discovery.localPhotoPath
+            ?.takeIf { discoveries.photos.exists(it) }
+            ?.let { discoveries.photos.file(it) }
 
     fun flower(id: Int): Flower? = repository.byId(id)
 
@@ -156,5 +215,8 @@ class DexViewModel(app: Application) : AndroidViewModel(app) {
 
     private companion object {
         const val BADGE_STEP = 10
+
+        /** 화면 04 `최근 발견한 꽃` 가로 스트립 칸 수. */
+        const val RECENT_LIMIT = 6
     }
 }

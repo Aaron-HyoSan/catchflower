@@ -5,8 +5,19 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.catchflower.app.core.AppSecrets
 import com.catchflower.app.core.GamePolicy
-import com.catchflower.app.data.DummyDiscoveries
+import com.catchflower.app.core.Visibility
+import com.catchflower.app.data.Coordinate
+import com.catchflower.app.data.DiscoveryRepository
+import com.catchflower.app.data.DiscoveryRules
 import com.catchflower.app.data.FlowerRepository
+import com.catchflower.app.data.LocationSource
+import com.catchflower.app.data.NoLocationSource
+import com.catchflower.app.data.PlaceInfo
+import com.catchflower.app.data.PlaceService
+import com.catchflower.app.data.PlatformLocationSource
+import com.catchflower.app.data.KakaoPlaceService
+import com.catchflower.app.data.NoPlaceService
+import com.catchflower.app.data.model.Discovery
 import com.catchflower.app.recognizer.FlowerPreFilter
 import com.catchflower.app.recognizer.FlowerRecognizer
 import com.catchflower.app.recognizer.IdentifyFlow
@@ -19,6 +30,7 @@ import com.catchflower.app.recognizer.RecognitionError
 import com.catchflower.app.recognizer.ScientificNameIndex
 import com.catchflower.app.ui.component.CfToast
 import java.util.Calendar
+import java.util.UUID
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
@@ -70,11 +82,26 @@ sealed interface CaptureState {
      */
     data class Failed(val streak: Int) : CaptureState
 
-    /** 화면 10 — 신규 등록. */
-    data class NewFlower(val flowerId: Int, val dexOrder: Int) : CaptureState
+    /**
+     * 화면 10 — 신규 등록.
+     *
+     * @param discoveryId 방금 저장한 기록. 화면 13(지도 공유)이 이걸 수정한다 —
+     *   없으면 "공유하기"가 어느 기록의 공개 범위를 바꿀지 모른다.
+     */
+    data class NewFlower(
+        val flowerId: Int,
+        val dexOrder: Int,
+        val collectedCount: Int,
+        val seasonCount: Int,
+        val discoveryId: String,
+    ) : CaptureState
 
     /** 화면 11 — 재발견. */
-    data class Rediscovered(val flowerId: Int, val count: Int) : CaptureState
+    data class Rediscovered(
+        val flowerId: Int,
+        val count: Int,
+        val discoveryId: String,
+    ) : CaptureState
 
     /**
      * B-5 — 같은 종·같은 장소를 하루에 두 번.
@@ -101,10 +128,25 @@ class CaptureViewModel @JvmOverloads constructor(
      * ([MlKitFlowerPreFilter] 주석 참조).
      */
     private val preFilter: FlowerPreFilter = MlKitFlowerPreFilter(),
+    /**
+     * 위치. 기본은 플랫폼 구현이고 **권한이 없으면 조용히 null**이다 —
+     * `도감 등록은 위치 없이도 할 수 있어요`(화면 03)가 약속이다.
+     */
+    private val locationSource: LocationSource = PlatformLocationSource(app),
+    /** 장소명·행정구역. 카카오 키가 없으면 [NoPlaceService]. */
+    private val places: PlaceService =
+        if (AppSecrets.hasKakaoKey) KakaoPlaceService() else NoPlaceService,
 ) : AndroidViewModel(app) {
 
     private val repository = FlowerRepository.get(app)
     private val flow = IdentifyFlow(repository)
+    private val discoveries = DiscoveryRepository.get(app)
+
+    init {
+        // 저장된 기록을 읽어 둔다. **B-5와 `12번째 꽃`이 이걸 봐야 한다** —
+        // 안 읽으면 앱을 켠 직후 촬영에서 모든 꽃이 "신규"가 되고 중복 제한도 안 걸린다.
+        viewModelScope.launch { discoveries.load() }
+    }
 
     /**
      * 실제 인식기를 쓸 수 있으면 쓰고, **키가 없으면 Mock으로 돈다.**
@@ -168,11 +210,46 @@ class CaptureViewModel @JvmOverloads constructor(
      */
     var debugLabel: String? = null
 
+    /**
+     * 지금 흐름에 있는 사진 1장의 부수 정보.
+     *
+     * ⚠️ **셔터를 누른 시각을 여기 잡아 둔다.** 확정 시점에 `System.currentTimeMillis()`를
+     *    다시 부르면 `captured_at`이 등록 시각이 되어 계약 C-8(촬영↔등록 시차 검증)이
+     *    **항상 0초로 통과한다** — 검증이 있는데 아무것도 검증하지 않는 상태가 된다.
+     */
+    private var pending: Pending? = null
+
+    private data class Pending(
+        val jpeg: ByteArray,
+        val capturedAt: Long,
+        var coordinate: Coordinate? = null,
+        var place: PlaceInfo? = null,
+    )
+
+    /** 위치·장소 조회. 분석과 **병렬로** 돌린다. */
+    private var locationJob: Job? = null
+
     /** 화면 07에서 셔터를 눌렀다. */
     fun onPhotoTaken(jpeg: ByteArray) {
         analysisJob?.cancel()
+        locationJob?.cancel()
+        val shot = Pending(jpeg = jpeg, capturedAt = System.currentTimeMillis())
+        pending = shot
         state = CaptureState.Analyzing(jpeg)
+        // 위치는 판별과 **동시에** 받는다. 순차로 하면 촬영 후 대기가 GPS 대기만큼 늘어난다.
+        // 판별이 먼저 끝나도 사용자가 화면 09에서 버튼을 누르는 동안 이쪽이 채워진다.
+        locationJob = viewModelScope.launch { fillPlace(shot) }
         analysisJob = viewModelScope.launch { analyze(jpeg) }
+    }
+
+    /**
+     * 좌표와 장소를 채운다. **실패해도 촬영은 계속된다** —
+     * `허용하지 않아도 도감은 쓸 수 있지만 일부 기능이 제한돼요`(화면 03)가 약속이다.
+     */
+    private suspend fun fillPlace(shot: Pending) {
+        val coordinate = locationSource.current() ?: return
+        shot.coordinate = coordinate
+        shot.place = places.place(coordinate.lat, coordinate.lng)
     }
 
     private suspend fun analyze(jpeg: ByteArray) {
@@ -225,12 +302,19 @@ class CaptureViewModel @JvmOverloads constructor(
     fun backToCamera() {
         analysisJob?.cancel()
         analysisJob = null
+        // 위치 조회도 끊는다. 안 끊으면 취소한 사진의 좌표를 받으려고 GPS가 계속 돌고,
+        // 다음 촬영의 `pending`에 **앞 사진의 장소가 덮인다.**
+        locationJob?.cancel()
+        locationJob = null
+        pending = null
         state = CaptureState.Camera
     }
 
     /** 화면 12 `나중에 할게요` — 도감으로 나간다. 연속 실패도 끊는다. */
     fun giveUp() {
         analysisJob?.cancel()
+        locationJob?.cancel()
+        pending = null
         failStreak = 0
         state = CaptureState.Camera
     }
@@ -247,8 +331,11 @@ class CaptureViewModel @JvmOverloads constructor(
      * 화면 09에서 후보를 확정했다 (`네, 맞아요` 또는 후보 선택).
      *
      * ⚠️ **B-5를 여기서 판정한다.** 같은 종·같은 장소·같은 날이면 등록하지 않는다.
-     *    지금은 위치가 없어(GPS 미연결) 같은 날 같은 종만 본다 —
-     *    위치가 붙으면 [GamePolicy.SAME_PLACE_RADIUS_METERS]를 함께 본다.
+     *    판정은 [DiscoveryRules.isDuplicateToday]가 한다 — 좌표 반올림 기준을
+     *    카카오 캐시와 공유해야 해서 여기서 다시 구현하지 않는다.
+     *
+     * ⚠️ **저장이 끝난 뒤에 화면을 바꾼다.** 먼저 화면을 넘기면 `12번째 꽃`이
+     *    저장 전 숫자로 그려지고, 저장이 실패해도 성공 화면이 뜬다.
      */
     fun confirm(candidate: RankedCandidate) {
         // B-3 어뷰징 가드 ① — 희귀종을 낮은 순위에서 고르면 사진을 한 장 더 받는다.
@@ -262,32 +349,80 @@ class CaptureViewModel @JvmOverloads constructor(
                     "score=${candidate.score} → 추가 촬영이 필요한 케이스",
             )
         }
+        viewModelScope.launch { record(candidate) }
+    }
 
+    private suspend fun record(candidate: RankedCandidate) {
         val flowerId = candidate.flower.id
-        val today = DummyDiscoveries.forFlower(flowerId, System.currentTimeMillis())
+        // 위치 조회가 아직 안 끝났으면 기다린다. **타임아웃은 안에 있다**
+        // ([PlatformLocationSource.REQUEST_TIMEOUT_MS]) — 여기서 무한정 기다리지 않는다.
+        locationJob?.join()
+        val shot = pending
+        val records = discoveries.discoveries.value
+        val now = System.currentTimeMillis()
 
-        // B-5 — 같은 종을 오늘 이미 기록했나.
-        val alreadyToday = today.count { isSameDay(it.createdAt, System.currentTimeMillis()) }
-        if (alreadyToday >= GamePolicy.SAME_FLOWER_SAME_PLACE_DAILY_LIMIT) {
+        // B-5 — 같은 종 + 같은 장소를 오늘 이미 기록했나.
+        if (DiscoveryRules.isDuplicateToday(
+                discoveries = records,
+                flowerId = flowerId,
+                lat = shot?.coordinate?.lat,
+                lng = shot?.coordinate?.lng,
+                now = now,
+            )
+        ) {
             state = CaptureState.DailyDuplicate(flowerId)
             return
         }
 
-        state = if (today.isEmpty()) {
-            CaptureState.NewFlower(flowerId, dexOrder = DummyDiscoveries.collectedIds.size + 1)
+        val isFirst = flowerId !in DiscoveryRules.collectedIds(records)
+        // 사진을 먼저 저장한다. 실패하면 파일명 없이 기록만 남는다 —
+        // **등록 자체를 막지 않는다.** 도감 칸은 채워지고 썸네일만 실루엣이 된다.
+        val photoName = shot?.jpeg?.let { discoveries.photos.save(it) }
+        val discovery = Discovery(
+            id = UUID.randomUUID().toString(),
+            userId = discoveries.userId,
+            flowerId = flowerId,
+            photoUrl = null, // 서버 업로드 전이다. 로컬 파일명은 아래 필드에 있다.
+            localPhotoPath = photoName,
+            lat = shot?.coordinate?.lat,
+            lng = shot?.coordinate?.lng,
+            placeName = shot?.place?.placeName ?: shot?.place?.dongName,
+            dongCode = shot?.place?.dongCode,
+            guCode = shot?.place?.guCode,
+            // 기본은 비공개다. 공개는 화면 13에서 **사용자가 명시적으로** 고른다 —
+            // 기본 공개로 두면 위치가 붙은 사진이 동의 없이 지도에 올라간다.
+            visibility = Visibility.PRIVATE,
+            aiConfidence = candidate.score,
+            aiPickedRank = candidate.rank,
+            isFirstDiscovery = isFirst,
+            createdAt = now,
+            capturedAt = shot?.capturedAt ?: now,
+        )
+
+        val updated = discoveries.add(discovery)
+        pending = null
+
+        state = if (isFirst) {
+            CaptureState.NewFlower(
+                flowerId = flowerId,
+                dexOrder = DiscoveryRules.collectedIds(updated).size,
+                collectedCount = DiscoveryRules.collectedIds(updated).size,
+                seasonCount = DiscoveryRules.seasonCollectedCount(
+                    updated,
+                    Calendar.getInstance().get(Calendar.MONTH) + 1,
+                ),
+                discoveryId = discovery.id,
+            )
         } else {
-            CaptureState.Rediscovered(flowerId, count = today.size + 1)
+            CaptureState.Rediscovered(
+                flowerId = flowerId,
+                count = DiscoveryRules.countFor(updated, flowerId),
+                discoveryId = discovery.id,
+            )
         }
     }
 
     fun flowerName(flowerId: Int): String = repository.byId(flowerId)?.name.orEmpty()
 
     fun flower(flowerId: Int) = repository.byId(flowerId)
-
-    private fun isSameDay(a: Long, b: Long): Boolean {
-        val ca = Calendar.getInstance().apply { timeInMillis = a }
-        val cb = Calendar.getInstance().apply { timeInMillis = b }
-        return ca.get(Calendar.YEAR) == cb.get(Calendar.YEAR) &&
-            ca.get(Calendar.DAY_OF_YEAR) == cb.get(Calendar.DAY_OF_YEAR)
-    }
 }

@@ -10,6 +10,15 @@
          권한을 안 받는 게 곧 규칙의 보장이다. -->
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <!-- 촬영 위치 → 장소명·동/구 코드 (지도 14~16 · 지역 랭킹 B-6).
+         ⚠️ **선언이 없으면 `checkSelfPermission`이 영구히 DENIED다** — 요청 대화상자가
+            아예 뜨지 않는다. 컴파일도 실행도 정상이고 장소만 조용히 안 붙는다.
+         ⚠️ FINE도 선언한다. COARSE만 두면 API 31+ 권한 대화상자에 "정확한 위치"
+            선택지가 없다. 실제로 필요한 건 동 단위·100m라 COARSE로 충분하지만,
+            사용자가 정확한 위치를 고를 수 있어야 장소명 정확도가 올라간다. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
     <!-- 화면 19 친구 초대. 화면 03(권한 안내)에서는 **요청하지 않는다** —
          iOS 세션이 같은 결론을 냈다(진행 기록 (16)): 쓰는 화면에서 받아야
          왜 필요한지 설명할 수 있다. 거부하면 초대 링크 단독 화면으로 대체한다. -->

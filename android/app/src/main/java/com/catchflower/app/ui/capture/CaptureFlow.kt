@@ -96,9 +96,8 @@ fun CaptureFlow(
                 NewFlowerScreen(
                     flower = flower,
                     dexOrder = state.dexOrder,
-                    // TODO: 저장이 붙으면 실제 수집 수로 바꾼다 (지금은 더미).
-                    collectedCount = state.dexOrder,
-                    seasonCount = SEASON_COUNT_PLACEHOLDER,
+                    collectedCount = state.collectedCount,
+                    seasonCount = state.seasonCount,
                     onShare = { onShare(state.flowerId) },
                     onKeepPrivate = {
                         vm.backToCamera()
@@ -145,6 +144,3 @@ fun CaptureFlow(
         }
     }
 }
-
-/** 시즌 종수는 저장이 붙어야 세진다. 더미 값이라는 걸 이름으로 남긴다. */
-private const val SEASON_COUNT_PLACEHOLDER = 13
