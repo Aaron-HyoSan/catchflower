@@ -110,6 +110,23 @@ class DiscoveryStore(private val file: File) {
         internal fun encodeConfidence(value: Float): Double =
             Math.round(value.toDouble() * 10_000.0) / 10_000.0
 
+        /**
+         * 서버로 보내는 형태. **[toJson]과 다르다.**
+         *
+         * 🔴 **로컬 전용 필드를 빼야 한다 — 안 빼면 전송이 400으로 전부 실패한다.**
+         *    실측: `{"code":"PGRST204","message":"Could not find the
+         *    '_local_photo_path' column of 'discoveries' in the schema cache"}`.
+         *    "파일에 쓰는 JSON이 계약 컬럼명 그대로니 그대로 올리면 된다"고 문서에
+         *    적어 뒀었는데, **`_local_photo_path` 한 칸 때문에 그게 틀렸다.**
+         *    PostgREST는 모르는 컬럼을 무시하지 않고 요청 전체를 거부한다 —
+         *    한 건도 안 올라가고, 이유는 로그에만 남는다.
+         *
+         * `captured_date`도 넣지 않는다. 서버 트리거가 채우고
+         * **클라이언트가 날짜를 정하면 B-5 하루 1회를 우회할 수 있다**(0001 주석).
+         */
+        internal fun toWireJson(d: Discovery): JSONObject =
+            toJson(d).apply { remove(K_LOCAL_PHOTO) }
+
         internal fun toJson(d: Discovery): JSONObject = JSONObject().apply {
             put(K_ID, d.id)
             put(K_USER_ID, d.userId)
@@ -124,8 +141,11 @@ class DiscoveryStore(private val file: File) {
             putOpt(K_DONG_CODE, d.dongCode)
             putOpt(K_GU_CODE, d.guCode)
             put(K_VISIBILITY, d.visibility.wire)
-            putOpt(K_AI_CONFIDENCE, d.aiConfidence?.let(::encodeConfidence))
-            putOpt(K_AI_PICKED_RANK, d.aiPickedRank)
+            // ⚠️ **`putOpt`가 아니라 `put`이다.** DB는 둘 다 `not null`이라
+            //    키가 빠지면 서버가 `400 23502`로 거부하고, 400은 영구 거절이라
+            //    그 기록은 **다시는 올라가지 않는다**(도감에는 보인다).
+            put(K_AI_CONFIDENCE, encodeConfidence(d.aiConfidence))
+            put(K_AI_PICKED_RANK, d.aiPickedRank)
             put(K_IS_FIRST, d.isFirstDiscovery)
             putOpt(K_NOTE, d.note)
             put(K_CREATED_AT, encodeTime(d.createdAt))
@@ -144,8 +164,12 @@ class DiscoveryStore(private val file: File) {
             dongCode = o.orNull(K_DONG_CODE),
             guCode = o.orNull(K_GU_CODE),
             visibility = Visibility.fromWire(o.getString(K_VISIBILITY)),
-            aiConfidence = if (o.has(K_AI_CONFIDENCE)) o.getDouble(K_AI_CONFIDENCE).toFloat() else null,
-            aiPickedRank = if (o.has(K_AI_PICKED_RANK)) o.getInt(K_AI_PICKED_RANK) else null,
+            // ⚠️ **기본값을 만들어 넣지 않는다.** 키가 없으면 `getDouble`이
+            //    `JSONException`을 던지고 [loadUnlocked]가 파일을 격리한다.
+            //    0.0 같은 기본값을 넣으면 **없는 신뢰도를 만들어 서버에 올리고**,
+            //    B-3 임계값을 실측으로 재채점할 때 그 값이 분포를 오염시킨다.
+            aiConfidence = o.getDouble(K_AI_CONFIDENCE).toFloat(),
+            aiPickedRank = o.getInt(K_AI_PICKED_RANK),
             isFirstDiscovery = o.getBoolean(K_IS_FIRST),
             note = o.orNull(K_NOTE),
             createdAt = decodeTime(o.getString(K_CREATED_AT)),

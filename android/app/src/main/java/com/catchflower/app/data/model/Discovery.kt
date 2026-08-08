@@ -29,13 +29,26 @@ data class Discovery(
      */
     val guCode: String?,
     val visibility: Visibility,
-    /** 0.0~1.0. PlantNet은 보정된 확률이라 그대로 저장한다 (퍼센트로 곱하지 않는다). */
-    val aiConfidence: Float?,
+    /**
+     * 0.0~1.0. PlantNet은 보정된 확률이라 그대로 저장한다 (퍼센트로 곱하지 않는다).
+     *
+     * ⚠️ **null이 될 수 없다.** 계약 1-3은 `float`, DB는 `not null`,
+     *    iOS도 `let aiConfidence: Double`(옵셔널 아님)이다 —
+     *    **AOS만 nullable이었다.**
+     *
+     * 🔴 그게 왜 위험했나: `putOpt`는 null이면 **키를 아예 빼고**, 서버는 그걸
+     *    `400 23502`(not-null 위반)로 거부한다. 400은 `Rejected`(영구 거절)라서
+     *    그 기록은 **다시는 올라가지 않는다** — 도감에는 보이므로 아무도 모른다.
+     *    실제로 null을 넣는 호출처는 하나도 없었으니, nullable은 **사고 경로만
+     *    만들어 두고 얻는 게 없는** 표현이었다.
+     */
+    val aiConfidence: Float,
     /**
      * 사용자가 몇 순위 후보를 골랐는가 (1·2·3).
      * ⚠️ B-3 어뷰징 가드 ②. 계속 하위 순위만 고르는 계정은 신호다.
+     * ⚠️ [aiConfidence]와 같은 이유로 null이 될 수 없다 (DB `not null`).
      */
-    val aiPickedRank: Int?,
+    val aiPickedRank: Int,
     /** 신규(화면 10) vs 재발견(화면 11)을 가른다. */
     val isFirstDiscovery: Boolean,
     /** 지도 공유 시 남기는 한 줄 (화면 13 · 최대 40자). */
