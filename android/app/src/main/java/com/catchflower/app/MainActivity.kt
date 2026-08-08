@@ -21,9 +21,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.catchflower.app.core.AppSecrets
+import com.catchflower.app.data.OnboardingState
+import com.catchflower.app.ui.onboarding.PermissionIntroScreen
 import com.catchflower.app.ui.capture.CaptureFlow
 import com.catchflower.app.ui.component.CfBottomNav
 import com.catchflower.app.ui.component.NavTab
@@ -78,11 +81,31 @@ class MainActivity : ComponentActivity() {
  *    하단 내비를 나중에 붙이면 화면마다 하단 여백 계산이 어긋나므로
  *    껍데기를 먼저 세운다.
  *
- * navigation-compose를 아직 쓰지 않는다. 로그인(화면 01~03)이 붙으면 시작
- * 목적지가 달라지므로 라우팅은 그때 한 번에 정한다.
+ * navigation-compose를 아직 쓰지 않는다. 화면 01·02(로그인·지역선택)가 붙으면 시작
+ * 목적지가 또 달라지므로 라우팅은 그때 한 번에 정한다.
  */
 @Composable
 private fun CatchFlowerRoot() {
+    val context = LocalContext.current
+
+    // 화면 03(권한 안내)은 **첫 실행에만** 보인다.
+    //
+    // ⚠️ **권한 상태로 분기하지 않는다.** 화면 03은 권한 게이트가 아니라 약속을 보여주는
+    //    화면이다(`촬영한 사진은 내 도감에만 저장됩니다`). 권한으로 판단하면 재설치 후
+    //    권한이 남은 사용자는 그 약속을 한 번도 못 본다. `OnboardingState` 주석 참고.
+    //
+    // ⚠️ **`remember`로 한 번만 읽는다.** 매 recomposition마다 읽으면 온보딩이 끝나
+    //    플래그가 켜지는 순간 이 값이 바뀌면서 화면이 통째로 갈리는데,
+    //    onFinish로 넘어가는 흐름과 겹쳐서 어느 쪽이 이겼는지 알 수 없게 된다.
+    var onboardingDone by remember { mutableStateOf(OnboardingState.isDone(context)) }
+    if (!onboardingDone) {
+        PermissionIntroScreen(
+            onFinish = { onboardingDone = true },
+            modifier = Modifier.fillMaxSize(),
+        )
+        return
+    }
+
     var tab by remember { mutableStateOf(NavTab.DEX) }
     // 도감 상세로 들어간 종. null이면 도감 홈이다.
     var detailFlowerId by remember { mutableStateOf<Int?>(null) }

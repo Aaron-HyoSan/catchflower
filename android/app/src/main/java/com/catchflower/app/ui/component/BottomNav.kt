@@ -107,7 +107,7 @@ fun CfBottomNav(
                     .clickable(role = Role.Button) { onSelect(NavTab.CAPTURE) },
                 contentAlignment = Alignment.Center,
             ) {
-                CameraGlyph(size = 30.dp, color = Color.White)
+                CameraGlyph(size = 30.dp, color = Color.White, holeColor = CfColor.Primary)
             }
             Text(
                 text = NavTab.CAPTURE.label,
@@ -152,9 +152,22 @@ private fun NavItem(
     }
 }
 
-/** 카메라 글리프 — 본체(라운드 사각) + 렌즈(원) + 상단 돌출부. */
+/**
+ * 카메라 글리프 — 본체(라운드 사각) + 렌즈(원) + 상단 돌출부.
+ *
+ * ⚠️ [holeColor]는 **렌즈를 파낸 자리에 칠하는 배경색**이다. 처음에는 이 값을
+ *    `CfColor.Primary`로 박아 뒀는데, 그러면 이 글리프는 **초록 셔터 위에서만**
+ *    맞다. 화면 03처럼 `PrimaryLight`(연한 초록) 원 안에 놓으면 렌즈 구멍만
+ *    진한 초록으로 칠해져서 "렌즈에 초록 점이 박힌" 그림이 된다.
+ *    호출처가 자기 배경색을 넘긴다.
+ */
 @Composable
-fun CameraGlyph(size: Dp, color: Color, modifier: Modifier = Modifier) {
+fun CameraGlyph(
+    size: Dp,
+    color: Color,
+    holeColor: Color,
+    modifier: Modifier = Modifier,
+) {
     Canvas(modifier = modifier.size(size)) {
         val w = this.size.width
         val h = this.size.height
@@ -180,7 +193,7 @@ fun CameraGlyph(size: Dp, color: Color, modifier: Modifier = Modifier) {
         )
         // 렌즈 — 본체에서 파낸 것처럼 보이게 배경색 원 + 링
         drawCircle(
-            color = CfColor.Primary,
+            color = holeColor,
             radius = w * 0.19f,
             center = Offset(w / 2f, h * 0.53f),
         )

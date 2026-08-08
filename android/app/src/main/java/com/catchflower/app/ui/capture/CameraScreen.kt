@@ -106,6 +106,11 @@ fun CameraScreen(
         // ⚠️ **한 번만 묻는다.** 촬영마다 다시 물으면 화면 03의 약속
         //    (`허용하지 않아도 도감은 쓸 수 있지만 일부 기능이 제한돼요`)이
         //    안내가 아니라 강요가 된다. 거부한 사람에게 재요청은 설정 화면에서 한다.
+        //
+        //    화면 03이 붙은 뒤에는 **여기가 거의 돌지 않는다** —
+        //    `OnboardingState.markDone`이 `markAsked`를 함께 부르기 때문이다.
+        //    남겨 두는 이유: 온보딩을 이미 지난 기존 사용자(플래그만 있고 위치는 안 물은
+        //    상태)와, 앞으로 화면 01·02가 끼어들며 흐름이 바뀔 경우의 안전망이다.
         if (LocationPermissionPrompt.shouldAsk(context)) {
             LocationPermissionPrompt.markAsked(context)
             // ⚠️ COARSE와 FINE을 **함께** 요청한다. API 31+에서 FINE만 요청하면
