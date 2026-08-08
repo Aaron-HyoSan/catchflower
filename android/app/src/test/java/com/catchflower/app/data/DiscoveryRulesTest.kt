@@ -39,6 +39,7 @@ class DiscoveryRulesTest {
         capturedAt: Long,
         lat: Double? = null,
         lng: Double? = null,
+        visibility: Visibility = Visibility.PRIVATE,
     ) = Discovery(
         id = id,
         userId = "u",
@@ -50,7 +51,7 @@ class DiscoveryRulesTest {
         placeName = null,
         dongCode = null,
         guCode = null,
-        visibility = Visibility.PRIVATE,
+        visibility = visibility,
         aiConfidence = 0.8f,
         aiPickedRank = 1,
         isFirstDiscovery = true,
@@ -312,6 +313,93 @@ class DiscoveryRulesTest {
         // "37.1235,127.9877" — 소수부 길이가 정책 자릿수와 같아야 한다.
         val decimals = key.substringBefore(',').substringAfter('.').length
         assertEquals(digits, decimals)
+    }
+
+    // ── 화면 20 지표 3칸 ────────────────────────────────────────────
+    //
+    // 🔴 **세 숫자 다 틀려도 화면이 완벽하게 정상이다.** 더미를 읽던 때는
+    //    `37종 / 112회 / 26개`가 항상 예쁘게 있었다. 하나가 틀려도 사용자는
+    //    자기 기록을 안 세어 봤으니 알 수 없다.
+
+    /**
+     * 종수와 발견 횟수는 **다른 숫자**다.
+     *
+     * 빨개지는 경우: `speciesCount`에 `discoveries.size`를 쓰거나(같은 종 3번이
+     * 3종이 된다), `discoveryCount`에 `collectedIds().size`를 쓰면(112회가 37회로
+     * 줄어든다 — **활동량이 3분의 1로 보인다**).
+     */
+    @Test
+    fun 같은_종을_여러_번_찍으면_종수는_하나_발견은_여러_번이다() {
+        val records = listOf(
+            d("a", 1, aug6),
+            d("b", 1, aug6 - 86_400_000),
+            d("c", 1, aug6 - 172_800_000),
+            d("d", 2, aug6),
+        )
+        val stats = DiscoveryRules.profileStats(records)
+        assertEquals("모은 꽃", 2, stats.speciesCount)
+        assertEquals("총 발견", 4, stats.discoveryCount)
+    }
+
+    /**
+     * 🔴 **`공유`는 공개로 올린 것만이다.**
+     *
+     * 빨개지는 경우: `discoveries.size`를 쓰거나 `PRIVATE`가 아닌 것을 세면.
+     * 그러면 `나만 보기`로 저장한 기록이 `공유 26개`에 들어가서 **사용자가
+     * 자기 사진이 공개된 줄로 읽는다.** 화면 13에서 매번 고르는 값이라 실제로 섞인다.
+     */
+    @Test
+    fun 공유는_공개로_올린_것만_센다() {
+        val records = listOf(
+            d("a", 1, aug6, visibility = Visibility.PUBLIC),
+            d("b", 2, aug6, visibility = Visibility.PUBLIC),
+            d("c", 3, aug6, visibility = Visibility.FRIENDS),
+            d("d", 4, aug6, visibility = Visibility.PRIVATE),
+        )
+        val stats = DiscoveryRules.profileStats(records)
+        assertEquals("공유", 2, stats.shareCount)
+        // 나머지 두 칸은 공개 여부와 무관하게 전부 센다 — 내 도감은 내 것이다.
+        assertEquals(4, stats.speciesCount)
+        assertEquals(4, stats.discoveryCount)
+    }
+
+    /** `친구에게만`은 공유가 아니다. 위 테스트에서 가장 흔히 새는 값이라 따로 못 박는다. */
+    @Test
+    fun 친구에게만_공개는_공유가_아니다() {
+        val onlyFriends = listOf(d("a", 1, aug6, visibility = Visibility.FRIENDS))
+        assertEquals(0, DiscoveryRules.profileStats(onlyFriends).shareCount)
+    }
+
+    /** 기록이 없으면 세 칸 다 0이다. **여기서만 0이 맞는 값이다.** */
+    @Test
+    fun 기록이_없으면_전부_0이다() {
+        val stats = DiscoveryRules.profileStats(emptyList())
+        assertEquals(0, stats.speciesCount)
+        assertEquals(0, stats.discoveryCount)
+        assertEquals(0, stats.shareCount)
+    }
+
+    /**
+     * 지표 3칸은 **시즌과 무관한 누적치**다(와이어프레임 20 주석 ②).
+     *
+     * 빨개지는 경우: 시즌 필터([DiscoveryRules.seasonCollectedCount])를 끼워 넣으면.
+     * 그러면 시즌이 바뀌는 순간 `모은 꽃 37종`이 `0종`으로 떨어지고,
+     * **사용자는 도감이 초기화된 줄로 읽는다** — 화면 21이 "안 지워진다"고
+     * 약속한 바로 그 숫자다.
+     */
+    @Test
+    fun 지표는_시즌으로_자르지_않는다() {
+        val records = listOf(
+            // 시즌 1(3~8월) 안.
+            d("a", 1, aug6),
+            // 지난 시즌 — 2025년 10월. 시즌으로 자르면 이게 빠진다.
+            d("b", 2, at(2025, 10, 1, 12)),
+            // 휴지기(1월)에 찍은 것. 어느 시즌에도 안 들어간다.
+            d("c", 3, at(2026, 1, 15, 12)),
+        )
+        val stats = DiscoveryRules.profileStats(records)
+        assertEquals("누적 종수", 3, stats.speciesCount)
+        assertEquals("누적 발견", 3, stats.discoveryCount)
     }
 
     private object FailTransport : KakaoPlaceService.Transport {

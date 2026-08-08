@@ -119,12 +119,31 @@ private fun CatchFlowerRoot() {
     var friendsOpen by remember { mutableStateOf(false) }
     var seasonResultOpen by remember { mutableStateOf(false) }
 
+    // 화면 17의 `동네 선택하기`가 여는 자리.
+    //
+    // 🔴 **화면 02가 아직 없다.** 활동 지역을 안 정하면 서버 랭킹은 영원히 비므로,
+    //    버튼을 아무 데도 안 이으면 화면 17이 **빠져나갈 길 없는 빈 화면**이 된다.
+    //    조용히 무시하는 것(`{}`)이 최악이다 — "눌렀는데 아무 일도 안 났다"가 되고,
+    //    화면을 봐도 버그인지 미구현인지 구분되지 않는다. 그래서 지도 탭과 같은
+    //    [Placeholder]를 세워 **무엇이 들어올 자리인지 화면 번호로 보이게** 한다.
+    //    하단 내비가 그대로 보이므로 사용자는 다른 탭으로 나갈 수 있다.
+    var regionPickerOpen by remember { mutableStateOf(false) }
+
     // 화면 21은 **전면 화면**이다(와이어프레임 21 주석 ①: 시즌 종료 후 첫 실행 1회 강제 노출).
     // ⚠️ 탭 안에 넣었더니 하단 내비와 촬영 FAB이 위에 그려져서, FAB이 `결과 공유하기`
     //    버튼을 덮었다. 화면에서만 보이는 문제였다 — `시즌 2 시작하기`를 누르라는
     //    화면에서 다른 탭으로 샐 길을 열어 두는 것도 주석 ①과 어긋난다.
     if (seasonResultOpen) {
         SeasonResultScreen(
+            // 🔴 **`null`이다. 예시 결과를 넣지 않는다.** 지난 시즌 순위를 보관하는
+            //    곳이 서버에도 기기에도 없다 — 이유는 [SeasonResult]에 있다.
+            //    강제로 뜨는 화면에 `연남동 4위`를 그리면 한 번도 랭킹에 든 적 없는
+            //    사용자에게 4위를 받았다고 말한다.
+            result = null,
+            // 초기화 안내의 `모은 꽃 {N}종`. 도감과 **같은 값을 읽는다.**
+            stats = dexViewModel.profileStats,
+            // 시즌 번호를 박지 않는다 — `시즌 2 시작하기`가 시즌 3 뒤에도 나온다.
+            newSeasonLabel = "시즌 ${rankingViewModel.season.seasonIndex}",
             onStartNewSeason = { seasonResultOpen = false },
             onClose = { seasonResultOpen = false },
             modifier = Modifier
@@ -193,10 +212,14 @@ private fun CatchFlowerRoot() {
                             onBack = { friendsOpen = false },
                         )
 
+                        regionPickerOpen -> Placeholder("활동 지역 선택", "화면 02")
+
                         else -> RankingScreen(
                             vm = rankingViewModel,
                             onOpenFriends = { friendsOpen = true },
                             onOpenLastSeason = { seasonResultOpen = true },
+                            onPickRegion = { regionPickerOpen = true },
+                            onCapture = { tab = NavTab.CAPTURE },
                         )
                     }
 
@@ -206,10 +229,21 @@ private fun CatchFlowerRoot() {
                             onBack = { friendsOpen = false },
                         )
 
+                        // 화면 20 활동 지역 칸의 `동네 선택하기`도 같은 자리를 연다.
+                        // 랭킹 탭과 상태를 공유하므로 두 화면이 다른 곳으로 가지 않는다.
+                        regionPickerOpen -> Placeholder("활동 지역 선택", "화면 02")
+
                         else -> MyScreen(
+                            // 랭킹 탭과 **같은 ViewModel**을 읽는다 — 각자 물으면
+                            // 화면 17과 화면 20이 다른 동네를 말할 수 있다.
+                            profile = rankingViewModel.profile,
+                            // 지표 3칸은 **기기 기록**이다(누적치 · 오프라인에서도 있다).
+                            stats = dexViewModel.profileStats,
                             friendCount = rankingViewModel.friendCount,
                             onOpenFriends = { friendsOpen = true },
                             onOpenLastSeason = { seasonResultOpen = true },
+                            onPickRegion = { regionPickerOpen = true },
+                            onRetryProfile = rankingViewModel::refresh,
                         )
                     }
                 }
@@ -225,6 +259,7 @@ private fun CatchFlowerRoot() {
                 // 열어 둔 채 `랭킹`으로 갔을 때 랭킹 대신 친구 관리가 나온다.
                 friendsOpen = false
                 seasonResultOpen = false
+                regionPickerOpen = false
                 tab = selected
             },
             modifier = Modifier.align(Alignment.BottomCenter),

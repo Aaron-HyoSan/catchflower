@@ -106,9 +106,12 @@ class KakaoPlaceService(
                 if (chosen == null) chosen = d
             }
             val admin = chosen ?: return null
-            val code = admin.optString("code").ifEmpty { null }
+            // [stringOrNull]이다 — `"null"`이 코드로 들어오면 **그 문자열이 dong_code로
+            // 서버에 올라가고**, 앞 5자리 `"null"`이 gu_code가 된다. 랭킹 집계 단위가
+            // 오염되는데 업로드는 성공한다.
+            val code = admin.stringOrNull("code")
             PlaceInfo(
-                dongName = admin.optString("region_3depth_name").ifEmpty { null },
+                dongName = admin.stringOrNull("region_3depth_name"),
                 dongCode = code,
                 // 구 코드는 행정동 코드 앞 5자리다 (예 1120065000 → 11200).
                 guCode = code?.takeIf { it.length >= 5 }?.substring(0, 5),
@@ -131,7 +134,7 @@ class KakaoPlaceService(
         return try {
             val docs = JSONObject(body).optJSONArray("documents") ?: return null
             if (docs.length() == 0) return null
-            docs.getJSONObject(0).optString("place_name").ifEmpty { null }
+            docs.getJSONObject(0).stringOrNull("place_name")
         } catch (e: JSONException) {
             android.util.Log.w("CatchFlower", "장소 검색 응답을 읽을 수 없다", e)
             null

@@ -27,8 +27,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.catchflower.app.core.KoreanText
-import com.catchflower.app.data.DummyRanking
 import com.catchflower.app.data.model.RankedEntry
+import com.catchflower.app.data.model.RankingRules
 import com.catchflower.app.ui.component.CfSmallButton
 import com.catchflower.app.ui.component.CfTextButton
 import com.catchflower.app.ui.component.FlowerIllust
@@ -48,6 +48,14 @@ fun RankingScreen(
     vm: RankingViewModel,
     onOpenFriends: () -> Unit,
     onOpenLastSeason: () -> Unit,
+    /**
+     * 화면 02(활동 지역 선택)로 보낸다. 🔴 **이 화면이 아직 없다.**
+     * 지역을 안 정하면 서버 랭킹은 영원히 비므로, 화면 17만으로는 사용자가
+     * 빠져나갈 방법이 없다 — §9에 올렸다.
+     */
+    onPickRegion: () -> Unit,
+    /** 화면 07(카메라)로 보낸다 — 빈 동네의 `꽃 찍어보기`. */
+    onCapture: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxSize()) {
@@ -69,7 +77,7 @@ fun RankingScreen(
         RankingTabs(current = vm.tab, onSelect = vm::selectTab)
 
         when (vm.tab) {
-            RankingTab.REGION -> RegionRanking(vm)
+            RankingTab.REGION -> RegionRanking(vm, onPickRegion = onPickRegion, onCapture = onCapture)
             RankingTab.FRIENDS -> FriendRanking(vm, onInvite = onOpenFriends)
         }
     }
@@ -116,8 +124,18 @@ private fun RankingTabs(current: RankingTab, onSelect: (RankingTab) -> Unit) {
 
 // ── 화면 17 우리 동네 ────────────────────────────────────────────────
 
+/**
+ * 화면 17.
+ *
+ * 🔴 **랭킹이 없는 상태가 네 가지다.** 더미를 읽던 때는 랭킹이 **항상 있었다** —
+ *    서버를 붙이면서 생긴 분기이고, 하나로 뭉개면 다음이 섞인다:
+ *    "동네를 안 골랐다"(사용자가 할 일이 있다) · "아무도 안 찍었다"(정상) ·
+ *    "네트워크가 죽었다"(다시 시도) · "키 없는 빌드"(할 수 있는 게 없다).
+ *    문구는 A 문서 3절 `화면 17 지역 랭킹의 빈·실패 상태`를 쓴다.
+ */
 @Composable
-private fun RegionRanking(vm: RankingViewModel) {
+private fun RegionRanking(vm: RankingViewModel, onPickRegion: () -> Unit, onCapture: () -> Unit) {
+    val state = vm.region
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
@@ -129,23 +147,133 @@ private fun RegionRanking(vm: RankingViewModel) {
         ),
         verticalArrangement = Arrangement.spacedBy(CfDimen.Gap),
     ) {
-        item { SeasonBanner(vm) }
-        item { MyRankCard(vm) }
-        item {
+        // 시즌 배너는 랭킹과 무관하게 항상 맞는 정보다(마감까지 남은 일수).
+        item { SeasonBanner(vm, state) }
+
+        when (state) {
+            // A 문서: 로딩은 **문구를 두지 않는다.** `아직 없어요`를 깜빡이면
+            // 랭킹이 있는 사용자에게도 없다고 말하는 순간이 생긴다.
+            RegionRankingUi.Loading -> item { RankingLoading() }
+
+            RegionRankingUi.NoRegion -> item {
+                RegionEmptyState(
+                    title = "활동 지역을 정하면 순위를 볼 수 있어요",
+                    // 화면 02 `설명 1`과 **같은 문장**이다 — 같은 것을 설명하는 두
+                    // 화면이 다른 말을 하면 사용자가 다른 기능으로 읽는다.
+                    body = "같은 동네 이웃들과 꽃 수집 순위를 겨루게 됩니다.",
+                    action = "동네 선택하기",
+                    onAction = onPickRegion,
+                )
+            }
+
+            RegionRankingUi.Empty -> item {
+                RegionEmptyState(
+                    title = "아직 이 동네에 모은 꽃이 없어요",
+                    body = "첫 번째로 남겨보세요",
+                    action = "꽃 찍어보기",
+                    onAction = onCapture,
+                )
+            }
+
+            RegionRankingUi.Failed -> item {
+                RegionEmptyState(
+                    // 3절 토스트의 네트워크 오류 문구를 재사용한다.
+                    title = "연결이 불안정해요. 잠시 후 다시 시도해 주세요.",
+                    body = null,
+                    action = "다시 시도",
+                    onAction = vm::refresh,
+                    secondary = true,
+                )
+            }
+
+            // 키 없는 빌드 — 오류도 버튼도 띄우지 않는다. 눌러도 안 되고 사용자 탓이 아니다.
+            RegionRankingUi.NotConfigured -> Unit
+
+            is RegionRankingUi.Loaded -> {
+                item { MyRankCard(vm, state) }
+                item {
+                    Text(
+                        // `연남동 이웃 1,284명`. 🔴 B-6이 구로 넓히면 **구명**이 온다 —
+                        // 동명을 박아 두면 마포구 전체 순위를 연남동이라고 말한다.
+                        "${state.regionLabel} 이웃 ${KoreanText.thousands(state.memberCount)}명",
+                        style = CfText.Section,
+                        color = CfColor.TextPrimary,
+                    )
+                }
+                items(state.rows) { ranked -> RankRow(ranked, vm) }
+                item {
+                    // `6위부터 더 보기` — 마지막 행의 **순위 다음**이다.
+                    // ⚠️ `rows.size + 1`로 세면 안 된다: 동점자가 있으면 5행이 4위까지일
+                    //    수 있어서 이미 보여 준 순위를 다시 가리킨다.
+                    CfTextButton(
+                        text = "${(state.rows.lastOrNull()?.rank ?: 0) + 1}위부터 더 보기",
+                        onClick = { /* TODO(§9): 페이지 추가 로드 — 서버 함수에 offset이 없다 */ },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 랭킹을 불러오는 중.
+ *
+ * ⚠️ **`0종`·`-위` 같은 빈 값을 그리지 않는다.** 그러면 41종을 모은 사용자가
+ *    화면을 열 때마다 0종을 먼저 본다 — 도감 `loaded` 플래그를 둔 것과 같은 이유다.
+ */
+@Composable
+private fun RankingLoading() {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = CfDimen.GapLarge),
+        contentAlignment = Alignment.Center,
+    ) {
+        androidx.compose.material3.CircularProgressIndicator(color = CfColor.Primary)
+    }
+}
+
+/**
+ * 랭킹이 없을 때. 문구는 **전부 A 문서 3절**에서 온다.
+ *
+ * ⚠️ 상태마다 **행동 버튼이 다르다** — 같은 "비었어요" 화면을 돌려 쓰면
+ *    동네를 안 고른 사람에게 `꽃 찍어보기`를 내밀게 되고, 그 사람은 찍어도
+ *    순위가 안 생긴다.
+ */
+@Composable
+private fun RegionEmptyState(
+    title: String,
+    body: String?,
+    action: String,
+    onAction: () -> Unit,
+    secondary: Boolean = false,
+) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = CfDimen.GapLarge),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            title,
+            style = CfText.Section,
+            color = CfColor.TextPrimary,
+            textAlign = TextAlign.Center,
+        )
+        if (body != null) {
+            Spacer(Modifier.height(CfDimen.GapSmall))
             Text(
-                // `연남동 이웃 1,284명`
-                "${DummyRanking.MY_DONG} 이웃 ${KoreanText.thousands(DummyRanking.NEIGHBOR_COUNT)}명",
-                style = CfText.Section,
-                color = CfColor.TextPrimary,
+                body,
+                style = CfText.Body,
+                color = CfColor.TextSecondary,
+                textAlign = TextAlign.Center,
             )
         }
-        items(vm.regionTop) { ranked -> RankRow(ranked, vm) }
-        item {
-            // `6위부터 더 보기` — 상위 5명만 있으므로 다음 순위를 계산해 붙인다.
-            CfTextButton(
-                text = "${vm.regionTop.size + 1}위부터 더 보기",
-                onClick = { /* TODO(서버 붙은 뒤): 페이지 추가 로드 */ },
-            )
+        Spacer(Modifier.height(CfDimen.Gap))
+        if (secondary) {
+            com.catchflower.app.ui.component.CfSecondaryButton(text = action, onClick = onAction)
+        } else {
+            com.catchflower.app.ui.component.CfPrimaryButton(text = action, onClick = onAction)
         }
     }
 }
@@ -158,7 +286,7 @@ private fun RegionRanking(vm: RankingViewModel) {
  *    [com.catchflower.app.core.SeasonClock]이 문장까지 만든다.
  */
 @Composable
-private fun SeasonBanner(vm: RankingViewModel) {
+private fun SeasonBanner(vm: RankingViewModel, state: RegionRankingUi) {
     val season = vm.season
     Row(
         Modifier
@@ -171,12 +299,15 @@ private fun SeasonBanner(vm: RankingViewModel) {
         Column(Modifier.weight(1f)) {
             Text(season.title, style = CfText.BodyBold, color = CfColor.Primary)
             Spacer(Modifier.height(CfDimen.GapTiny))
-            Text(
-                "${DummyRanking.MY_DONG} 꽃 수집 순위",
-                style = CfText.Body,
-                color = CfColor.TextPrimary,
-            )
-            Spacer(Modifier.height(CfDimen.GapTiny))
+            // `{동명} 꽃 수집 순위`.
+            // ⚠️ **지역명을 모를 때 이 줄을 아예 쓰지 않는다.** 더미 시절에는 항상
+            //    `연남동`이 있었지만, 지역을 안 정했거나 조회에 실패하면 이름이 없다.
+            //    빈칸을 두면 ` 꽃 수집 순위`가 되고, 기본값을 넣으면 **남의 동네
+            //    이름을 내 화면에 박는다.**
+            (state as? RegionRankingUi.Loaded)?.regionLabel?.takeIf { it.isNotEmpty() }?.let {
+                Text("$it 꽃 수집 순위", style = CfText.Body, color = CfColor.TextPrimary)
+                Spacer(Modifier.height(CfDimen.GapTiny))
+            }
             Text(vm.deadlineLabel, style = CfText.Caption, color = CfColor.TextSecondary)
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -190,9 +321,17 @@ private fun SeasonBanner(vm: RankingViewModel) {
  * 내 순위 고정 카드 — 리스트를 스크롤해 자기를 찾게 하지 않는다 (주석 ③).
  *
  * `3종만 더 모으면 15위권!`은 **행동으로 이어지는 문장**이라 순위보다 중요하다.
+ *
+ * 🔴 **더미가 만들어 주던 값 두 개가 서버에는 없다.**
+ *    ① `▲ 3`(지난 시즌 대비 변동) — 서버가 안 보낸다. 0을 넣으면 `-`가 그려지고
+ *      사용자는 **"순위가 안 변했다"는 정보로 읽는다.** 우리는 모르는 것이다.
+ *    ② 내가 상위 목록 밖이면(6위 이하) 내 행이 아예 없다. `0위`로 채우면
+ *      **1등보다 위에 있는 순위**를 그린다.
+ *    둘 다 **문장을 지운다.** 없는 정보를 그리는 것보다 안 그리는 게 정직하다.
  */
 @Composable
-private fun MyRankCard(vm: RankingViewModel) {
+private fun MyRankCard(vm: RankingViewModel, state: RegionRankingUi.Loaded) {
+    val mine = vm.myRegionRank
     Column(
         Modifier
             .fillMaxWidth()
@@ -203,32 +342,53 @@ private fun MyRankCard(vm: RankingViewModel) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("내 순위", style = CfText.Body, color = CfColor.TextSecondary)
             Spacer(Modifier.width(CfDimen.GapSmall))
-            Text(
-                "${DummyRanking.MY_REGION_RANK}위",
-                style = CfText.Section,
-                color = CfColor.TextPrimary,
-            )
-            Spacer(Modifier.width(CfDimen.GapSmall))
-            RankDelta(DummyRanking.MY_REGION_RANK_DELTA)
+            if (mine != null) {
+                Text("${mine.rank}위", style = CfText.Section, color = CfColor.TextPrimary)
+                Spacer(Modifier.width(CfDimen.GapSmall))
+                // 서버가 변동을 안 주므로 null이고, 그때 RankDelta는 아무것도 안 그린다.
+                RankDelta(mine.delta)
+            } else {
+                // 상위 목록 밖이다. `-`는 "변동 없음"과 헷갈리지 않는 자리다.
+                Text("-", style = CfText.Section, color = CfColor.TextTertiary)
+            }
             Spacer(Modifier.weight(1f))
             Column(horizontalAlignment = Alignment.End) {
                 Text("이번 시즌 모은 꽃", style = CfText.Tiny, color = CfColor.TextTertiary)
+                // ⚠️ 지역 랭킹의 내 행에서 읽는다. 친구 랭킹(vm.me)에서 읽으면
+                //    **친구가 없으면 0종이 되고**, 같은 사용자의 종수가 화면마다 달라진다.
                 Text(
-                    "${vm.me?.entry?.speciesCount ?: 0}종",
+                    "${mine?.entry?.speciesCount ?: 0}종",
                     style = CfText.BodyBold,
                     color = CfColor.Primary,
                 )
             }
         }
-        Spacer(Modifier.height(CfDimen.GapSmall))
-        Text(
-            "${DummyRanking.REGION_SPECIES_TO_TARGET}종만 더 모으면 " +
-                "${DummyRanking.REGION_TARGET_RANK}위권!",
-            style = CfText.Body,
-            color = CfColor.Primary,
-        )
+        // `{N}종만 더 모으면 {M}위권!` — 목표 순위 안에 들려면 몇 종이 더 필요한지를
+        // **받은 목록에서 계산한다.** 더미의 3·15는 그냥 박아 둔 숫자였다.
+        // 이미 목표 안이거나 내 행이 없으면 [RankingRules]가 null을 주고, 그때
+        // **문장을 쓰지 않는다** — `0종만 더 모으면`은 말이 안 된다.
+        val target = mine?.let {
+            RankingRules.speciesToReach(state.rows, myRank = it.rank, targetRank = TARGET_RANK)
+        }
+        if (target != null) {
+            Spacer(Modifier.height(CfDimen.GapSmall))
+            Text(
+                "${target}종만 더 모으면 ${TARGET_RANK}위권!",
+                style = CfText.Body,
+                color = CfColor.Primary,
+            )
+        }
     }
 }
+
+/**
+ * `{N}종만 더 모으면 {M}위권!`의 목표 순위.
+ *
+ * ⚠️ 와이어프레임 예시가 `15위권`이라 그 숫자를 쓴다. **게임 규칙이 아니라 화면
+ *    문구의 기준**이라 [com.catchflower.app.core.GamePolicy]에 넣지 않았다
+ *    (랭킹 최소 인원과 다른 성격이다).
+ */
+private const val TARGET_RANK = 15
 
 /**
  * 순위 변동 `▲ 3`.
@@ -237,7 +397,10 @@ private fun MyRankCard(vm: RankingViewModel) {
  *    사용자에게는 숫자만 남는다. 기호(▲▼)와 숫자를 함께 쓴다.
  */
 @Composable
-private fun RankDelta(delta: Int) {
+private fun RankDelta(delta: Int?) {
+    // 🔴 **모를 때(null)는 아무것도 그리지 않는다.** `-`를 그리면 "변동 없음"으로
+    //    읽히는데, 서버는 지난 시즌 순위를 아예 보내지 않는다. 0과 null은 다르다.
+    if (delta == null) return
     if (delta == 0) {
         Text("-", style = CfText.Caption, color = CfColor.TextTertiary)
         return
@@ -350,8 +513,32 @@ private fun RankBadge(rank: Int) {
 
 @Composable
 private fun FriendRanking(vm: RankingViewModel, onInvite: () -> Unit) {
+    // 🔴 **응답이 오기 전에 초대 화면을 띄우면 안 된다.** 친구가 8명인 사용자도
+    //    탭을 열 때마다 `아직 겨룰 친구가 없어요`를 먼저 보게 된다 —
+    //    더미를 읽던 때는 목록이 항상 있었으니 없던 문제다.
+    when (vm.friends) {
+        FriendRankingUi.Loading -> {
+            RankingLoading()
+            return
+        }
+        FriendRankingUi.Failed -> {
+            // 실패를 `친구가 없다`로 보여주면 사용자는 **친구가 사라졌다고 읽는다.**
+            RegionEmptyState(
+                title = "연결이 불안정해요. 잠시 후 다시 시도해 주세요.",
+                body = null,
+                action = "다시 시도",
+                onAction = vm::refresh,
+                secondary = true,
+            )
+            return
+        }
+        // 키 없는 빌드에서는 친구 기능 자체가 없다 — 초대 화면을 보여준다(할 일이 있다).
+        FriendRankingUi.NotConfigured -> Unit
+        is FriendRankingUi.Loaded -> Unit
+    }
+
     // 친구 0~2명이면 랭킹 자체가 무의미하므로 초대 화면으로 **전체 대체** (주석 ④).
-    if (vm.effectiveShowInvite) {
+    if (vm.effectiveShowInvite || vm.friends is FriendRankingUi.NotConfigured) {
         NoFriendsInvite(onInvite = onInvite, onToggleDebug = vm::toggleNoFriends)
         return
     }
@@ -368,8 +555,10 @@ private fun FriendRanking(vm: RankingViewModel, onInvite: () -> Unit) {
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // A 문서 `친구 수를 모를 때의 문구` — 못 세면 **숫자만 뺀다.**
+                // 🔴 `0명`을 넣으면 틀린 말인 데다 초대 화면 조건과 겹친다.
                 Text(
-                    "친구 ${vm.friendCount}명과 겨루는 중",
+                    vm.friendCount?.let { "친구 ${it}명과 겨루는 중" } ?: "친구와 겨루는 중",
                     style = CfText.Section,
                     color = CfColor.TextPrimary,
                 )

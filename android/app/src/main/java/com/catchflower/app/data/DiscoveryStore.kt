@@ -176,9 +176,14 @@ class DiscoveryStore(private val file: File) {
             capturedAt = decodeTime(o.getString(K_CAPTURED_AT)),
         )
 
-        /** 없는 키와 빈 문자열을 똑같이 null로 본다. `optString`은 없을 때 ""를 준다. */
-        private fun JSONObject.orNull(key: String): String? =
-            if (!has(key) || isNull(key)) null else getString(key).ifEmpty { null }
+        /**
+         * 없는 키 · JSON `null` · 빈 문자열을 똑같이 null로 본다.
+         *
+         * ⚠️ **[stringOrNull]과 같은 판정이다**(`isNull`을 먼저 본다). 그쪽 주석에
+         *    왜 `optString`만으로는 안 되는지 — 그리고 왜 JVM 테스트가 그걸
+         *    못 잡는지 — 실측 표가 있다.
+         */
+        private fun JSONObject.orNull(key: String): String? = stringOrNull(key)
     }
 
     /** 전부 읽는다. 없으면 빈 목록. */

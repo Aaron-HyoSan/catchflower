@@ -308,8 +308,11 @@ class AuthService(
             val expiresIn = o.optLong("expires_in", 0L)
             return Session(
                 userId = o.getJSONObject("user").getString("id"),
-                accessToken = o.optString("access_token").ifEmpty { null },
-                refreshToken = o.optString("refresh_token").ifEmpty { null },
+                // [stringOrNull]이다 — 토큰이 JSON `null`로 오면 안드로이드에서는
+                // 문자열 `"null"`이 되어 **`Bearer null`을 헤더에 실어 보낸다.**
+                // 401이 아니라 "토큰이 있는데 거부당했다"로 보여서 원인을 못 찾는다.
+                accessToken = o.stringOrNull("access_token"),
+                refreshToken = o.stringOrNull("refresh_token"),
                 // `expires_in`이 없으면 0을 남긴다 — "만료 시각을 모른다"는
                 // **곧 만료됐다로 취급**해야 안전하다. 먼 미래를 넣으면 401을 맞는다.
                 expiresAt = if (expiresIn > 0L) now + expiresIn * 1000L else 0L,

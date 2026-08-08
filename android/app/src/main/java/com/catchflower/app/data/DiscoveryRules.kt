@@ -1,6 +1,7 @@
 package com.catchflower.app.data
 
 import com.catchflower.app.core.GamePolicy
+import com.catchflower.app.core.Visibility
 import com.catchflower.app.data.model.Discovery
 import java.util.Calendar
 import java.util.TimeZone
@@ -109,6 +110,31 @@ object DiscoveryRules {
         }
         return samePlace >= limit
     }
+
+    /**
+     * 화면 20 지표 3칸 `모은 꽃 37종 / 총 발견 112회 / 공유 26개`.
+     *
+     * ⚠️ **시즌과 무관한 누적치다**(와이어프레임 20 주석 ②). 랭킹의 `13종`과 여기
+     *    `37종`이 다른 것은 버그가 아니다. 두 값을 같게 만드는 '수정'을 하지 않는다.
+     *
+     * ⚠️ **서버에 묻지 않고 기기 기록으로 센다.** 서버 `my_season_summary`는
+     *    **이번 시즌**만 세므로(실측) 이 칸의 정의와 다르다. 그리고 기기 기록은
+     *    오프라인에서도 있다 — 업로드가 밀렸다고 내 지표가 줄어들면 안 된다.
+     */
+    fun profileStats(discoveries: List<Discovery>): ProfileStats = ProfileStats(
+        speciesCount = collectedIds(discoveries).size,
+        discoveryCount = discoveries.size,
+        // 🔴 `공유`는 **공개로 올린 것**만이다. `친구에게만`·`나만 보기`까지 세면
+        //    "나만 보기로 저장했는데 공유 26개"가 되어 사용자가 **공개된 줄로 읽는다.**
+        //    화면 13에서 매번 고르는 값이라 실제로 섞인다.
+        shareCount = discoveries.count { it.visibility == Visibility.PUBLIC },
+    )
+
+    data class ProfileStats(
+        val speciesCount: Int,
+        val discoveryCount: Int,
+        val shareCount: Int,
+    )
 
     /** 화면 10 `12번째 꽃` — 이 종이 새로 들어간 뒤의 도감 순번. */
     fun dexOrderAfterAdding(discoveries: List<Discovery>, flowerId: Int): Int {

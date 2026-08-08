@@ -66,7 +66,8 @@ private enum class FriendTab { MINE, INVITE }
  */
 @Composable
 fun FriendsScreen(
-    friendCount: Int,
+    /** `null`이면 **모른다** — 숫자를 안 쓴다(A 문서 `친구 수를 모를 때의 문구`). */
+    friendCount: Int?,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -96,7 +97,8 @@ fun FriendsScreen(
         )
 
         Row(Modifier.fillMaxWidth()) {
-            FriendTabItem("내 친구 $friendCount", tab == FriendTab.MINE) { tab = FriendTab.MINE }
+            val mineLabel = friendCount?.let { "내 친구 $it" } ?: "내 친구"
+            FriendTabItem(mineLabel, tab == FriendTab.MINE) { tab = FriendTab.MINE }
             FriendTabItem("초대하기", tab == FriendTab.INVITE) { tab = FriendTab.INVITE }
         }
 
@@ -213,7 +215,7 @@ private fun ContactsDeniedFallback() {
 
 /** `내 친구 {n}` 탭 — 이미 친구인 사람. 랭킹과 같은 목록이라 닉네임만 보여준다. */
 @Composable
-private fun MyFriendsList(friendCount: Int) {
+private fun MyFriendsList(friendCount: Int?) {
     // 목록을 한 번만 만든다. `items` 블록 안에서 `friends()`를 다시 부르면
     // 행마다 리스트를 새로 만들고 필터링한다.
     val friends = remember { DummyRanking.friends().filterNot { it.isMe } }
@@ -224,7 +226,7 @@ private fun MyFriendsList(friendCount: Int) {
     ) {
         item {
             Text(
-                "친구 ${friendCount}명",
+                friendCount?.let { "친구 ${it}명" } ?: "친구",
                 style = CfText.Section,
                 color = CfColor.TextPrimary,
             )

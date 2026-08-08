@@ -34,8 +34,15 @@ class DiscoveryRepository(
      *    그동안의 기록을 옮긴다).
      */
     userId: String,
-    /** null이면 로그인을 시도하지 않는다 (테스트·오프라인 전용). */
-    private val auth: AuthAccount? = null,
+    /**
+     * null이면 로그인을 시도하지 않는다 (테스트·오프라인 전용).
+     *
+     * ⚠️ **`internal val`이다** — 랭킹 조회([RankingService])가 **같은 인스턴스**를
+     *    써야 한다. 새로 만들면 토큰 갱신이 서로 다른 prefs 인스턴스를 통해 일어나
+     *    회전된 `refresh_token`을 덮어쓰고, **며칠 뒤 조용히 로그인이 끊긴다.**
+     *    아래 [get]이 이미 같은 이유로 하나만 만들고 있다.
+     */
+    internal val auth: AuthAccount? = null,
     /** null이면 서버에 올리지 않는다 (테스트·오프라인 전용). */
     private val uploader: UploadSink? = null,
     /** [uploader]와 짝이다. 둘 중 하나만 있으면 업로드하지 않는다. */

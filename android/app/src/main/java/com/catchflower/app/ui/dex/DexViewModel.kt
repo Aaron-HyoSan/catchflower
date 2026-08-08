@@ -125,6 +125,20 @@ class DexViewModel(app: Application) : AndroidViewModel(app) {
     val recentDiscoveries: List<Discovery>
         get() = DiscoveryRules.recentDiscoveries(visibleRecords, RECENT_LIMIT)
 
+    /**
+     * 화면 20 지표 3칸 `모은 꽃 37종 / 총 발견 112회 / 공유 26개`.
+     *
+     * 🔴 **읽는 중에는 `null`이다. 0으로 그리지 않는다.** [loading]이 있는 이유와
+     *    같다 — 200종을 모은 사용자가 마이 탭을 열 때마다 `모은 꽃 0종`을 한 프레임
+     *    보게 된다. 파일을 읽기 전이라 **모르는 것**이고, 0은 사실 주장이다.
+     *
+     * ⚠️ **화면 20이 [DiscoveryRepository]를 다시 열지 않고 여기서 받아 간다.**
+     *    같은 저장소를 두 ViewModel이 각자 읽으면 한쪽이 옛 목록을 들고 있을 수 있다
+     *    (등록 직후가 그렇다) — 그러면 도감은 38종인데 마이는 37종이 된다.
+     */
+    val profileStats: DiscoveryRules.ProfileStats?
+        get() = if (loading) null else DiscoveryRules.profileStats(visibleRecords)
+
     /** 필터가 적용된 그리드. 화면 04의 3열 그리드가 이걸 그린다. */
     val visibleFlowers: List<Flower>
         get() = filter.apply(allFlowers, collectedIds)

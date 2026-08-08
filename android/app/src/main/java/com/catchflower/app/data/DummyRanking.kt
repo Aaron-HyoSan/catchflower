@@ -120,34 +120,7 @@ object DummyRanking {
         Badge("첫 발견", "2026.3"),
     )
 
-    /** 화면 21 지난 시즌 기록. */
-    val lastSeason = SeasonResult(
-        seasonLabel = "시즌 1",
-        rank = 4,
-        neighborCount = NEIGHBOR_COUNT,
-        speciesCount = 24,
-        discoveryCount = 68,
-        shareCount = 19,
-        bestRank = 3,
-        awardedBadge = "봄꽃 수집가",
-    )
-
     data class Contact(val name: String, val phone: String)
 
     data class Badge(val name: String, val periodLabel: String)
-
-    data class SeasonResult(
-        val seasonLabel: String,
-        val rank: Int,
-        val neighborCount: Int,
-        val speciesCount: Int,
-        val discoveryCount: Int,
-        val shareCount: Int,
-        val bestRank: Int,
-        /**
-         * 받은 배지. 화면 21 주석 ②: 순위형(1~3위)과 달성형 2계열이고
-         * **4위는 순위형 미지급 → 달성형만** 표시한다.
-         */
-        val awardedBadge: String?,
-    )
 }

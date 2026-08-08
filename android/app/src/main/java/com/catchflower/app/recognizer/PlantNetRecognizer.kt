@@ -1,6 +1,7 @@
 package com.catchflower.app.recognizer
 
 import com.catchflower.app.core.GamePolicy
+import com.catchflower.app.data.stringOrNull
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -106,9 +107,10 @@ class PlantNetRecognizer(
 
         for (i in 0 until results.length()) {
             val item = results.optJSONObject(i) ?: continue
+            // [stringOrNull]이다 — 학명이 JSON `null`이면 안드로이드에서 `"null"`이
+            // 되고, 그 문자열을 색인에서 찾다가 못 찾아 **후보가 조용히 하나 빠진다.**
             val name = item.optJSONObject("species")
-                ?.optString("scientificNameWithoutAuthor")
-                ?.takeIf { it.isNotEmpty() } ?: continue
+                ?.stringOrNull("scientificNameWithoutAuthor") ?: continue
 
             // **후보 집합을 색인에 넘긴다.** 안 넘기면 속 대표가 도감번호 최솟값으로 정해져서
             // 8월에 `Rosa chinensis 0.606`(정답)이 `찔레꽃`(5~6월)으로 번역되고 탈락한다.

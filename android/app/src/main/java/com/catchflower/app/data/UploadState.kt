@@ -121,7 +121,9 @@ class UploadState(
 
     private fun JSONArray?.toSet(): Set<String> {
         if (this == null) return emptySet()
-        return (0 until length()).mapNotNullTo(HashSet()) { optString(it).ifEmpty { null } }
+        // [stringOrNull]이다 — `"null"`이 전송 완료 id로 들어오면 **없는 발견을
+        // 올린 것으로 기록**하고, 진짜 기록 하나가 영원히 안 올라간다.
+        return (0 until length()).mapNotNullTo(HashSet()) { stringOrNull(it) }
     }
 
     companion object {
