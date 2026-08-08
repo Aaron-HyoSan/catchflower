@@ -35,7 +35,16 @@ data class Flower(
     /** 이 달에 피는가. 개화월 하드 필터의 판정. */
     fun bloomsIn(month: Int): Boolean = month in bloomMonths
 
-    /** 일러스트 파일명 규칙 (C 발주서 2절): `flower_081_장미.svg` */
+    /**
+     * 일러스트 assets 경로. **번호만 쓴다.**
+     *
+     * ⚠️ 원래 C 발주서 2절의 `flower_081_장미.svg`를 그대로 조립했는데,
+     *    **실제 납품은 PNG이고 이름으로 찾으면 안 된다.** macOS 파일명의 한글은
+     *    **NFD(자모 분리)** 로 저장되고 `flowers.json`의 `name`은 NFC라서,
+     *    이름을 붙여 만든 문자열은 **200종 전부 파일과 불일치**한다
+     *    (`개나리`.length가 3 vs 6 — 눈으로는 같은 글자다).
+     *    빌드가 복사할 때 이름을 버리고 번호만 남기는 이유가 이것이다.
+     */
     val illustAssetName: String
-        get() = "flower_%03d_%s".format(id, name)
+        get() = "flower_illust/%03d.png".format(id)
 }

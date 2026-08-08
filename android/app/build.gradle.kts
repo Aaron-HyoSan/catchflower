@@ -63,14 +63,29 @@ android {
 }
 
 // 도감 200종 데이터는 `꽃도감/flowers.json`이 원본이다 (공유 자산 — iOS도 같은 파일을 쓴다).
+// 꽃 일러스트 200장(`꽃도감/꽃도감_일러스트/*.png`)도 같은 규칙으로 원본이다.
 // assets로 손으로 복사하면 조용히 낡는다. 빌드마다 원본에서 가져온다.
 //
 // ⚠️ AGP 9는 sourceSets에 Provider를 못 넣는다("You cannot add Provider instances to the
 //    Android SourceSet API"). Variant API의 addGeneratedSourceDirectory를 쓰면
 //    태스크 의존성도 자동으로 걸린다.
+//
+// ⚠️ **일러스트를 `res/drawable`이 아니라 `assets`에 넣는다.** 안드로이드 리소스
+//    이름은 `[a-z0-9_]`만 허용해서 `001_개나리`가 들어갈 수 없다. 영문 변환표를 만들면
+//    표와 파일이 어긋날 때 **그림만 조용히 안 나온다**(예외도 안 난다).
+//    assets는 파일명을 그대로 쓰므로 도감번호로 바로 찾는다.
+//
+// ⚠️ **파일명은 도감번호로만 찾는다.** macOS 파일명은 한글이 **NFD(자모 분리)** 로
+//    저장되는데 `flowers.json`의 이름은 NFC다 — `"001_개나리.png"`를 이름으로 조립해
+//    비교하면 **200종 전부 불일치**한다(실제로 겪었다). 그래서 복사 단계에서
+//    **`001.png`처럼 번호만 남기고 이름을 버린다.** 이름을 자산 키로 쓰지 않는다.
 abstract class SyncSharedAssets : DefaultTask() {
     @get:InputFile
     abstract val source: RegularFileProperty
+
+    /** `꽃도감/꽃도감_일러스트` 원본 디렉터리. */
+    @get:InputDirectory
+    abstract val illustSource: DirectoryProperty
 
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
@@ -80,6 +95,25 @@ abstract class SyncSharedAssets : DefaultTask() {
         val target = outputDir.get().asFile
         target.mkdirs()
         source.get().asFile.copyTo(target.resolve("flowers.json"), overwrite = true)
+
+        // 일러스트: `001_개나리 1.png` → `flower_illust/001.png`
+        val illustDir = target.resolve("flower_illust")
+        illustDir.deleteRecursively()
+        illustDir.mkdirs()
+
+        val numbered = "^(\\d{3})_.*\\.png$".toRegex()
+        var copied = 0
+        val seen = mutableSetOf<String>()
+        illustSource.get().asFile.listFiles().orEmpty().sorted().forEach { f ->
+            val id = numbered.find(f.name)?.groupValues?.get(1) ?: return@forEach
+            // 같은 번호가 두 개면(`001_개나리.png`와 `001_개나리 2.png`) 조용히
+            // 하나가 이기고 어느 쪽이 들어갔는지 알 수 없다. 빌드를 세운다.
+            check(seen.add(id)) { "일러스트 도감번호 $id 가 중복이다: ${f.name}" }
+            f.copyTo(illustDir.resolve("$id.png"), overwrite = true)
+            copied++
+        }
+        // 200장 중 몇 장이 빠져도 앱은 잘 돈다 — 그 칸만 빈다. 그래서 여기서 센다.
+        logger.lifecycle("꽃 일러스트 $copied 장을 assets/flower_illust 로 복사했다")
     }
 }
 
@@ -89,8 +123,13 @@ androidComponents {
         check(sharedJson.asFile.exists()) {
             "꽃도감/flowers.json이 없다. `python3 꽃도감/_tools/build_app_data.py`를 먼저 돌린다."
         }
+        val illustDir = rootProject.layout.projectDirectory.dir("../꽃도감/꽃도감_일러스트")
+        check(illustDir.asFile.isDirectory) {
+            "꽃도감/꽃도감_일러스트 폴더가 없다. 일러스트 원본을 그 자리에 둔다."
+        }
         val task = tasks.register<SyncSharedAssets>("sync${variant.name.replaceFirstChar(Char::uppercase)}SharedAssets") {
             source.set(sharedJson)
+            illustSource.set(illustDir)
         }
         variant.sources.assets?.addGeneratedSourceDirectory(task, SyncSharedAssets::outputDir)
     }

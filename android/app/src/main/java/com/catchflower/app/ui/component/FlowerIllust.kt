@@ -1,36 +1,86 @@
 package com.catchflower.app.ui.component
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.catchflower.app.data.model.Flower
 import com.catchflower.app.ui.theme.CfColor
 
 /**
- * 꽃 일러스트.
+ * 꽃 일러스트 — **실제 납품 아트를 그린다** (2026-08-08).
  *
- * ⚠️ **200종 SVG는 아직 없다.** `디자이너_업무/C_꽃일러스트_발주서.md`는 발주서이고,
- *    산출물(`flower_{3자리}_{이름}.svg`)은 아직 납품 전이다.
+ * 원본은 `꽃도감/꽃도감_일러스트/{번호}_{이름} 1.png` 200장이고, 빌드가 번호만 남겨
+ * `assets/flower_illust/`로 복사한다. 읽는 것은 [FlowerIllustLoader].
  *
- * 그래서 지금은 꽃 색·꽃잎 수로 그리는 **플레이스홀더**를 쓴다.
- * 목적은 "그림처럼 보이게"가 아니라 **레이아웃과 색 배치를 실제 크기로 검증**하는 것이다.
- * - 종마다 다르게 보인다 (id로 꽃잎 수·회전을 흔든다) → 그리드에서 200칸이 구분된다
- * - 실제 색을 쓴다 → B-1-1의 "UI 저채도 / 일러스트 다채로움" 충돌 여부를 지금 볼 수 있다
+ * ⚠️ **발주서는 SVG였지만 실제로 온 것은 PNG 512×512다.** 안드로이드는 SVG를 직접
+ *    렌더하지 못하므로(빌드 시점에 `VectorDrawable`로 변환해야 한다) PNG가 오히려 안전하다.
+ *    다만 벡터가 아니라서 **원본보다 크게 그리면 뭉갠다** — 지금 최대 사용처는 132dp이고
+ *    3x 기기에서 396px이라 512px 안이다. 더 크게 쓰는 화면이 생기면 원본을 다시 받아야 한다.
  *
- * SVG가 오면 [FlowerIllust] 내부만 교체한다. 호출부는 [Flower.illustAssetName]을
- * 이미 알고 있으므로 바뀌지 않는다.
+ * ⚠️ **파일을 못 찾으면 플레이스홀더로 되돌린다.** 예외를 던지지 않는다 — 일러스트 한 장이
+ *    없다고 도감을 못 열게 만들 이유가 없다. 대신 **빈 칸이 조용히 생기는 것**이
+ *    이 방식의 유일한 위험이라, 200장이 다 있는지는 테스트가 센다
+ *    ([com.catchflower.app.ui.component.FlowerIllustAssetTest]).
  */
 @Composable
 fun FlowerIllust(
+    flower: Flower,
+    size: Dp,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val density = LocalDensity.current
+    val reqPx = with(density) { size.roundToPx() }
+
+    // 디코딩은 파일 I/O다. `remember`로 묶지 않으면 리컴포지션마다 다시 읽는다
+    // (그리드 스크롤에서 바로 티가 난다). 키에 크기를 넣는 이유는 같은 꽃을
+    // 셀과 상세에서 다른 크기로 쓰기 때문이다.
+    val bitmap = remember(flower.id, reqPx) {
+        FlowerIllustLoader.load(context, flower, reqPx)
+    }
+
+    if (bitmap == null) {
+        // 납품 누락 · 복사 실패. 옛 플레이스홀더로 되돌린다.
+        FlowerIllustPlaceholder(flower = flower, size = size, modifier = modifier)
+        return
+    }
+
+    Image(
+        bitmap = bitmap.asImageBitmap(),
+        // 이름은 셀 아래 텍스트가 말한다. 여기서 또 읽으면 중복 낭독이 된다.
+        contentDescription = null,
+        // ⚠️ **`Crop`이 아니라 `Fit`이다.** 일러스트는 아트보드를 거의 꽉 채우고 있다
+        //    (실측 여백 중앙값 10px · 200장 중 194장이 발주서 기준 32px 미만).
+        //    `Crop`으로 두면 꽃잎 끝이 잘린다.
+        contentScale = ContentScale.Fit,
+        modifier = modifier.size(size),
+    )
+}
+
+/**
+ * 아트가 없을 때만 쓰는 옛 플레이스홀더 — 꽃 색·꽃잎 수로 그린다.
+ *
+ * ⚠️ **지우지 않는다.** 일러스트 배치 3(65종)은 출시 후 납품이고
+ *    (`C_꽃일러스트_발주서.md`), 그때 빈 칸이 생기면 이 그림이 대신 나와야 한다.
+ *    실제 아트와 구분되게 두는 것이 목적이라 "예쁘게" 만들 필요는 없다.
+ */
+@Composable
+fun FlowerIllustPlaceholder(
     flower: Flower,
     size: Dp,
     modifier: Modifier = Modifier,
@@ -72,6 +122,13 @@ fun FlowerIllust(
 /**
  * 미발견 셀 (화면 04). 와이어프레임은 **회색 실루엣**이다 —
  * 색까지 보여주면 "무슨 꽃인지 모른다"는 정보가 새 버린다.
+ *
+ * ⚠️ **실제 아트가 왔지만 여기는 일부러 바꾸지 않았다.** B 문서 76행이 미발견 처리를
+ *    **2안 시안(a: 일러스트 회색 반투명 / b: 단색 실루엣)** 으로 요청한 **오너 미결 항목**이고,
+ *    (a)를 고르면 **꽃 모양이 그대로 드러난다** — 지금의 추상 도형보다 정보가 더 샌다.
+ *    "200종 중 상당수가 미발견으로 보이므로 화면 인상을 좌우한다"(77행)는 것도 이 문서의 말이다.
+ *    임의로 정하지 않고 (b) 쪽에 가까운 현행을 유지한다. 오너가 (a)를 고르면
+ *    [FlowerIllustLoader]가 이미 비트맵을 주므로 이 함수만 바꾸면 된다.
  */
 @Composable
 fun FlowerSilhouette(
