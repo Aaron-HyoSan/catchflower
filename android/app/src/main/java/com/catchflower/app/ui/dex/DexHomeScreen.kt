@@ -392,6 +392,12 @@ private fun EmptyStateBlock(
         starters.firstOrNull()?.let {
             // 대표 일러스트 자리. 특정 종을 크게 보여주면 "그 꽃을 찍어야 한다"로
             // 읽히므로 실루엣으로 둔다.
+            //
+            // ⚠️ **실제 아트가 왔어도 여기는 실루엣이다.** 132dp로 크게 그리면 아래 문구
+            //    "아직 모은 꽃이 없어요"와 붙어 **그 꽃을 찍으라는 지시로 읽힌다** —
+            //    `starters.first()`는 그냥 제철 목록의 첫 항목일 뿐이다.
+            //    이름도 안 붙어 있어서 오해를 정정할 방법이 없다.
+            //    아래 추천 4종은 반대로 실제 일러스트를 쓴다(이름이 붙어 있다).
             FlowerSilhouette(flower = it, size = CfDimen.DetailIllust)
         }
         Text(
@@ -435,7 +441,12 @@ private fun EmptyStateBlock(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
-                        FlowerSilhouette(flower = flower, size = 56.dp)
+                        // ⚠️ 여기는 **실루엣이 아니라 실제 일러스트다.** 위 395행과 다르다.
+                        //    이 섹션은 이름을 이미 다 적어 놓고 "동네에서 흔히 보이는
+                        //    꽃이에요"라며 **찾아보라고 시키는 자리**다. 그림을 가리면
+                        //    감추는 정보가 없는데(이름이 있다) **뭘 찾으라는 건지 알 수 없다.**
+                        //    미발견 셀(366행)과는 목적이 반대다.
+                        FlowerIllust(flower = flower, size = 56.dp)
                         Text(
                             text = flower.name,
                             style = CfText.Caption,
