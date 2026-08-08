@@ -128,9 +128,25 @@ class AuthService(
         val p = prefs()
         val token = p.getString(K_TOKEN, null)?.ifEmpty { null }
         val expiresAt = p.getLong(K_EXPIRES_AT, 0L)
-        // 만료 직전에 보낸 요청이 서버에 닿을 때 이미 만료돼 있을 수 있다. 여유를 둔다.
-        if (token != null && System.currentTimeMillis() < expiresAt - EXPIRY_MARGIN_MS) return token
-        return refresh()
+        val step = nextTokenStep(
+            token = token,
+            expiresAt = expiresAt,
+            now = System.currentTimeMillis(),
+            hasRefreshToken = p.getString(K_REFRESH, null)?.ifEmpty { null } != null,
+            hasAccount = storedUserId() != null,
+            configured = configured,
+        )
+        return when (step) {
+            TokenStep.USE_STORED -> token
+            TokenStep.REFRESH -> refresh()
+            TokenStep.GIVE_UP -> null
+            TokenStep.SIGN_UP -> {
+                // ⚠️ [userId]가 실패해도 던지지 않는다 — 여전히 로컬 uuid로 계속 쓴다.
+                //    **가입이 성공했을 때만** 토큰이 생긴다.
+                userId()
+                prefs().getString(K_TOKEN, null)?.ifEmpty { null }
+            }
+        }
     }
 
     /**
@@ -265,6 +281,69 @@ class AuthService(
     }
 
     companion object {
+
+        /**
+         * [accessToken]이 다음에 할 일.
+         *
+         * **`Context`를 받지 않는다** — [migrate]·[parseSession]과 같은 이유다.
+         * 이 판단이 [AuthService] 안에 있으면 **어떤 테스트도 실행하지 않는 분기**가 된다
+         * (Robolectric이 없어서 [AuthService]를 JVM에서 만들 수 없다).
+         */
+        enum class TokenStep {
+            /** 보관한 토큰이 아직 유효하다. */
+            USE_STORED,
+
+            /** 만료됐거나 없지만 `refresh_token`이 있다. */
+            REFRESH,
+
+            /** 계정 자체가 없다. **가입을 다시 시도해야 한다.** */
+            SIGN_UP,
+
+            /** 지금 할 수 있는 것이 없다. 로컬로 계속 쓴다. */
+            GIVE_UP,
+        }
+
+        /**
+         * 🔴 **[SIGN_UP]이 없으면 서버 기능이 영구히 죽는다 — 에뮬레이터에서 실측했다.**
+         *
+         * 첫 실행에서 익명 로그인이 한 번 실패하면(비행기 모드·서버 점검·키 없는 빌드로
+         * 한 번 켠 뒤 키를 넣은 경우) 기기에는 `local_user_id`만 남고 `auth_user_id`·
+         * 토큰·`refresh_token`이 **하나도 없다.**
+         *
+         * 그런데 **가입을 다시 시도하는 곳은 [userId] 하나뿐이고**, 서버를 쓰는 다섯
+         * 군데가 전부 [accessToken]을 **먼저** 부른다([RegionUpdateService]·
+         * [RankingService]×4·[DiscoveryUploader]). [SIGN_UP]이 없으면 그 다섯 곳이
+         * 전부 "토큰 없음 → 갱신 불가 → null"에서 멈추고 **아무도 [userId]에 닿지 못한다.**
+         * 다음 실행에서도 같은 자리다 — [userId] 주석이 약속한 "다음 실행에서 다시
+         * 시도한다"가 **실제로는 일어나지 않는다.**
+         *
+         * 증상은 조용하다: 화면 02는 `연결이 불안정해요`만 띄우고(그 경로는
+         * [RegionUpdateService]에서 **로그도 안 남는 유일한 return**이다), 랭킹은 비고,
+         * 업로드는 401로 쌓인다. **서버·키·네트워크는 전부 정상인데 앱만 안 된다.**
+         *
+         * ⚠️ **계정이 있으면 [SIGN_UP]으로 가지 않는다**([hasAccount]). 가면 토큰이
+         *    만료됐을 뿐인 사용자에게 **새 계정을 만들어** 그동안의 기록이 주인 없는
+         *    데이터가 된다([reset] 주석과 같은 사고다).
+         *
+         * @param expiresAt [parseSession]이 계산한 **기기 시계 기준** 절대 시각
+         * @param hasAccount `auth_user_id`가 있는가 (로컬 uuid는 계정이 아니다)
+         * @param configured 서버 URL·anon 키가 있는가
+         */
+        fun nextTokenStep(
+            token: String?,
+            expiresAt: Long,
+            now: Long,
+            hasRefreshToken: Boolean,
+            hasAccount: Boolean,
+            configured: Boolean,
+        ): TokenStep = when {
+            // 만료 직전에 보낸 요청이 서버에 닿을 때 이미 만료돼 있을 수 있다. 여유를 둔다.
+            token != null && now < expiresAt - EXPIRY_MARGIN_MS -> TokenStep.USE_STORED
+            hasRefreshToken -> TokenStep.REFRESH
+            !configured -> TokenStep.GIVE_UP
+            hasAccount -> TokenStep.GIVE_UP
+            else -> TokenStep.SIGN_UP
+        }
 
         /**
          * 기기 로컬 id로 저장된 기록을 로그인 id로 옮긴다.

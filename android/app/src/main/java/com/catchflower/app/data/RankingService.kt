@@ -42,6 +42,27 @@ interface RankingSource {
      *    두 화면이 같은 것을 다른 숫자로 말하면 어느 쪽이 맞는지 화면만 봐선 모른다.
      */
     suspend fun friendCount(): RankingResult<Int>
+
+    /**
+     * 화면 02 목록의 `이웃 {N}명 활동 중` · `아직 이웃이 적어요`.
+     *
+     * 🔴 **이게 왜 랭킹 쪽에 있는가.** 화면 02는 지역 **선택** 화면인데 이 숫자는
+     *    화면 17의 `{동명} 이웃 1,284명`과 **같은 뜻이어야 한다.** 서버
+     *    `dong_member_count`가 `region_ranking`의 `dong_members` CTE와 글자 그대로
+     *    같은 집합을 센다(0004). 두 정의가 갈리면 화면 02에서 `이웃 12명`을 보고
+     *    고른 사용자가 화면 17에서 `이웃 3명`을 본다 — (18)에서 친구 수 7 vs 8로
+     *    겪은 사고이고, 이번에는 **6개월간 못 바꾸는 선택**의 근거가 된다.
+     *
+     * ⚠️ **`public_profiles`를 세는 것으로 바꾸지 마라.** anon 키로도 되고 더 쉽지만
+     *    (실측: `Content-Range: 0-0/11`) 그건 **가입자 수**다. 위 사고가 그것이다.
+     *
+     * ⚠️ 실패는 [RankingResult.Failed]다 — **0으로 만들지 않는다.** 0은
+     *    `아직 이웃이 적어요`가 되고, 그건 "세어 봤다"는 뜻이다(A 문서 3절
+     *    `화면 02에서 이웃 수를 모를 때`). 모를 때 화면은 줄을 **뺀다.**
+     *
+     * @param dongCode **행정동** 코드. 법정동을 넣으면 오류 없이 0이 나온다.
+     */
+    suspend fun dongMemberCount(dongCode: String): RankingResult<Int>
 }
 
 /**
@@ -285,6 +306,23 @@ class RankingService(
         val token = auth.accessToken() ?: return RankingResult.Failed(401)
         val url = "$baseUrl/rest/v1/friendships?select=requester_id&state=eq.$ACCEPTED"
         return requestCount(url, token)
+    }
+
+    /**
+     * 🔴 **응답이 배열이 아니라 스칼라다.** `returns int` 함수라 PostgREST가
+     *    `12`를 그대로 준다 — `[{"count":12}]`가 아니다. [rpc]를 쓰면
+     *    `JSONArray("12")`가 던지고 [PARSE_FAILED]가 되므로 직접 읽는다.
+     *
+     * ⚠️ **`toIntOrNull()`이다.** 형식이 바뀌면 실패로 남겨야 한다 —
+     *    `toInt()`는 던지고, 0으로 두면 위 인터페이스 주석의 사고가 된다.
+     */
+    override suspend fun dongMemberCount(dongCode: String): RankingResult<Int> {
+        if (!configured) return RankingResult.NotConfigured
+        val token = auth.accessToken() ?: return RankingResult.Failed(401)
+        val args = JSONObject().put("target_dong", dongCode)
+        return request("$baseUrl/rest/v1/rpc/dong_member_count", args.toString(), token) { body ->
+            body.trim().toIntOrNull()
+        }
     }
 
     /**

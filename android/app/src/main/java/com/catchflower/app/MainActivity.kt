@@ -39,6 +39,7 @@ import com.catchflower.app.ui.my.SeasonResultScreen
 import com.catchflower.app.ui.ranking.FriendsScreen
 import com.catchflower.app.ui.ranking.RankingScreen
 import com.catchflower.app.ui.ranking.RankingViewModel
+import com.catchflower.app.ui.region.RegionPickerScreen
 import com.catchflower.app.ui.theme.CatchFlowerTheme
 import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
@@ -98,7 +99,24 @@ private fun CatchFlowerRoot() {
     //    플래그가 켜지는 순간 이 값이 바뀌면서 화면이 통째로 갈리는데,
     //    onFinish로 넘어가는 흐름과 겹쳐서 어느 쪽이 이겼는지 알 수 없게 된다.
     var onboardingDone by remember { mutableStateOf(OnboardingState.isDone(context)) }
+    // 온보딩은 **02 → 03** 순서다(A 문서 헤더 표기 `1/2` · `2/2`).
+    //
+    // ⚠️ **플래그를 하나 더 만들지 않았다.** 완료 표시는 화면 03이 [OnboardingState]에
+    //    남기므로, 02를 `나중에 하기`로 건너뛴 사용자도 03을 지나면 두 화면이 같이
+    //    끝난다 — 그리고 02는 화면 17·20의 `동네 선택하기`로 언제든 다시 열 수 있다.
+    //    02에 별도 플래그를 주면 "지역을 안 정한 사용자"에게 매 실행마다 온보딩이
+    //    다시 뜨거나(강요), 반대로 저장 실패가 영구히 굳는다.
+    var regionStepDone by remember { mutableStateOf(false) }
     if (!onboardingDone) {
+        if (!regionStepDone) {
+            RegionPickerScreen(
+                // 저장 성공·`나중에 하기` 모두 여기로 온다. **둘을 구분하지 않는다** —
+                // 다음 화면이 같고, 정했는지는 서버가 아는 사실이다(화면 17이 읽는다).
+                onDone = { regionStepDone = true },
+                modifier = Modifier.fillMaxSize(),
+            )
+            return
+        }
         PermissionIntroScreen(
             onFinish = { onboardingDone = true },
             modifier = Modifier.fillMaxSize(),
@@ -119,14 +137,11 @@ private fun CatchFlowerRoot() {
     var friendsOpen by remember { mutableStateOf(false) }
     var seasonResultOpen by remember { mutableStateOf(false) }
 
-    // 화면 17의 `동네 선택하기`가 여는 자리.
+    // 화면 17·20의 `동네 선택하기`가 여는 자리. 화면 02를 위에 겹쳐 띄운다.
     //
-    // 🔴 **화면 02가 아직 없다.** 활동 지역을 안 정하면 서버 랭킹은 영원히 비므로,
-    //    버튼을 아무 데도 안 이으면 화면 17이 **빠져나갈 길 없는 빈 화면**이 된다.
-    //    조용히 무시하는 것(`{}`)이 최악이다 — "눌렀는데 아무 일도 안 났다"가 되고,
-    //    화면을 봐도 버그인지 미구현인지 구분되지 않는다. 그래서 지도 탭과 같은
-    //    [Placeholder]를 세워 **무엇이 들어올 자리인지 화면 번호로 보이게** 한다.
-    //    하단 내비가 그대로 보이므로 사용자는 다른 탭으로 나갈 수 있다.
+    // ⚠️ **닫을 때 랭킹을 다시 읽어야 한다.** 안 읽으면 동네를 막 정하고 돌아온
+    //    화면 17이 여전히 `활동 지역을 정하면 순위를 볼 수 있어요`를 보여준다 —
+    //    저장은 성공했는데 화면만 안 바뀌므로 **저장이 안 된 것처럼 보인다.**
     var regionPickerOpen by remember { mutableStateOf(false) }
 
     // 화면 21은 **전면 화면**이다(와이어프레임 21 주석 ①: 시즌 종료 후 첫 실행 1회 강제 노출).
@@ -212,7 +227,14 @@ private fun CatchFlowerRoot() {
                             onBack = { friendsOpen = false },
                         )
 
-                        regionPickerOpen -> Placeholder("활동 지역 선택", "화면 02")
+                        regionPickerOpen -> RegionPickerScreen(
+                            // 저장 성공·`나중에 하기` 모두 닫는다. 닫으면서
+                            // **랭킹을 다시 읽는다** — 위 주석의 이유.
+                            onDone = {
+                                regionPickerOpen = false
+                                rankingViewModel.refresh()
+                            },
+                        )
 
                         else -> RankingScreen(
                             vm = rankingViewModel,
@@ -231,7 +253,14 @@ private fun CatchFlowerRoot() {
 
                         // 화면 20 활동 지역 칸의 `동네 선택하기`도 같은 자리를 연다.
                         // 랭킹 탭과 상태를 공유하므로 두 화면이 다른 곳으로 가지 않는다.
-                        regionPickerOpen -> Placeholder("활동 지역 선택", "화면 02")
+                        regionPickerOpen -> RegionPickerScreen(
+                            // 저장 성공·`나중에 하기` 모두 닫는다. 닫으면서
+                            // **랭킹을 다시 읽는다** — 위 주석의 이유.
+                            onDone = {
+                                regionPickerOpen = false
+                                rankingViewModel.refresh()
+                            },
+                        )
 
                         else -> MyScreen(
                             // 랭킹 탭과 **같은 ViewModel**을 읽는다 — 각자 물으면

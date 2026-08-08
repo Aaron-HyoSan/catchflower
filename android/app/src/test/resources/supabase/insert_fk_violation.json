@@ -1,0 +1,1 @@
+{"code":"23502","details":null,"hint":null,"message":"null value in column \"ai_confidence\" of relation \"discoveries\" violates not-null constraint"}
