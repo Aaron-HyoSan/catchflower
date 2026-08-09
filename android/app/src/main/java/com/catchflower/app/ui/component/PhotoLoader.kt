@@ -51,8 +51,31 @@ object PhotoLoader {
     }
 
     /**
+     * 이미 읽어 둔 것만 돌려준다. **디스크를 건드리지 않는다.**
+     *
+     * 🔴 **[DiscoveryPhoto]가 첫 프레임을 이걸로 그린다.** 캐시에 있는 사진까지
+     *    비동기로 돌리면 **스크롤을 되돌릴 때마다 일러스트가 한 번 번쩍인다** —
+     *    이미 메모리에 있는 것을 못 보여주는 것이라 사용자에게는 고장으로 보인다.
+     */
+    fun cached(file: File, reqSizePx: Int): Bitmap? = cache.get(keyOf(file, reqSizePx))
+
+    /**
      * [file]을 [reqSizePx]보다 작지 않게, 그러나 필요 이상 크지 않게 읽는다.
      * 파일이 없거나 깨졌으면 null — 호출부가 일러스트로 되돌린다.
+     *
+     * 🔴 **메인 스레드에서 부르지 않는다.** 실측 **18~94ms/장**이고 60fps 한 프레임은
+     *    16.7ms다 — 사진 한 장이 **프레임 1~6개**를 먹는다((39) 실측).
+     *    호출부는 [DiscoveryPhoto] 하나이고 거기서 IO 디스패처로 보낸다.
+     *
+     * 🔴 **프레임 수로 이 규칙을 검증할 수 없다 — 시도했고 실패했다((40)).** 이 에뮬레이터는
+     *    SwiftShader(소프트웨어 렌더링)라서 `gfxinfo`가 **사진과 무관한 화면도 100% janky**로
+     *    보고한다. 실측 대조: 사진을 한 장도 안 읽는 도감 그리드가 `100% janky / p50 400ms`,
+     *    사진 41장 목록이 `89.9% / p50 400ms`로 **사진 화면이 더 좋게** 나왔다.
+     *    ⚠️ 즉 `Choreographer: Skipped`가 줄었는지로 판정하면 **고쳤는지 망쳤는지 모른다.**
+     *    검증한 방법은 **디코딩 스레드 이름을 기기가 직접 보고하게 한 것**이다 —
+     *    41장 전부 `main=false`(`DefaultDispatcher-worker-*`)이고, 되돌려 스크롤해도
+     *    디코딩이 41회에서 늘지 않았다(캐시 적중). 소스 단정은
+     *    [com.catchflower.app.ui.component.DiscoveryPhotoSourceTest]가 맡는다.
      */
     fun load(file: File, reqSizePx: Int): Bitmap? {
         // 키는 **파일명 + 요청 크기**다. 파일명이 UUID라 충돌이 없고, 같은 사진을
@@ -63,7 +86,7 @@ object PhotoLoader {
         // ⚠️ **실패는 캐시하지 않는다**(아래 `if (bitmap != null)`). 저장 중 죽어
         //    0바이트가 남은 파일을 null째로 캐시하면, 다음에 정상으로 채워져도
         //    같은 실행 안에서는 **계속 null을 돌려준다.**
-        val key = "${file.name}@$reqSizePx"
+        val key = keyOf(file, reqSizePx)
         cache.get(key)?.let { return it }
 
         val bitmap = try {
@@ -134,6 +157,15 @@ object PhotoLoader {
         }
         return sample
     }
+
+    /**
+     * 캐시 키 — **파일명 + 요청 크기**.
+     *
+     * ⚠️ [cached]와 [load]가 **같은 키를 만들어야 한다.** 두 곳에서 따로 조립하면
+     *    한쪽만 고쳤을 때 **캐시가 조용히 항상 빈 것처럼** 동작한다(디코딩이 매번
+     *    다시 돌고, 화면은 정상으로 보인다).
+     */
+    private fun keyOf(file: File, reqSizePx: Int): String = "${file.name}@$reqSizePx"
 
     /** 테스트·메모리 압박 대응. */
     fun clear() = cache.evictAll()

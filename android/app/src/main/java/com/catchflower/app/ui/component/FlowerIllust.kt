@@ -5,7 +5,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -20,6 +24,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.catchflower.app.data.model.Flower
 import com.catchflower.app.ui.theme.CfColor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * 꽃 일러스트 — **실제 납품 아트를 그린다** (2026-08-08).
@@ -183,6 +189,25 @@ fun FlowerSilhouette(
  * ⚠️ **`remember`로 붙든다.** 리컴포지션마다 디코딩하면 목록을 스크롤하는 동안
  *    프레임마다 JPEG를 다시 읽는다. 키는 **파일 경로와 크기**다 —
  *    [Flower]를 키로 쓰면 같은 종의 다른 기록이 **첫 사진을 재사용한다.**
+ *
+ * 🔴 **디코딩을 메인 스레드에서 하지 않는다((39) 측정 후 고쳤다).** 처음엔
+ *    `remember { PhotoLoader.load(...) }`로 **동기 디코딩**을 했고, 기기가
+ *    **18~94ms/장**을 보고했다 — 60fps 한 프레임(16.7ms)의 1~6배다.
+ *    ⚠️ **이 결함은 "좀 끊기네"로만 보인다** — 크래시도 로그도 없고, 에뮬레이터는
+ *    원래 스크롤이 끊기므로 **기기에 시간을 재는 로그를 넣어야** 원인이 드러났다.
+ *    (그 로그는 측정용이라 지웠다 — 상시로 두면 스크롤마다 로그가 쏟아진다.)
+ *
+ * 🔴 **고쳤다는 증거는 프레임 수가 아니다((40)).** 고친 뒤 `Choreographer: Skipped`가
+ *    오히려 **71 → 173프레임**으로 커져 보였는데, 그 큰 값들은 **탭하기 전 콜드 스타트**
+ *    구간이거나 **앱이 아닌 pid**(919·1055)의 것이었다. 스크롤 구간만 떼서 재도
+ *    이 에뮬레이터는 SwiftShader라 **사진을 안 읽는 화면이 더 janky**하게 나온다
+ *    ([PhotoLoader.load]의 대조 실측). 실제 증거는 **41장 전부 `main=false`,
+ *    되돌려 스크롤해도 디코딩 41회 유지(캐시 적중), FATAL·OOM 0건**이다.
+ *
+ * ⚠️ **첫 프레임은 [PhotoLoader.cached]로 그린다.** 캐시에 있는 것까지 비동기로
+ *    돌리면 스크롤을 되돌릴 때마다 **일러스트가 한 번 번쩍인다.**
+ *    캐시에 없을 때만 일러스트를 잠깐 보여주고, 읽히면 사진으로 바뀐다 —
+ *    **회색 칸을 두지 않는 이유와 같다**(빈 칸은 고장으로 보인다).
  */
 @Composable
 fun DiscoveryPhoto(
@@ -194,16 +219,28 @@ fun DiscoveryPhoto(
 ) {
     val density = LocalDensity.current
     val reqPx = with(density) { size.roundToPx() }
-    val bitmap = remember(photo?.path, reqPx) {
-        photo?.takeIf { it.exists() }?.let { PhotoLoader.load(it, reqPx) }
+    val path = photo?.path
+    // 캐시 조회는 메모리 연산이라 동기로 해도 된다(디스크를 안 건드린다).
+    var bitmap by remember(path, reqPx) {
+        mutableStateOf(photo?.let { PhotoLoader.cached(it, reqPx) })
+    }
+    LaunchedEffect(path, reqPx) {
+        if (bitmap != null || photo == null) return@LaunchedEffect
+        // ⚠️ `exists()`도 디스크 접근이라 여기서 한다. 메인에서 부르면
+        //    사진 없는 기록 41개가 각각 `stat`을 한 번씩 한다.
+        val loaded = withContext(Dispatchers.IO) {
+            photo.takeIf { it.exists() }?.let { PhotoLoader.load(it, reqPx) }
+        }
+        if (loaded != null) bitmap = loaded
     }
 
-    if (bitmap == null) {
+    val shown = bitmap
+    if (shown == null) {
         FlowerIllust(flower = flower, size = size, modifier = modifier)
         return
     }
     Image(
-        bitmap = bitmap.asImageBitmap(),
+        bitmap = shown.asImageBitmap(),
         contentDescription = contentDescription,
         // ⚠️ 여기는 **`Crop`이다** — 일러스트(`Fit`)와 반대다. 사진은 정사각으로
         //    저장되므로 잘릴 것이 없고, 만약 옛 기록이 정사각이 아니면 `Fit`은

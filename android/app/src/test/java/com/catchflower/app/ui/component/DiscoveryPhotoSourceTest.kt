@@ -104,6 +104,84 @@ class DiscoveryPhotoSourceTest {
         )
     }
 
+    /**
+     * 사진 디코딩은 **메인 스레드에서 하지 않는다.**
+     *
+     * 🔴 (39)에서 `remember { PhotoLoader.load(...) }`로 **동기 디코딩**을 했고,
+     *    기기가 **18~94ms/장 · `main=true`**를 보고했다 — 60fps 한 프레임(16.7ms)의
+     *    1~6배다. 기록 41개를 스크롤하는 동안 프레임을 계속 놓쳤다.
+     *
+     * ⚠️ **프레임 수로는 이 규칙을 지킬 수 없다((40)에서 확인).** 이 에뮬레이터는
+     *    SwiftShader라서 `gfxinfo`가 사진과 무관한 화면도 100% janky로 보고한다 —
+     *    대조 실측에서 **사진을 안 읽는 도감 그리드(100%)가 사진 41장 목록(89.9%)보다
+     *    더 나빴다.** 그래서 판정을 **스레드 배치**로 한다: 기기 검증은
+     *    `main=false`(41/41)로 했고, 회귀를 막는 것은 이 소스 단정이다.
+     *
+     * 판정 기준은 "[PhotoLoader.load]를 부르는 곳이 `withContext`/코루틴 안인가"다.
+     * `remember {` 블록 안에서 부르면 **그 자리가 메인 스레드다.**
+     */
+    @Test
+    fun 사진_디코딩을_메인_스레드에서_하지_않는다() {
+        val callers = mainSources
+            .filter { it.name != "PhotoLoader.kt" }
+            .filter { bodyOf(it).contains("PhotoLoader.load(") }
+            .map { it.name }
+        // 호출부가 사라지면(이름이 바뀌면) 검사가 조용히 비어 버린다.
+        assertEquals(
+            "PhotoLoader.load를 부르는 곳이 하나여야 한다(DiscoveryPhoto): $callers",
+            listOf("FlowerIllust.kt"),
+            callers,
+        )
+
+        val body = bodyOf(File("src/main/java/com/catchflower/app/ui/component/FlowerIllust.kt"))
+
+        // `remember { ... PhotoLoader.load ... }`는 컴포지션(=메인)에서 즉시 돈다.
+        val syncInRemember = Regex("""remember\([^)]*\)\s*\{[^}]*PhotoLoader\.load\(""")
+        assertTrue(
+            "remember 블록에서 PhotoLoader.load를 부른다 — 그 자리가 메인 스레드다",
+            !syncInRemember.containsMatchIn(body),
+        )
+
+        // 디코딩은 IO 디스패처로 넘긴다.
+        //
+        // ⚠️ `[^}]*`로 쓰면 안 된다 — 실제 코드는 `withContext(Dispatchers.IO) {`와
+        //    `PhotoLoader.load(` 사이에 `takeIf { it.exists() }`가 있어서 **중간에
+        //    `}`가 나온다.** 처음 그렇게 써서 **고쳐 놓은 코드가 위반으로 잡혔다.**
+        //    (테스트가 빨갰던 이유가 코드가 아니라 검사였다.)
+        assertTrue(
+            "PhotoLoader.load가 withContext(Dispatchers.IO) 안에 없다",
+            Regex("""withContext\(Dispatchers\.IO\)\s*\{[\s\S]{0,300}?PhotoLoader\.load\(""")
+                .containsMatchIn(body),
+        )
+
+        // 첫 프레임은 캐시 조회(메모리)로 그린다 — 없으면 스크롤 되돌릴 때 일러스트가 번쩍인다.
+        assertTrue(
+            "첫 프레임을 PhotoLoader.cached로 그리지 않는다 — 스크롤 되돌리면 번쩍인다",
+            body.contains("PhotoLoader.cached("),
+        )
+    }
+
+    /**
+     * **위 검사가 실제로 주석을 걷어내고 보는지** 스스로 확인한다.
+     *
+     * 🔴 이 저장소에서 **주석이 증거로 세어진 적이 두 번** 있다. 지금 `FlowerIllust.kt`의
+     *    KDoc에는 `remember { PhotoLoader.load(...) }`라는 **금지된 형태가 설명으로
+     *    적혀 있다** — [bodyOf]가 주석을 안 지우면 위 단정이 **영원히 빨갛다.**
+     */
+    @Test
+    fun 금지형태가_주석에만_있으면_통과한다() {
+        val raw = File("src/main/java/com/catchflower/app/ui/component/FlowerIllust.kt").readText()
+        val pattern = Regex("""remember\([^)]*\)\s*\{[^}]*PhotoLoader\.load\(""")
+        assertTrue(
+            "KDoc에 금지 형태가 없어졌다 — 이 검사가 무의미해졌으니 지워도 된다",
+            raw.contains("remember { PhotoLoader.load("),
+        )
+        assertTrue(
+            "bodyOf가 주석을 걷어내지 못했다 — 주석 속 예시가 위반으로 잡힌다",
+            !pattern.containsMatchIn(bodyOf(File("src/main/java/com/catchflower/app/ui/component/FlowerIllust.kt"))),
+        )
+    }
+
     private companion object {
         val mainSources: List<File> by lazy {
             File("src/main/java/com/catchflower/app")
