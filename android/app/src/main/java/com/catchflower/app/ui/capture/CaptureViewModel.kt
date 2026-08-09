@@ -25,6 +25,8 @@ import com.catchflower.app.recognizer.IdentifyOutcome
 import com.catchflower.app.recognizer.MlKitFlowerPreFilter
 import com.catchflower.app.recognizer.MockFlowerRecognizer
 import com.catchflower.app.recognizer.PlantNetRecognizer
+import com.catchflower.app.recognizer.QaBypassPreFilter
+import com.catchflower.app.recognizer.QaPreFilterSwitch
 import com.catchflower.app.recognizer.RankedCandidate
 import com.catchflower.app.recognizer.RecognitionError
 import com.catchflower.app.recognizer.ScientificNameIndex
@@ -142,8 +144,13 @@ class CaptureViewModel @JvmOverloads constructor(
     /**
      * 1차 필터. 실측 결과 재현율 100%·차단율 92.4%로 확정했다
      * ([MlKitFlowerPreFilter] 주석 참조).
+     *
+     * ⚠️ [QaBypassPreFilter]로 감싸 두지만 **평소에는 아무 일도 하지 않는다** —
+     *    `/data/local/tmp/cf_qa_allow_any_photo`가 있을 때만 열린다
+     *    ([QaPreFilterSwitch]). `AlwaysPassPreFilter`로 갈아끼우지 않는 이유는
+     *    그 파일 주석에 있다.
      */
-    private val preFilter: FlowerPreFilter = MlKitFlowerPreFilter(),
+    private val preFilter: FlowerPreFilter = QaBypassPreFilter(MlKitFlowerPreFilter()),
     /**
      * 위치. 기본은 플랫폼 구현이고 **권한이 없으면 조용히 null**이다 —
      * `도감 등록은 위치 없이도 할 수 있어요`(화면 03)가 약속이다.
@@ -193,8 +200,24 @@ class CaptureViewModel @JvmOverloads constructor(
      */
     val recognizerName: String get() = recognizer::class.simpleName ?: "?"
 
+    /**
+     * 지금 1차 필터가 어떤 것인가. [recognizerName]과 같은 이유로 있다 —
+     * 검증이 `QaPreFilterSwitch.enabled`를 두 번 확인하는 동어반복이 되지 않게.
+     */
+    val preFilterName: String get() = preFilter::class.simpleName ?: "?"
+
     init {
-        android.util.Log.i("CatchFlower", "인식기: $recognizerName")
+        android.util.Log.i("CatchFlower", "인식기: $recognizerName · 1차필터: $preFilterName")
+        if (QaPreFilterSwitch.enabled) {
+            // 🔴 **한 줄로 크게 남긴다.** QA 우회를 켠 채 잊으면 그 뒤의 모든 촬영이
+            //    유료 API로 가는데 **화면에는 아무 증상이 없다** — 화면 12가
+            //    "필터가 막았다"와 "호출했는데 실패했다"를 똑같이 보여주기 때문이다((39)).
+            android.util.Log.w(
+                "CatchFlower",
+                "🔴 QA 우회가 켜져 있다 (${QaPreFilterSwitch.PATH}). " +
+                    "꽃이 아닌 사진도 유료 API로 간다. QA 끝나면 adb shell rm 으로 지운다",
+            )
+        }
     }
 
     var state by mutableStateOf<CaptureState>(CaptureState.Camera)
