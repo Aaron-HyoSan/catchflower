@@ -1,6 +1,7 @@
 package com.catchflower.app.recognizer
 
 import com.catchflower.app.core.AiDifficulty
+import com.catchflower.app.core.GamePolicy
 import com.catchflower.app.core.Rarity
 import com.catchflower.app.core.Season
 import com.catchflower.app.data.model.Flower
@@ -259,5 +260,66 @@ class PlantNetRecognizerTest {
         // 서버가 계약을 깨는 값을 줘도 앱이 죽지 않아야 한다 (Candidate의 require).
         val result = recognizer(200, response("Rosa hybrida" to 1.4)).identify(ByteArray(1), august)
         assertEquals(1f, result.first().score, 0.0001f)
+    }
+
+    /**
+     * 🔴 **응답 요약 로그가 세 원인을 구분할 수 있는가.**
+     *
+     * **왜 로그에 테스트가 붙는가.** 이 줄이 없던 동안 오너 QA가 막혔다((45)) —
+     * `판별 호출 직전` 뒤가 비어서 `어떤 꽃인지 알 수 없었어요`의 원인이
+     * ⓐ 못 알아봤다 / ⓑ 도감·개화월에서 걸렸다 / ⓒ floor 미달 중 무엇인지
+     * **알 수 없었다.** 화면에는 셋이 똑같이 보인다. 그리고 로그는 **조용해져도
+     * 증상이 없다** — 지워지거나 값이 빠져도 아무도 모른다. 그래서 고정한다.
+     *
+     * ⚠️ **학명이 들어 있어야 한다.** 도감 id만 찍으면 ⓑ에서 "무엇이 걸렸는지" 모른다.
+     */
+    @Test
+    fun `응답 요약 로그가 원인을 구분할 수 있게 남는다`() = runBlocking {
+        val lines = mutableListOf<String>()
+        // 실기기 실측(21:09)의 모양을 그대로 쓴다 — **1순위를 맞혔는데 점수가 0.018이라
+        // floor에 걸린** 사진이다. ⓑ와 ⓒ가 한 줄에 같이 보여야 한다.
+        // ⚠️ 실측의 `Taraxacum`을 그대로 쓰면 이 픽스처의 민들레가 3~5월이라 8월 후보에
+        //    없어서 `통과=0`이 되고, **ⓒ(floor 미달)를 확인할 수 없다.** 그래서 8월에 피는
+        //    속으로 바꿔 같은 점수를 쓴다.
+        val body = response(
+            "Rosa chinensis" to 0.018,
+            "Quercus mongolica" to 0.9, // 도감 200종 밖 → 통과 목록에는 없어야 한다
+            "Begonia grandis" to 0.007,
+        )
+        PlantNetRecognizer(
+            index = index,
+            apiKey = "test-key",
+            transport = object : PlantNetRecognizer.Transport {
+                override suspend fun post(url: String, contentType: String, body2: ByteArray) =
+                    200 to body
+            },
+            log = { lines += it },
+        ).identify(ByteArray(1), august)
+
+        assertEquals("로그가 한 줄 남아야 한다. 실제: $lines", 1, lines.size)
+        val line = lines.single()
+
+        // ⓐ vs ⓑ를 가르는 값: PlantNet이 **몇 개를 줬는가**
+        assertTrue("받은 후보 수가 없다: $line", "받은 후보=3" in line)
+        // ⓑ를 읽으려면 **학명**이 있어야 한다
+        assertTrue("학명이 없다 — 무엇이 걸렸는지 알 수 없다: $line", "Rosa chinensis" in line)
+        assertTrue("도감 밖 학명도 남아야 한다(왜 탈락했는지): $line", "Quercus mongolica" in line)
+        // ⓒ를 읽으려면 통과 목록과 점수, 그리고 비교 대상인 floor가 있어야 한다
+        assertTrue("통과 수가 없다: $line", "통과=2" in line)
+        assertTrue("1순위 점수가 없다: $line", "0.018" in line)
+        assertTrue(
+            "floor가 없다 — 점수만 보고 미달인지 판단할 수 없다: $line",
+            "floor=${GamePolicy.MIN_CONFIDENCE_FOR_ANY_CANDIDATE}" in line,
+        )
+    }
+
+    /** 로거를 안 넘기면 조용하다 — 테스트·JVM에서 `android.util.Log`를 부르지 않는 근거다. */
+    @Test
+    fun `로거를 주지 않으면 아무것도 하지 않는다`() = runBlocking {
+        // 여기서 죽으면 인식기가 android.util.Log를 직접 부르는 것이다
+        // (`Method i in android.util.Log not mocked`).
+        val result = recognizer(200, response("Rosa chinensis" to 0.606))
+            .identify(ByteArray(1), august)
+        assertEquals(1, result.size)
     }
 }

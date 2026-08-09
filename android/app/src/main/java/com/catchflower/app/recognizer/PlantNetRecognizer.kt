@@ -45,6 +45,16 @@ class PlantNetRecognizer(
      */
     private val project: String = "k-eastern-asia",
     private val transport: Transport = HttpTransport(),
+    /**
+     * 응답 요약을 어디로 보낼지. **기본은 아무것도 안 한다.**
+     *
+     * ⚠️ **여기서 `android.util.Log`를 직접 부르면 JVM 테스트가 죽는다**
+     *    (`Method i in android.util.Log not mocked`). 피하는 설정
+     *    `unitTests.isReturnDefaultValues = true`는 **모든 안드로이드 API를 조용히
+     *    0/null로 만드는** 거부된 항목이다. 그래서 실제 로그는 호출처
+     *    ([com.catchflower.app.ui.capture.CaptureViewModel])가 주입한다.
+     */
+    private val log: (String) -> Unit = {},
 ) : FlowerRecognizer {
 
     /** HTTP 한 번. 테스트에서 갈아끼우는 자리다. */
@@ -91,7 +101,26 @@ class PlantNetRecognizer(
         }
 
         return try {
-            parse(body, candidates)
+            parse(body, candidates).also { out ->
+                // 🔴 **지우지 않는다.** 이게 없으면 `판별 호출 직전` 뒤가 비어서
+                //    화면 12의 원인 **세 가지를 구분할 수 없다**((45) QA에서 실제로 막혔다):
+                //      ⓐ PlantNet이 아무것도 못 알아봤다 (`받은 후보=0`)
+                //      ⓑ 알아봤지만 도감·개화월에서 전부 걸렸다 (`받은 후보=N · 통과=0`)
+                //      ⓒ 통과했지만 floor 미달이다 (`통과=N`인데 화면 12)
+                //    셋 다 화면에 똑같이 `어떤 꽃인지 알 수 없었어요`로 보인다.
+                //    ⚠️ **학명을 찍는다.** 도감 id만 찍으면 ⓑ에서 "무엇이 걸렸는지" 모른다.
+                val raw = JSONObject(body).optJSONArray("results")
+                val names = (0 until (raw?.length() ?: 0)).mapNotNull { i ->
+                    val r = raw!!.optJSONObject(i) ?: return@mapNotNull null
+                    val n = r.optJSONObject("species")?.stringOrNull("scientificNameWithoutAuthor")
+                    n?.let { "$it ${"%.3f".format(r.optDouble("score", 0.0))}" }
+                }
+                log(
+                    "판별 응답: 받은 후보=${names.size} [${names.joinToString(" · ")}] → " +
+                        "통과=${out.size} ${out.map { "${it.flowerId}:${"%.3f".format(it.score)}" }} " +
+                        "(floor=${GamePolicy.MIN_CONFIDENCE_FOR_ANY_CANDIDATE})",
+                )
+            }
         } catch (e: JSONException) {
             // 200인데 JSON이 아닌 경우(프록시가 끼어든 HTML 등). 크래시로 만들지 않는다.
             throw RecognitionError.Unavailable("응답을 읽을 수 없다: $e")

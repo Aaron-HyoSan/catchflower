@@ -186,6 +186,9 @@ class CaptureViewModel @JvmOverloads constructor(
             PlantNetRecognizer(
                 index = ScientificNameIndex(repository.flowers),
                 apiKey = AppSecrets.plantNetApiKey,
+                // 응답 요약을 로그로 흘린다. 인식기 안에서 Log를 부르면 JVM 테스트가
+                // 죽으므로 여기서 넘긴다 ([PlantNetRecognizer.log] 주석).
+                log = { android.util.Log.i("CatchFlower", it) },
             )
         } else {
             MockFlowerRecognizer()
@@ -344,6 +347,14 @@ class CaptureViewModel @JvmOverloads constructor(
         when (val outcome = flow.decide(result)) {
             is IdentifyOutcome.Failed -> {
                 failStreak++
+                // 🔴 화면 12에 **왜** 왔는지 남긴다. `판별 응답`의 `통과=N`과 함께 읽으면
+                //    "후보가 0개였다"와 "후보는 있었는데 floor에 걸렸다"가 갈린다 —
+                //    화면에는 둘 다 `어떤 꽃인지 알 수 없었어요`로 똑같이 보인다((45)).
+                android.util.Log.i(
+                    "CatchFlower",
+                    "화면 12: 통과 후보=${result.size} " +
+                        "1순위점수=${result.firstOrNull()?.score} 연속실패=$failStreak",
+                )
                 state = CaptureState.Failed(failStreak)
             }
             else -> {
