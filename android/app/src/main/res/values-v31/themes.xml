@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      안드로이드 12+ 스플래시.
+
+      🔴 **이 속성들은 v31 미만에서 컴파일 에러다** — `values/themes.xml`에 두면
+         빌드가 죽는다. 그래서 디렉터리로 갈랐다. v31 미만 기기는
+         `values/themes.xml`의 `android:windowBackground`(= `@drawable/splash_background`)를
+         쓴다. 🔴 **한쪽만 고치면 기기 세대에 따라 다른 스플래시가 뜬다** —
+         그리고 내 에뮬레이터는 API 36이라 **31 미만 경로는 여기서 확인되지 않는다.**
+
+      ⚠️ `windowSplashScreenAnimatedIcon`에는 **배지가 아니라 꽃만** 넣는다
+         (`ic_launcher_splash`). 시스템이 아이콘 뒤에
+         `windowSplashScreenIconBackgroundColor` 원을 직접 그리므로, 배지를 넣으면
+         **초록 원 안에 초록 원**이 겹친다.
+    -->
+    <style name="Theme.CatchFlower" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#FFFFFFFF</item>
+        <item name="android:navigationBarColor">#FFFFFFFF</item>
+        <item name="android:windowLightStatusBar">true</item>
+
+        <item name="android:windowSplashScreenBackground">#FFFFFFFF</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_splash</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
+    </style>
+</resources>

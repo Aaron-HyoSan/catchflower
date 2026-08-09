@@ -5,5 +5,12 @@
         <item name="android:statusBarColor">#FFFFFFFF</item>
         <item name="android:navigationBarColor">#FFFFFFFF</item>
         <item name="android:windowLightStatusBar">true</item>
+
+        <!-- 스플래시 (**API 31 미만**). 안드로이드 12+는 `values-v31/themes.xml`이
+             같은 그림을 시스템 스플래시로 그린다 — **두 곳을 같이 고친다.**
+             ⚠️ `windowBackground`는 스플래시가 끝난 뒤에도 **모든 화면의 밑바닥**이다.
+                Compose 화면이 자기 배경을 칠하므로 보이지 않지만, 만약 어딘가에
+                투명 영역이 생기면 그 자리에 **꽃 배지가 비친다.** -->
+        <item name="android:windowBackground">@drawable/splash_background</item>
     </style>
 </resources>

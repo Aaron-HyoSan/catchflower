@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 🔴 생성물이다. 손으로 고치지 않는다 —
+     `python3 디자이너_업무/아이콘/_tools/build_android_launcher.py`가 쓴다.
+     값은 앱아이콘_시안E의 **꽃 바로 뒤 초록**을 실측한 것이다. -->
+<resources>
+    <color name="ic_launcher_background">#FF307B44</color>
+</resources>

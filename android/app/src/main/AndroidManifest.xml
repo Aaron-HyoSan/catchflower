@@ -32,9 +32,17 @@
         android:name="android.hardware.camera.any"
         android:required="true" />
 
+    <!-- 🔴 **`android:icon`이 없으면 런처에 안드로이드 기본 로봇 아이콘이 뜬다.**
+         빌드도 실행도 정상이고 앱 안 화면도 멀쩡해서, 앱을 켜서 확인하는 동안에는
+         **한 번도 눈에 띄지 않는다** — 홈 화면을 봐야 보인다.
+         ⚠️ `roundIcon`도 같이 준다. 어댑티브 아이콘이 있으면 원형 런처가 알아서
+            깎지만, `roundIcon`을 비워 두면 일부 런처(픽셀 계열)가 **레거시
+            `ic_launcher.png`를 원형으로 다시 깎아** 배지 테두리를 자른다. -->
     <application
         android:name=".CatchFlowerApp"
         android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="false"
         android:theme="@style/Theme.CatchFlower">
         <activity

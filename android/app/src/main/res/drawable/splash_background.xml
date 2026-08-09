@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  스플래시 화면 (**API 31 미만** 경로 · minSdk 26 ~ 30).
+
+  🔴 안드로이드 12(API 31)부터는 시스템이 스플래시를 **자동으로** 그리고
+     `windowSplashScreen*` 속성으로만 꾸밀 수 있다 — 그 속성은 v31 이상에서만
+     인식되므로 `values-v31/themes.xml`에 따로 있다. 여기는 그 이전 기기용
+     `windowBackground` 방식이고, **두 경로가 같은 그림을 그려야 한다.**
+
+  ⚠️ `<bitmap>`은 원본 픽셀 크기로 그린다(`gravity="center"`). 그래서 배지 PNG를
+     108dp 캔버스로 만들어 뒀다 — 512px 원본을 그대로 넣으면 화면을 덮는다.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@android:color/white" />
+    <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@mipmap/ic_splash_badge" />
+    </item>
+</layer-list>

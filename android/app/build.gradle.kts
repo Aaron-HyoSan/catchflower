@@ -135,6 +135,40 @@ androidComponents {
     }
 }
 
+/**
+ * 🔴 **파일을 읽는 테스트는 그 파일을 입력으로 선언해야 한다.**
+ *
+ * 이 저장소의 테스트 12개는 `File("src/main/…")`·A 문서·`res/`를 직접 읽는다
+ * (`IconAssetTest`, `ButtonLabelSourceTest`, `PermissionCopyTest`, `DeadButtonTest` …).
+ * 그런데 Gradle은 **테스트 소스와 클래스패스만** 입력으로 안다 — `res/`·매니페스트·
+ * 마크다운을 고쳐도 `testDebugUnitTest`가 `UP-TO-DATE`로 통과한다.
+ *
+ * 실측(2026-08-09, 돌연변이 168·169·171):
+ *
+ * | 훼손 | 캐시 그대로 | `--rerun-tasks` |
+ * |---|---|---|
+ * | `drawable-xxhdpi/ic_tab_map.png` 삭제 | **BUILD SUCCESSFUL** | 1 failed |
+ * | 매니페스트 `android:icon` 제거 | **BUILD SUCCESSFUL** | 1 failed |
+ * | A 문서 버튼 문구 훼손 | **BUILD SUCCESSFUL** | 2 failed |
+ *
+ * ⚠️ **`.kt`를 고칠 때는 제대로 돈다**(돌연변이 170은 캐시 상태로 잡혔다). 그래서
+ *    "테스트가 캐시 때문에 안 도는구나"를 평소에 눈치챌 수 없다 — 코드를 고치는 동안엔
+ *    항상 다시 돌기 때문이다. 문서·리소스만 고친 커밋에서만 조용히 통과한다.
+ *
+ * ⚠️ **`--rerun-tasks`를 습관으로 만드는 것으로 대신하지 않는다.** 그건 사람이 기억해야
+ *    하고, CI에서는 빠진다. 입력을 선언하면 Gradle이 대신 기억한다.
+ */
+tasks.withType<Test>().configureEach {
+    val root = rootProject.layout.projectDirectory
+    inputs.dir(layout.projectDirectory.dir("src/main/res"))
+        .withPropertyName("cfTestReadsRes").withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(layout.projectDirectory.file("src/main/AndroidManifest.xml"))
+        .withPropertyName("cfTestReadsManifest").withPathSensitivity(PathSensitivity.RELATIVE)
+    // A 문서 = 모든 버튼 문구의 원본. `문구를 새로 쓰지 않는다`를 지키는 검사가 이걸 읽는다.
+    inputs.file(root.file("../디자이너_업무/A_문구·버튼_스펙.md"))
+        .withPropertyName("cfTestReadsCopySpec").withPathSensitivity(PathSensitivity.NONE)
+}
+
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2026.06.01")
     implementation(composeBom)

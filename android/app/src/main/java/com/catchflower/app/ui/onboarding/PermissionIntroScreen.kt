@@ -20,11 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Place
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,7 +35,8 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.catchflower.app.ui.component.CameraGlyph
+import com.catchflower.app.R
+import com.catchflower.app.ui.component.CfIcon
 import com.catchflower.app.ui.component.CfPrimaryButton
 import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
@@ -188,15 +185,19 @@ private fun PermissionRow(item: PermissionIntroItem) {
             },
         horizontalArrangement = Arrangement.spacedBy(CfDimen.GapMedium),
     ) {
-        // 아이콘. B 문서 1-7 아이콘 세트(17종)에 카메라·핀·사람이 들어 있고,
-        // **세 개 모두 이미 이 앱에 있다** — 카메라는 [CameraGlyph](하단 내비 셔터),
-        // 위치·연락처는 하단 내비가 쓰는 Material `Place`·`Person`이다.
+        // 아이콘. **납품 아이콘 3종을 쓴다**(`꽃 촬영`·`위치`·`친구 추가` · 2026-08-09).
         //
         // ⚠️ 처음에는 `item.title.take(1)`로 첫 글자(`카`·`위`·`연`)를 넣어 뒀다.
         //    화면만 보면 원 안에 글자가 들어차 있어 "아이콘 자리"로 보이지만,
-        //    **와이어프레임이 요구한 건 아이콘이고 그 아이콘은 이미 있었다.**
-        //    같은 앱 안에서 위치를 `핀`으로도 `위`로도 그리면 같은 개념이 화면마다
+        //    **와이어프레임이 요구한 건 아이콘이었다.** 그다음엔 직접 그린 카메라 글리프와
+        //    Material `Place`·`Person`으로 채웠고, 이제 납품 아트로 바꿨다(그 글리프는
+        //    호출처가 0이 돼서 지웠다 — `BottomNav.kt`).
+        //    같은 앱 안에서 위치를 두 가지 그림으로 그리면 같은 개념이 화면마다
         //    달라 보인다 — 중장년 타깃에서 아이콘 일관성은 학습 비용에 직결된다.
+        //    **하단 내비의 `지도`·`마이`와 같은 세트여야 한다는 것이 판정 기준이다.**
+        //
+        // ⚠️ **`tint`를 주지 않는다.** 납품 아이콘은 컬러이고, 이 원의 배경은
+        //    `PrimaryLight`(연한 초록)라서 초록으로 덮으면 거의 안 보인다([CfIcon]).
         Box(
             modifier = Modifier
                 .size(36.dp)
@@ -206,29 +207,18 @@ private fun PermissionRow(item: PermissionIntroItem) {
         ) {
             // contentDescription은 주지 않는다 — 바깥 Row가 `clearAndSetSemantics`로
             // 카드 전체를 한 덩어리로 읽으므로 여기서 주면 무시되거나 중복된다.
-            when (item.icon) {
-                PermissionIcon.CAMERA -> CameraGlyph(
-                    size = 20.dp,
-                    color = PermissionIntroPalette.Icon,
-                    // 렌즈 구멍은 이 원의 배경색으로 파낸다. Primary를 넘기면
-                    // 연한 초록 원 안에 진한 초록 점이 찍힌다.
-                    holeColor = PermissionIntroPalette.IconCircleBackground,
-                )
-
-                PermissionIcon.PLACE -> Icon(
-                    imageVector = Icons.Outlined.Place,
-                    contentDescription = null,
-                    tint = PermissionIntroPalette.Icon,
-                    modifier = Modifier.size(20.dp),
-                )
-
-                PermissionIcon.PERSON -> Icon(
-                    imageVector = Icons.Outlined.Person,
-                    contentDescription = null,
-                    tint = PermissionIntroPalette.Icon,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
+            CfIcon(
+                id = when (item.icon) {
+                    PermissionIcon.CAMERA -> R.drawable.ic_capture
+                    PermissionIcon.PLACE -> R.drawable.ic_place
+                    // 연락처 = `친구 추가`. 납품 세트에 `연락처`는 없고, 이 권한이
+                    // 하는 일이 곧 친구 찾기다(`purpose` 문구가 그렇게 말한다).
+                    PermissionIcon.PERSON -> R.drawable.ic_person_add
+                },
+                size = 20.dp,
+                // contentDescription은 주지 않는다 — 위 Row가 카드 전체를 한 덩어리로 읽는다.
+                contentDescription = null,
+            )
         }
 
         Column(modifier = Modifier.weight(1f)) {
@@ -414,9 +404,12 @@ internal data class PermissionIntroItem(
 }
 
 /**
- * 카드 아이콘. **하단 내비와 같은 그림을 쓴다** — 위치는 핀, 연락처는 사람,
- * 카메라는 셔터에 쓰는 [CameraGlyph]다. enum으로 두는 이유는 `PermissionIntroItem`을
- * JVM 테스트에서 그대로 읽는데, `ImageVector`를 필드로 들면 Compose를 끌고 들어와서다.
+ * 카드 아이콘. **하단 내비와 같은 납품 세트를 쓴다** — 카메라는 셔터와 같은
+ * `꽃 촬영`, 위치는 `위치`, 연락처는 `친구 추가`다.
+ *
+ * ⚠️ **리소스 id를 이 enum에 필드로 넣지 않는다.** `PermissionIntroItem`을 JVM
+ *    테스트가 그대로 읽는데, id는 `R`(생성 클래스)을 끌고 들어온다 — 그리기 쪽에서
+ *    `when`으로 옮긴다. 같은 이유로 `ImageVector`도 넣지 않았다.
  */
 internal enum class PermissionIcon { CAMERA, PLACE, PERSON }
 
