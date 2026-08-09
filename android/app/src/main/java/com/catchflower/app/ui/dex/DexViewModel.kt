@@ -158,7 +158,14 @@ class DexViewModel(app: Application) : AndroidViewModel(app) {
     fun discoveriesFor(flowerId: Int): List<Discovery> =
         DiscoveryRules.forFlower(records, flowerId)
 
-    /** 화면 05 썸네일. 파일명 → 실제 파일. 없으면 실루엣을 그린다. */
+    /**
+     * 화면 05 썸네일. 파일명 → 실제 파일. 없으면 null이고,
+     * [com.catchflower.app.ui.component.DiscoveryPhoto]가 **도감 일러스트**로 되돌린다
+     * (실루엣이 아니다 — 실루엣은 미발견 종의 표현이고, 이 기록은 이미 발견한 것이다).
+     *
+     * ⚠️ **기록마다 부른다.** 꽃 단위로 한 번 구해서 돌려쓰면 같은 종의 모든 기록이
+     *    첫 사진 하나를 보여주는데, 화면으로는 완벽하게 정상으로 보인다.
+     */
     fun photoFile(discovery: Discovery): java.io.File? =
         discovery.localPhotoPath
             ?.takeIf { discoveries.photos.exists(it) }

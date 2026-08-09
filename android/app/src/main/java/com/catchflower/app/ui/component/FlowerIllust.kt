@@ -168,8 +168,58 @@ fun FlowerSilhouette(
 }
 
 /**
- * 사진 자리. 발견 기록 목록(화면 05)에서 실제 사진이 붙기 전까지 쓴다.
- * 와이어프레임의 점선 `사진` 박스와 같은 자리다.
+ * **내가 찍은 사진 한 장.** 없으면 도감 일러스트로 되돌린다.
+ *
+ * 화면 05 `내 발견 기록`과 화면 13 공유 카드가 **같은 이 함수**를 쓴다.
+ * 🔴 **따로 만들면 안 된다** — 화면 13에만 `SharePhoto`가 있던 동안 화면 05는
+ * 회색 `사진` 박스였다(아래). 두 화면이 같은 데이터를 다르게 그리면
+ * **어느 쪽이 맞는지 화면만 봐서는 판단할 수 없다.**
+ *
+ * ⚠️ **사진이 없을 때 빈 회색 칸을 두지 않는다.** 사진 저장은 실패해도 등록을 막지
+ *    않으므로([com.catchflower.app.ui.capture.CaptureViewModel] `record`) 실제로 없을 수
+ *    있고, 옛 기록에는 아예 없다(사진 저장은 나중에 붙었다). 회색 칸은 **앱이 고장난
+ *    것처럼** 보이는데, 일러스트를 그리면 "무슨 꽃인지"는 그대로 전달된다.
+ *
+ * ⚠️ **`remember`로 붙든다.** 리컴포지션마다 디코딩하면 목록을 스크롤하는 동안
+ *    프레임마다 JPEG를 다시 읽는다. 키는 **파일 경로와 크기**다 —
+ *    [Flower]를 키로 쓰면 같은 종의 다른 기록이 **첫 사진을 재사용한다.**
+ */
+@Composable
+fun DiscoveryPhoto(
+    photo: java.io.File?,
+    flower: Flower,
+    size: Dp,
+    modifier: Modifier = Modifier,
+    contentDescription: String? = null,
+) {
+    val density = LocalDensity.current
+    val reqPx = with(density) { size.roundToPx() }
+    val bitmap = remember(photo?.path, reqPx) {
+        photo?.takeIf { it.exists() }?.let { PhotoLoader.load(it, reqPx) }
+    }
+
+    if (bitmap == null) {
+        FlowerIllust(flower = flower, size = size, modifier = modifier)
+        return
+    }
+    Image(
+        bitmap = bitmap.asImageBitmap(),
+        contentDescription = contentDescription,
+        // ⚠️ 여기는 **`Crop`이다** — 일러스트(`Fit`)와 반대다. 사진은 정사각으로
+        //    저장되므로 잘릴 것이 없고, 만약 옛 기록이 정사각이 아니면 `Fit`은
+        //    **칸 안에 빈 띠**를 남긴다. 목록에서 그 띠가 칸마다 다르게 생긴다.
+        contentScale = ContentScale.Crop,
+        modifier = modifier.size(size),
+    )
+}
+
+/**
+ * 사진 자리. **사진이 있을 수 없는 자리**에만 쓴다.
+ *
+ * 🔴 **발견 기록에는 쓰지 않는다.** 화면 05가 이걸 쓰고 있었는데, 사진은 (28)부터
+ *    실제로 저장되고 있었다 — **파일은 기기에 있는데 회색 박스를 그리고 있었다**
+ *    ((39)에서 [DiscoveryPhoto]로 바꿨다). 사진이 없는 것과 **안 보여주는 것**은
+ *    화면에서 똑같이 보인다.
  */
 @Composable
 fun PhotoPlaceholder(size: Dp, modifier: Modifier = Modifier) {

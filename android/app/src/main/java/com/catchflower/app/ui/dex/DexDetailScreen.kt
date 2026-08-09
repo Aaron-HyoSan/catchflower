@@ -33,9 +33,9 @@ import com.catchflower.app.ui.component.CfTextButton
 import com.catchflower.app.ui.component.CfToast
 import com.catchflower.app.ui.component.rememberToaster
 import com.catchflower.app.ui.component.CfVisibilityBadge
+import com.catchflower.app.ui.component.DiscoveryPhoto
 import com.catchflower.app.ui.component.FlowerIllust
 import com.catchflower.app.ui.component.FlowerSilhouette
-import com.catchflower.app.ui.component.PhotoPlaceholder
 import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
 import com.catchflower.app.ui.theme.CfText
@@ -197,6 +197,11 @@ fun DexDetailScreen(
             items(discoveries, key = { it.id }) { discovery ->
                 DiscoveryRow(
                     discovery = discovery,
+                    flower = flower,
+                    // 🔴 사진은 **기록마다 다르다.** `vm.photoFile(discovery)`를 여기서
+                    //    부른다 — 꽃 단위로 한 번 구해서 돌려쓰면 같은 종의 모든 기록이
+                    //    **첫 사진 하나**를 보여주는데, 화면으로는 완벽하게 정상이다.
+                    photo = vm.photoFile(discovery),
                     modifier = Modifier.padding(
                         horizontal = CfDimen.ScreenPadding,
                         vertical = CfDimen.GapSmall,
@@ -243,8 +248,23 @@ private fun MetricsCard(discoveries: List<Discovery>, modifier: Modifier = Modif
     }
 }
 
+/**
+ * 발견 기록 한 줄.
+ *
+ * 🔴 **여기가 회색 `사진` 박스였다**((39)에서 고쳤다). 사진은 (28)부터 실제로
+ *    기기에 저장되고 있었는데 **아무도 읽지 않았다** — `DexViewModel.photoFile`의
+ *    호출자가 0개였다. 도감을 채운 사용자에게 **자기가 찍은 사진이 한 장도 안 보였다.**
+ *    "사진이 없다"와 "사진을 안 보여준다"는 화면에서 똑같이 보이고,
+ *    코드에는 `실제 사진이 붙기 전까지 자리만 잡는다`는 주석이 남아 있어서
+ *    **이미 붙었다는 사실을 가렸다.**
+ */
 @Composable
-private fun DiscoveryRow(discovery: Discovery, modifier: Modifier = Modifier) {
+private fun DiscoveryRow(
+    discovery: Discovery,
+    flower: Flower,
+    photo: java.io.File?,
+    modifier: Modifier = Modifier,
+) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -254,15 +274,20 @@ private fun DiscoveryRow(discovery: Discovery, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(CfDimen.GapMedium),
     ) {
-        // 실제 사진이 붙기 전까지 자리만 잡는다.
         Box(
             modifier = Modifier
                 .size(52.dp)
                 .clip(RoundedCornerShape(CfDimen.GapSmall)),
             contentAlignment = Alignment.Center,
         ) {
-            PhotoPlaceholder(size = 52.dp)
-            Text(text = "사진", style = CfText.Tiny, color = CfColor.TextTertiary)
+            DiscoveryPhoto(
+                photo = photo,
+                flower = flower,
+                size = 52.dp,
+                // 날짜·장소는 옆 줄이 읽어 준다. 사진 자체가 새 정보는 아니라서
+                // 낭독을 늘리지 않는다(일러스트 `contentDescription = null`과 같은 판단).
+                contentDescription = null,
+            )
         }
         Column(
             modifier = Modifier.weight(1f),

@@ -1,6 +1,5 @@
 package com.catchflower.app.ui.capture
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -30,8 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.ImeAction
@@ -43,7 +40,7 @@ import com.catchflower.app.data.model.Flower
 import com.catchflower.app.ui.component.CfHeader
 import com.catchflower.app.ui.component.CfPrimaryButton
 import com.catchflower.app.ui.component.CfTextButton
-import com.catchflower.app.ui.component.FlowerIllust
+import com.catchflower.app.ui.component.DiscoveryPhoto
 import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
 import com.catchflower.app.ui.theme.CfText
@@ -268,14 +265,14 @@ private fun TargetCard(flower: Flower, photo: File?, dateLine: String) {
 /**
  * 저장된 사진 한 장.
  *
- * ⚠️ **`remember`로 붙든다.** 리컴포지션마다 디코딩하면 한 줄을 타이핑하는 동안
- *    글자마다 1600px JPEG를 다시 읽는다 — 입력이 눈에 보이게 끊긴다.
+ * 🔴 **직접 디코딩하지 않는다.** (39)까지 이 함수는 `BitmapFactory.decodeFile`을
+ *    옵션 없이 불렀다 — 72dp 칸에 **1600px 원본(약 10MB)**을 그대로 올린 것이고,
+ *    화면으로는 완벽하게 정상이었다. 지금은 화면 05와 **같은 [DiscoveryPhoto]**를 쓴다.
+ *    두 화면이 사진을 각각 그리던 동안 **화면 05는 회색 박스였다** —
+ *    같은 데이터를 두 곳에서 그리면 한쪽이 틀려도 아무도 모른다.
  */
 @Composable
 private fun SharePhoto(photo: File?, flower: Flower, size: androidx.compose.ui.unit.Dp) {
-    val bitmap = remember(photo?.path) {
-        photo?.let { android.graphics.BitmapFactory.decodeFile(it.path) }
-    }
     Box(
         Modifier
             .size(size)
@@ -283,16 +280,15 @@ private fun SharePhoto(photo: File?, flower: Flower, size: androidx.compose.ui.u
             .background(CfColor.Background),
         contentAlignment = Alignment.Center,
     ) {
-        if (bitmap != null) {
-            Image(
-                bitmap = bitmap.asImageBitmap(),
-                contentDescription = "방금 찍은 사진",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-        } else {
-            FlowerIllust(flower = flower, size = size)
-        }
+        DiscoveryPhoto(
+            photo = photo,
+            flower = flower,
+            size = size,
+            // 여기는 **낭독이 필요하다** — 화면 05 목록과 달리 이 카드는
+            // "무엇을 공유하는지"를 확인시키는 것이 목적이고, 옆 줄은 꽃 이름과
+            // 날짜만 읽는다(사진이 그 확인의 절반이다).
+            contentDescription = "방금 찍은 사진",
+        )
     }
 }
 

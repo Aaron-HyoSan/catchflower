@@ -272,6 +272,15 @@ class CaptureViewModel @JvmOverloads constructor(
         // ① 온디바이스 1차 필터 — 꽃이 아니면 **유료 API를 부르지 않는다**.
         //    비용 문서 4절 절감 장치 ②.
         val pre = preFilter.check(jpeg)
+        // 🔴 **지우지 않는다**((39)). 화면 12는 **1차 필터가 막은 것**과 **유료 호출이
+        //    404를 돌려준 것**을 똑같이 보여준다 — 로그가 없으면 "이 촬영이 과금됐는가"를
+        //    화면으로는 **판단할 수 없다.** 실제로 이 줄 덕분에 에뮬레이터 촬영이
+        //    `top=Screenshot`으로 걸러졌다는 것(= 호출 0건)을 확인했다.
+        android.util.Log.i(
+            "CatchFlower",
+            "1차필터: 꽃=${pre.isLikelyFlower} top=${pre.topLabel} " +
+                "matched=${pre.matchedLabel} conf=${pre.confidence} ${pre.elapsedMillis}ms",
+        )
         if (!pre.isLikelyFlower) {
             // 화면 12로 보낸다. 사용자에게는 판별 실패와 구분되지 않는다 —
             // "꽃이 아니에요"라고 단정하면 필터가 틀렸을 때(재현율 100%지만 우리 데이터셋 기준)
@@ -285,6 +294,13 @@ class CaptureViewModel @JvmOverloads constructor(
         //    ⚠️ 서버가 붙으면 서버가 한다. 지금은 클라이언트가 후보를 만든다.
         val month = Calendar.getInstance().get(Calendar.MONTH) + 1
         val candidates = flow.candidatesForMonth(month)
+        // 🔴 **지우지 않는다**((39)). 후보가 0개면 [PlantNetRecognizer]가 **네트워크를
+        //    타지 않는다**(유료 호출 없음). 반대로 이 줄이 `후보=N개(N>0)`로 찍히면
+        //    **그 촬영은 과금된 것**이다. 과금 여부를 사후에 확인할 수 있는 유일한 흔적이다.
+        android.util.Log.i(
+            "CatchFlower",
+            "판별 호출 직전: $recognizerName 후보=${candidates.size}개 (${month}월)",
+        )
 
         val result = try {
             recognizer.identify(jpeg, candidates, debugLabel)
