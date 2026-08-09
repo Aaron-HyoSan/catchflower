@@ -8,6 +8,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.catchflower.app.data.FlowerRepository
+import com.catchflower.app.ui.component.CfToast
 import androidx.compose.ui.platform.LocalContext
 
 /**
@@ -18,12 +19,16 @@ import androidx.compose.ui.platform.LocalContext
  * 화면마다 다음 목적지를 알게 하면 흐름이 흩어진다.
  *
  * @param onExit 흐름을 완전히 벗어난다 (도감으로). 하단 내비를 다시 보여줘야 한다.
- * @param onShare 화면 13 지도 공유 설정으로. **아직 없다** — 다음 단계.
+ * @param onShared 화면 13에서 공유를 마쳤다 → **지도(화면 14)로 간다**(와이어프레임 13 흐름).
+ *   토스트(`지도에 공유했어요`)는 여기서 띄운다.
+ * @param onSkipShare 화면 13 `공유하지 않기` → **도감 상세(화면 05)로 간다**
+ *   (와이어프레임 13 주석 ⑤). 토스트(`도감에는 저장됐어요`)도 여기서 띄운다.
  */
 @Composable
 fun CaptureFlow(
     onExit: () -> Unit,
-    onShare: (flowerId: Int) -> Unit,
+    onShared: () -> Unit,
+    onSkipShare: (flowerId: Int) -> Unit,
     modifier: Modifier = Modifier,
     vm: CaptureViewModel = viewModel(),
 ) {
@@ -98,7 +103,7 @@ fun CaptureFlow(
                     dexOrder = state.dexOrder,
                     collectedCount = state.collectedCount,
                     seasonCount = state.seasonCount,
-                    onShare = { onShare(state.flowerId) },
+                    onShare = { vm.openShareSettings(state.discoveryId, state.flowerId) },
                     onKeepPrivate = {
                         vm.backToCamera()
                         onExit()
@@ -116,10 +121,51 @@ fun CaptureFlow(
                 RediscoveredScreen(
                     flower = flower,
                     count = state.count,
-                    onShare = { onShare(state.flowerId) },
+                    onShare = { vm.openShareSettings(state.discoveryId, state.flowerId) },
                     onKeepPrivate = {
                         vm.backToCamera()
                         onExit()
+                    },
+                    modifier = insetModifier,
+                )
+            }
+        }
+
+        is CaptureState.ShareSettings -> {
+            val flower = repository.byId(state.flowerId)
+            val discovery = vm.discovery(state.discoveryId)
+            // ⚠️ **둘 중 하나가 없으면 나간다.** 기록을 못 찾는 것은 저장이 어긋난
+            //    경우뿐이고, 없는 기록의 공개 범위를 묻는 화면은 무엇을 눌러도
+            //    아무 데도 가지 않는다.
+            if (flower == null || discovery == null) {
+                vm.skipShare()
+                onExit()
+            } else {
+                ShareSettingsScreen(
+                    flower = flower,
+                    discovery = discovery,
+                    discoveryCount = state.discoveryCount,
+                    photo = vm.photoFile(discovery),
+                    onShare = { visibility, note ->
+                        vm.share(state.discoveryId, visibility, note)
+                        Toast.makeText(
+                            context,
+                            CfToast.MAP_SHARED.message,
+                            Toast.LENGTH_LONG,
+                        ).show()
+                        onShared()
+                    },
+                    onSkip = {
+                        vm.skipShare()
+                        // 🔴 **토스트가 반드시 있어야 한다.** `공유하지 않기`는 아무것도
+                        //    바꾸지 않으므로(기록은 이미 비공개다), 안내가 없으면
+                        //    "방금 찍은 꽃이 어디로 갔는지" 알 수 없다.
+                        Toast.makeText(
+                            context,
+                            CfToast.DEX_SAVED_ONLY.message,
+                            Toast.LENGTH_LONG,
+                        ).show()
+                        onSkipShare(state.flowerId)
                     },
                     modifier = insetModifier,
                 )

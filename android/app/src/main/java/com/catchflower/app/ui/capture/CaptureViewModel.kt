@@ -110,6 +110,22 @@ sealed interface CaptureState {
      * **오너 검토 대상 문구다.**
      */
     data class DailyDuplicate(val flowerId: Int) : CaptureState
+
+    /**
+     * 화면 13 — 지도 공유 설정. 10·11의 `지도에 공유하기`가 여기로 온다.
+     *
+     * **왜 촬영 흐름 안에 두는가.** 이 화면이 고치는 것은 방금 등록한 기록이고,
+     * 그 id는 10·11 상태에만 있다. 셸(`MainActivity`)에서 따로 띄우면 id를 넘기는
+     * 경로를 하나 더 만들어야 하고, 흐름의 다음 목적지(지도·도감 상세)를 화면 두
+     * 곳이 나눠 알게 된다 — [CaptureFlow] KDoc이 경계한 상태다.
+     *
+     * @param discoveryCount 이 꽃의 누적 발견 횟수. 카드의 `{서수} 발견`이 쓴다.
+     */
+    data class ShareSettings(
+        val discoveryId: String,
+        val flowerId: Int,
+        val discoveryCount: Int,
+    ) : CaptureState
 }
 
 /**
@@ -420,6 +436,69 @@ class CaptureViewModel @JvmOverloads constructor(
                 discoveryId = discovery.id,
             )
         }
+    }
+
+    // --- 화면 13 지도 공유 설정 ---
+
+    /** 화면 10·11의 `지도에 공유하기`. */
+    fun openShareSettings(discoveryId: String, flowerId: Int) {
+        val records = discoveries.discoveries.value
+        state = CaptureState.ShareSettings(
+            discoveryId = discoveryId,
+            flowerId = flowerId,
+            // `{서수} 발견`. 신규 등록이면 1이라 `첫 번째`가 된다.
+            discoveryCount = DiscoveryRules.countFor(records, flowerId),
+        )
+    }
+
+    /** 화면 13이 그릴 기록. 이미 저장돼 있으므로 메모리에서 찾는다. */
+    fun discovery(id: String): Discovery? =
+        discoveries.discoveries.value.firstOrNull { it.id == id }
+
+    /**
+     * 화면 13 확인 카드의 사진. 없으면 null (일러스트로 대체한다).
+     *
+     * ⚠️ **파일 존재를 확인한다.** 파일명만 보고 넘기면 사진 저장이 실패했거나
+     *    정리([DiscoveryRepository.prunePhotos])에 걸린 기록에서 빈 칸이 나온다.
+     */
+    fun photoFile(discovery: Discovery): java.io.File? =
+        discovery.localPhotoPath
+            ?.takeIf { discoveries.photos.exists(it) }
+            ?.let { discoveries.photos.file(it) }
+
+    /**
+     * 화면 13 `공유하기`. 공개 범위와 한 줄을 저장하고 **서버에 다시 올린다**
+     * ([DiscoveryRepository.update]).
+     *
+     * ⚠️ **저장을 기다리지 않고 상태를 먼저 되돌린다.** 지하철에서 눌러도 화면이
+     *    넘어가야 하고, 공개 범위는 이미 정해진 일이다([DiscoveryRepository.add]와 같은 판단).
+     *
+     * 🔴 **상태를 [CaptureState.Camera]로 되돌리는 것이 핵심이다.** 안 되돌리면
+     *    촬영 탭을 다시 열 때 **방금 공유한 기록의 화면 13이 또 나온다** — 이미 공유한
+     *    꽃을 다시 공유하라고 묻는 화면이고, 그 기록은 이번엔 이미 `public`이다.
+     *    호출부가 곧바로 다른 탭으로 옮기므로 카메라가 실제로 열리지는 않는다.
+     *
+     * @param note [ShareRules.toStored]를 지난 값. **빈 문자열을 넘기지 않는다** —
+     *   서버 행에 `note = ''`가 박힌다(그 이유는 [ShareRules.toStored]에 있다).
+     */
+    fun share(discoveryId: String, visibility: Visibility, note: String?) {
+        val target = discovery(discoveryId) ?: return
+        state = CaptureState.Camera
+        viewModelScope.launch {
+            discoveries.update(target.copy(visibility = visibility, note = note))
+        }
+    }
+
+    /**
+     * 화면 13 `공유하지 않기`.
+     *
+     * ⚠️ **아무것도 저장하지 않는다.** 기록은 이미 `private`으로 저장돼 있어서
+     *    고칠 것이 없다 — 여기서 `update`를 부르면 서버에 같은 값을 한 번 더 보낸다.
+     *    그래서 호출부가 토스트(`도감에는 저장됐어요`)를 띄워야 한다. 안 띄우면
+     *    **아무 일도 안 일어난 것처럼 보인다.**
+     */
+    fun skipShare() {
+        state = CaptureState.Camera
     }
 
     fun flowerName(flowerId: Int): String = repository.byId(flowerId)?.name.orEmpty()

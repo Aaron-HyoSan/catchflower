@@ -204,11 +204,28 @@ class DiscoveryRepository(
         }
     }
 
-    /** 화면 13 공개 범위·한 줄 수정. */
+    /**
+     * 화면 13 공개 범위·한 줄 수정. 파일·메모리를 갱신하고 **서버에 다시 올린다.**
+     *
+     * 🔴 **[push]를 빼면 공유가 이 기기 밖으로 나가지 않는다.** [syncPending]은
+     *    `pending()`(= 아직 안 올린 id)만 보내므로, 이미 올라간 기록을 고쳐도
+     *    **다시 보낼 후보에 들어가지 않는다.** 그러면 서버 행은 계속
+     *    `visibility = 'private'` · `note = null`인데 앱은 `모두에게 공개`를 보여준다 —
+     *    화면·파일·서버 셋 중 둘만 맞는 상태라 **기기에서는 아무 증상이 없다.**
+     *
+     * ⚠️ **[UploadState.clearUploaded]를 부르지 않는다.** 그건 한 건 고칠 때마다
+     *    전 기록을 다시 올린다(수백 건 왕복). 업로드는 클라이언트가 만든 id로 하는
+     *    upsert(`resolution=merge-duplicates`)라 **같은 건을 다시 보내는 것이 안전하고**,
+     *    이미 `uploaded`인 id에 [UploadState.markUploaded]를 또 부르는 것도 집합 합집합이라 무해하다.
+     *
+     * ⚠️ **저장이 먼저다** ([add]와 같은 이유). 업로드를 기다리면 지하철에서
+     *    `공유하기`를 눌러도 화면이 안 넘어간다 — 공개 범위는 이미 정해진 일이다.
+     */
     suspend fun update(discovery: Discovery) {
         val updated = _discoveries.value.map { if (it.id == discovery.id) discovery else it }
         store.save(updated)
         _discoveries.value = updated
+        push(discovery)
     }
 
     /**

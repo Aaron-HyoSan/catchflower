@@ -188,9 +188,17 @@ private fun CatchFlowerRoot() {
     if (tab == NavTab.CAPTURE) {
         CaptureFlow(
             onExit = { tab = NavTab.DEX },
-            onShare = {
-                // TODO(다음 단계): 화면 13 지도 공유 설정.
-                // 지금 조용히 도감으로 보내면 "공유하기를 눌렀는데 아무 일도 안 났다"가 된다.
+            // 화면 13에서 공유를 마치면 **지도로 간다** (와이어프레임 13 흐름
+            // `10/11 → 13 → 14`). 방금 찍은 핀이 보이는 것이 공유의 결과다.
+            //
+            // ⚠️ **지도를 따로 새로 읽지 않는다.** `MapViewModel`이 저장소 흐름을
+            //    구독하므로 핀이 저절로 붙는다 — 여기서 refresh를 부르면 같은 일을
+            //    두 번 하고, 안 부르면 안 붙는 것으로 착각하기 쉽다.
+            onShared = { tab = NavTab.MAP },
+            // `공유하지 않기`는 **도감 상세로** 간다 (주석 ⑤). 도감 홈으로 보내면
+            // 방금 등록한 꽃이 200칸 그리드 어딘가에 섞여서 "저장됐다"가 눈에 안 보인다.
+            onSkipShare = { flowerId ->
+                detailFlowerId = flowerId
                 tab = NavTab.DEX
             },
             modifier = Modifier.fillMaxSize(),
