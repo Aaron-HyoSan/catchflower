@@ -103,8 +103,12 @@ fun PermissionIntroScreen(
                 .padding(horizontal = CfDimen.ScreenPadding)
                 .padding(top = CfDimen.GapLarge, bottom = CfDimen.GapLarge),
         ) {
+            // 🔴 **제목이 카드 수를 센다.** A 문서 원문은 `이 세 가지만…`인데 숫자가
+            //    문장에 박혀 있어서, 예선처럼 연락처 카드를 빼면 **화면에 없는 세 번째
+            //    카드를 세는 제목**이 된다(실측: 카드 2장 + 제목 `세 가지`).
+            //    문구는 A 문서 3절 `화면 03에서 권한 카드가 두 장일 때의 제목`에 있다.
             Text(
-                text = "이 세 가지만 허용하면 준비 끝!",
+                text = PermissionIntroItem.title(PermissionIntroItem.all.size),
                 style = CfText.Hero,
                 color = PermissionIntroPalette.Title,
             )
@@ -317,6 +321,16 @@ private fun Footer(enabled: Boolean, onClick: () -> Unit) {
  * A 문서 03번 표의 세 줄.
  *
  * ⚠️ **문구를 화면에서 만들지 않는다.** 데이터로 두면 A 문서와 나란히 놓고 대조할 수 있다.
+ *
+ * 🔴 **연락처 줄은 예선 빌드에서 [all]에 넣지 않는다**(2026-08-09 · 실측으로 발견).
+ *    목표 4에서 가짜 친구 목록과 `READ_CONTACTS` 선언을 지웠는데 **이 화면은 그대로
+ *    남아서** `이미 가입한 지인을 친구로 연결합니다`라고 약속하고 있었다 —
+ *    선언이 없으니 눌러도 아무 일도 일어나지 않는다. 선언만 남은 것과 **같은 종류의
+ *    거짓**이고, 방향만 반대다(이번엔 화면이 남았다).
+ *
+ *    ⚠️ 연락처 매칭을 붙일 때 **[CONTACTS] 항목·매니페스트 선언·읽는 코드를 같이**
+ *       되살린다. 문구는 [CONTACTS]에 그대로 보관해 뒀다 — A 문서에서 지우지 않았고,
+ *       [PermissionCopyTest]가 그 문구를 계속 A 문서와 대조한다.
  */
 internal data class PermissionIntroItem(
     val title: String,
@@ -326,6 +340,28 @@ internal data class PermissionIntroItem(
     val icon: PermissionIcon,
 ) {
     companion object {
+        /**
+         * 연락처 안내 — **예선 빌드에서는 그리지 않는다.**
+         *
+         * 🔴 **지우지 않고 여기 남겨 둔다.** 문구는 A 문서 03절에 그대로 있고
+         *    [PermissionCopyTest]가 그것과 대조한다. 코드에서 없애면 **되살릴 때
+         *    문구를 다시 쓰게 되고**, 그게 "문구를 새로 쓰지 않는다"를 깨는 경로다.
+         */
+        val CONTACTS = PermissionIntroItem(
+            title = "연락처",
+            isRequired = false,
+            purpose = "이미 가입한 지인을 친구로 연결합니다.",
+            caveat = "번호는 암호화해 보관하며 저장하지 않아요.",
+            icon = PermissionIcon.PERSON,
+        )
+
+        /**
+         * 화면이 실제로 그리는 줄.
+         *
+         * 🔴 **[CONTACTS]가 없다.** 연락처를 읽는 코드도, 매니페스트 선언도 없는
+         *    빌드에서 "지인을 친구로 연결합니다"를 약속하면 **눌러도 아무 일이
+         *    없는 안내**가 된다(실측: 온보딩 2/2에 그대로 떠 있었다).
+         */
         val all = listOf(
             PermissionIntroItem(
                 title = "카메라",
@@ -341,14 +377,39 @@ internal data class PermissionIntroItem(
                 caveat = "끄면 지도 공유를 쓸 수 없어요.",
                 icon = PermissionIcon.PLACE,
             ),
-            PermissionIntroItem(
-                title = "연락처",
-                isRequired = false,
-                purpose = "이미 가입한 지인을 친구로 연결합니다.",
-                caveat = "번호는 암호화해 보관하며 저장하지 않아요.",
-                icon = PermissionIcon.PERSON,
-            ),
         )
+
+        /**
+         * A 문서 대조용 — **문서에 있는 세 줄 전부.**
+         *
+         * ⚠️ [all]과 나누는 이유: [PermissionCopyTest]가 "문구가 A 문서와 같은가"를
+         *    재는 것과 "이번 빌드가 무엇을 그리는가"는 **다른 질문**이다. 하나로
+         *    합치면 예선에서 뺀 줄의 문구가 **검증 대상에서 조용히 사라진다.**
+         */
+        val allInSpec = all + CONTACTS
+
+        /**
+         * 제목 — **카드 수를 센 문장**을 준다 (A 문서 3절 `화면 03에서 권한 카드가
+         * 두 장일 때의 제목`).
+         *
+         * 🔴 **숫자를 뺀 문장으로 바꾸지 않는다.** `세 가지`는 "몇 개만 하면 된다"를
+         *    적게 느끼게 하는 장치다 — 빼면 **끝이 안 보이는 절차**로 읽힌다.
+         *
+         * ⚠️ 세는 값이 [all]이어야 한다. [allInSpec]으로 세면 화면에 안 그리는
+         *    카드까지 세어서 **원래 사고로 돌아간다.**
+         *
+         * @throws IllegalArgumentException 문구가 정해지지 않은 카드 수. 🔴 기본값으로
+         *   `세 가지`를 돌려주면 카드가 4장이 돼도 **조용히 틀린 제목**이 나온다 —
+         *   A 문서에 줄을 추가하라는 신호가 여기서 나야 한다.
+         */
+        fun title(cardCount: Int): String = when (cardCount) {
+            2 -> "이 두 가지만 허용하면 준비 끝!"
+            3 -> "이 세 가지만 허용하면 준비 끝!"
+            else -> throw IllegalArgumentException(
+                "권한 카드 ${cardCount}장에 맞는 제목이 A 문서에 없다 — " +
+                    "3절 `화면 03에서 권한 카드가 두 장일 때의 제목`에 줄을 추가하고 여기 넣는다",
+            )
+        }
     }
 }
 

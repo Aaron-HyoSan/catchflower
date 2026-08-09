@@ -34,6 +34,8 @@ import com.catchflower.app.ui.dex.DexDetailScreen
 import com.catchflower.app.ui.dex.DexFilterSheet
 import com.catchflower.app.ui.dex.DexHomeScreen
 import com.catchflower.app.ui.dex.DexViewModel
+import com.catchflower.app.ui.map.MapScreen
+import com.catchflower.app.ui.map.MapViewModel
 import com.catchflower.app.ui.my.MyScreen
 import com.catchflower.app.ui.my.SeasonResultScreen
 import com.catchflower.app.ui.ranking.FriendsScreen
@@ -54,10 +56,16 @@ class CatchFlowerApp : Application() {
         //    "실인식이 도는 줄 알았는데 Mock이었다"를 알 방법이 없다. iOS는 그 상태로
         //    `PlantNetRecognizer`를 한 번도 실행하지 않은 채 커밋까지 갔다.
         //    **값은 절대 찍지 않는다** — 있음/없음만 남긴다.
+        //
+        // 🔴 **카카오 키를 하나로 뭉쳐 찍지 않는다.** `Kakao=true` 한 줄만 남기던 때는
+        //    REST 키만 있는 빌드도 그렇게 말했고, **지도만 회색인 이유를 로그에서 찾을
+        //    수 없었다.** REST(주소↔좌표)와 지도(네이티브 앱 키)는 **서로 대체되지
+        //    않는다** — `AppSecrets.hasKakaoKey`/`hasKakaoMapKey`를 나눈 이유가 이것이다.
         android.util.Log.i(
             "CatchFlower",
             "키 상태: PlantNet=${AppSecrets.hasPlantNetKey} " +
-                "Kakao=${AppSecrets.hasKakaoKey} Supabase=${AppSecrets.hasSupabase}" +
+                "KakaoREST=${AppSecrets.hasKakaoKey} KakaoMap=${AppSecrets.hasKakaoMapKey} " +
+                "Supabase=${AppSecrets.hasSupabase}" +
                 if (AppSecrets.missingKeys.isEmpty()) "" else " · 없는 키 ${AppSecrets.missingKeys}",
         )
     }
@@ -131,6 +139,9 @@ private fun CatchFlowerRoot() {
 
     val dexViewModel: DexViewModel = viewModel()
     val rankingViewModel: RankingViewModel = viewModel()
+    // ⚠️ **지도 탭 안에서 만들지 않는다.** 탭을 옮길 때마다 새로 생기면 `MapView`가
+    //    매번 다시 시작하고, 그때마다 네이티브 렌더러가 붙었다 떨어진다.
+    val mapViewModel: MapViewModel = viewModel()
 
     // 랭킹·마이 탭에서 **위로 겹쳐 여는** 화면들. 탭 자체가 아니라서 NavTab에 넣지 않는다.
     // 두 탭이 같은 화면(친구 관리·지난 시즌)을 공유하므로 상태도 여기서 공유한다.
@@ -219,7 +230,10 @@ private fun CatchFlowerRoot() {
 
                     // 위에서 return하므로 여기 오지 않는다. when을 완전하게 두기 위해 명시한다.
                     NavTab.CAPTURE -> Unit
-                    NavTab.MAP -> Placeholder(tab.label, "화면 14~16")
+                    NavTab.MAP -> MapScreen(
+                        vm = mapViewModel,
+                        onCapture = { tab = NavTab.CAPTURE },
+                    )
                     NavTab.RANKING -> when {
                         // 화면 19는 헤더에 `뒤로`가 있는 하위 화면이라 탭 안에서 대체한다.
                         friendsOpen -> FriendsScreen(
@@ -308,22 +322,5 @@ private fun CatchFlowerRoot() {
     }
 }
 
-/** 아직 안 만든 탭. 무엇이 들어올 자리인지 화면 번호로 남긴다. */
-@Composable
-private fun Placeholder(title: String, screens: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(CfDimen.ScreenPadding),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(text = title, style = CfText.ScreenTitle, color = CfColor.TextPrimary)
-        Text(
-            text = "$screens · 준비 중",
-            style = CfText.Body,
-            color = CfColor.TextSecondary,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
+// ✅ **`Placeholder`를 지웠다**(2026-08-09). 마지막 사용처였던 지도 탭에 화면 14가
+//    들어왔다 — **`준비 중`을 띄우는 탭이 이제 없다.**

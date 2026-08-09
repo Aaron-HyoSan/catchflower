@@ -159,6 +159,21 @@ dependencies {
     implementation("androidx.camera:camera-view:$cameraX")
     implementation("androidx.camera:camera-core:$cameraX")
 
+    // 지도 (화면 14~16). A-3 확정 = 카카오맵.
+    //
+    // 🔴 **`mavenCentral()`에 없다.** `settings.gradle.kts`의 `devrepo.kakao.com`에서
+    //    받는다 — 그 줄을 지우면 이 의존성이 404가 되고 **빌드가 죽는다.**
+    //
+    // ⚠️ 이 SDK는 **네이티브 앱 키**로 초기화한다(REST 키가 아니다). REST 키는 화면 02의
+    //    주소↔좌표 되짚기가 이미 쓰고 있고, **둘은 서로 대체되지 않는다.**
+    //    게다가 콘솔에 **키 해시와 패키지명**이 등록돼야 타일이 내려온다 —
+    //    등록 전에는 `MapAuthException(401)`이고 화면은 **회색 지도**다(오류로 보이지 않는다).
+    //
+    // ⚠️ **`카카오맵 Android SDK 사용 신청`을 먼저 의심하지 마라.** 2026-08-09에 그걸로
+    //    의심했는데 아니었다 — 인증 엔드포인트 본문이 이유를 문장으로 말해 준다
+    //    (`android keyhash mismatched!`). 추측하지 말고 그 본문을 읽는다((35)).
+    implementation("com.kakao.maps.open:android:2.14.1")
+
     // 온디바이스 '꽃 여부' 1차 필터 (비용 문서 4절 절감 장치 ②의 Android 쪽).
     // 번들 모델 — 네트워크·과금 없음. iOS Vision 프레임워크에 대응하는 자리다.
     implementation("com.google.mlkit:image-labeling:17.0.9")

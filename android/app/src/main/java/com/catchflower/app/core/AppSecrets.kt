@@ -39,8 +39,27 @@ object AppSecrets {
     /** 실제 꽃 인식을 켤 수 있는가. 없으면 Mock으로 돈다. */
     val hasPlantNetKey: Boolean get() = plantNetApiKey.isNotEmpty()
 
-    /** 지도·장소 기능을 켤 수 있는가. */
+    /**
+     * 주소↔좌표 되짚기(화면 02·촬영 장소명)를 켤 수 있는가.
+     *
+     * 🔴 **지도 타일과 다른 키다.** REST 키는 카카오 로컬 API용이고, 지도 SDK는
+     *    [hasKakaoMapKey]의 **네이티브 앱 키**로 초기화한다. 하나로 뭉쳐서 보면
+     *    REST 키만 넣은 빌드가 "지도도 된다"고 말하고, **회색 화면**이 나온다.
+     */
     val hasKakaoKey: Boolean get() = kakaoRestApiKey.isNotEmpty()
+
+    /**
+     * 지도(화면 14~16)를 켤 수 있는가.
+     *
+     * ⚠️ 키가 있어도 **콘솔에 키 해시·패키지명이 등록돼야** 타일이 내려온다.
+     *    등록 전에는 초기화가 성공하고 화면만 회색이다 — 그래서 지도 실패는
+     *    **로그로만 보인다**([MapView] 콜백을 반드시 남긴다).
+     *
+     * 🔴 **`MapAuthException(401)`을 인증 실패로만 읽지 마라.** SDK가 **DNS 실패도
+     *    401로 감싼다**(2026-08-09 실측). 원인은 인증 엔드포인트 응답 **본문**에
+     *    문장으로 있다 — `e.message`에는 없다((35)).
+     */
+    val hasKakaoMapKey: Boolean get() = kakaoNativeAppKey.isNotEmpty()
 
     /** 디버그 화면에서 무엇이 빠졌는지 보여준다. */
     val missingKeys: List<String>
@@ -49,6 +68,9 @@ object AppSecrets {
             if (supabaseAnonKey.isEmpty()) add("SUPABASE_ANON_KEY")
             if (plantNetApiKey.isEmpty()) add("PLANTNET_API_KEY")
             if (kakaoRestApiKey.isEmpty()) add("KAKAO_REST_API_KEY")
+            // ⚠️ 지도 키를 여기 빼 두면 "키 다 들어왔다"는 로그가 뜨는데 지도만
+            //    회색이다. 위 [hasKakaoKey] 주석의 사고가 그것이다.
+            if (kakaoNativeAppKey.isEmpty()) add("KAKAO_NATIVE_APP_KEY")
         }
 
     /**

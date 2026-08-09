@@ -67,6 +67,11 @@ class PermissionCopyTest {
         return parts[0] to parts[1]
     }
 
+    /**
+     * ⚠️ **[PermissionIntroItem.allInSpec]으로 잰다** — 예선에서 화면에 안 그리는
+     *    연락처 줄까지 포함이다. `all`로 재면 **뺀 줄의 문구가 검증에서 조용히
+     *    사라진다**(되살릴 때 아무도 대조해 주지 않는 문구가 된다).
+     */
     @Test
     fun 세_권한_문구가_A문서_그대로다() {
         val expected = mapOf(
@@ -74,11 +79,85 @@ class PermissionCopyTest {
             "위치" to "위치 `선택`",
             "연락처" to "연락처 `선택`",
         )
-        PermissionIntroItem.all.forEach { item ->
+        PermissionIntroItem.allInSpec.forEach { item ->
             val (purpose, caveat) = split(expected.getValue(item.title))
             assertEquals("${item.title} 용도 문구가 A 문서와 다르다", purpose, item.purpose)
             assertEquals("${item.title} 단서 문구가 A 문서와 다르다", caveat, item.caveat)
         }
+    }
+
+    /**
+     * 🔴 **연락처 줄을 화면에 그리지 않는다** (예선 범위).
+     *
+     * 목표 4에서 가짜 친구 목록과 `READ_CONTACTS` 선언을 지웠는데 **이 화면만 남아서**
+     * `이미 가입한 지인을 친구로 연결합니다`라고 약속했다 — 선언이 없으니 눌러도
+     * 아무 일이 없다. 실측(에뮬레이터 온보딩 2/2)으로 발견했다.
+     *
+     * 빨개지는 경우: 연락처를 [PermissionIntroItem.all]에 다시 넣었는데 매니페스트
+     * 선언과 읽는 코드를 같이 살리지 않았을 때. **그때는 이 테스트를 지우는 것이
+     * 아니라, 셋을 같이 되살리고 이 테스트를 반대로 뒤집는다.**
+     */
+    @Test
+    fun 연락처_안내는_예선_빌드에_없다() {
+        assertEquals(
+            "연락처를 읽는 코드도 매니페스트 선언도 없는 빌드가 " +
+                "`지인을 친구로 연결합니다`라고 약속하고 있다",
+            listOf("카메라", "위치"),
+            PermissionIntroItem.all.map { it.title },
+        )
+        // 문구 자체는 보관돼 있어야 한다 — 되살릴 때 새로 쓰지 않기 위해서다.
+        assertEquals("연락처", PermissionIntroItem.CONTACTS.title)
+    }
+
+    /**
+     * 🔴 **제목이 화면에 있는 카드 수를 센다.**
+     *
+     * A 문서 원문 제목은 `이 세 가지만…`인데 **숫자가 문장에 박혀 있다.** 연락처
+     * 카드를 뺀 예선 빌드에서 그 문장을 그대로 쓰면 **화면에 없는 세 번째 카드를
+     * 세는 제목**이 된다 — 실측(온보딩 2/2)에서 카드 2장 + 제목 `세 가지`였다.
+     *
+     * 빨개지는 경우: 제목을 문자열로 다시 박거나, [PermissionIntroItem.allInSpec]으로
+     * 세거나, 카드를 뺐는데 제목을 안 고쳤을 때.
+     */
+    @Test
+    fun 제목이_카드_수를_센다() {
+        assertEquals(
+            "카드 ${PermissionIntroItem.all.size}장인데 제목이 다른 수를 세고 있다",
+            "이 두 가지만 허용하면 준비 끝!",
+            PermissionIntroItem.title(PermissionIntroItem.all.size),
+        )
+        assertEquals("이 세 가지만 허용하면 준비 끝!", PermissionIntroItem.title(3))
+    }
+
+    /**
+     * ⚠️ **문구가 없는 카드 수는 예외를 던진다.**
+     *
+     * 🔴 기본값으로 `세 가지`를 돌려주면 카드가 4장이 돼도 **조용히 틀린 제목**이
+     *    나온다. A 문서에 줄을 추가하라는 신호가 코드에서 나야 한다.
+     */
+    @Test
+    fun 문구_없는_카드_수는_거절한다() {
+        for (n in listOf(0, 1, 4, 5)) {
+            try {
+                PermissionIntroItem.title(n)
+                throw AssertionError("카드 ${n}장에 제목을 만들어 줬다 — 조용히 틀린 제목이 나온다")
+            } catch (expected: IllegalArgumentException) {
+                // 기대한 경로다.
+            }
+        }
+    }
+
+    /**
+     * ⚠️ **화면이 요청하는 권한과 그리는 카드가 같은 집합인가.**
+     *
+     * 카드는 3장인데 요청은 2개(카메라·위치)였던 것이 이 사고의 모양이다.
+     * 카드를 뺐으니 이제 **둘 다 2개**여야 한다.
+     */
+    @Test
+    fun 그리는_카드와_요청하는_권한_수가_같다() {
+        // 화면 코드가 요청하는 권한: CAMERA · ACCESS_COARSE/FINE_LOCATION
+        // (위치 둘은 한 카드가 함께 요청한다 → 카드 기준으로 2장)
+        assertEquals(2, PermissionIntroItem.all.size)
     }
 
     /**
@@ -90,7 +169,10 @@ class PermissionCopyTest {
      */
     @Test
     fun 화면_문구가_A문서_그대로다() {
+        // 🔴 **A 문서 원문은 `세 가지`(카드 3장 기준)다.** 화면이 그리는 제목은
+        //    카드 수에 따라 갈리므로 아래 [제목이_카드_수를_센다]가 따로 잰다.
         assertEquals("이 세 가지만 허용하면 준비 끝!", rows["제목"])
+        assertEquals(rows["제목"], PermissionIntroItem.title(3))
         assertEquals("허용하지 않아도 도감은 쓸 수 있지만 일부 기능이 제한돼요.", rows["설명"])
         assertEquals("허용하고 시작하기", rows["CTA (Primary)"])
         assertEquals("나중에 설정에서 바꿀 수 있어요", rows["하단"])
@@ -113,9 +195,11 @@ class PermissionCopyTest {
     fun 문구_개수가_A문서와_맞는다() {
         val permissionRows = rows.keys.filter { it.contains("`필수`") || it.contains("`선택`") }
         assertEquals(
-            "A 문서의 권한 줄 수와 화면이 그리는 줄 수가 다르다 (문서 $permissionRows)",
+            "A 문서의 권한 줄 수와 대조 대상 줄 수가 다르다 (문서 $permissionRows)",
             permissionRows.size,
-            PermissionIntroItem.all.size,
+            // ⚠️ `all`이 아니라 `allInSpec`이다 — 예선에서 화면에 안 그리는 줄도
+            //    문구는 대조돼야 한다(위 [세_권한_문구가_A문서_그대로다] 주석).
+            PermissionIntroItem.allInSpec.size,
         )
     }
 
@@ -133,7 +217,7 @@ class PermissionCopyTest {
             .map { it.substringBefore(" `") }
         assertEquals(
             requiredInSpec,
-            PermissionIntroItem.all.filter { it.isRequired }.map { it.title },
+            PermissionIntroItem.allInSpec.filter { it.isRequired }.map { it.title },
         )
     }
 
@@ -143,6 +227,8 @@ class PermissionCopyTest {
         val orderInSpec = rows.keys
             .filter { it.contains("`필수`") || it.contains("`선택`") }
             .map { it.substringBefore(" `") }
-        assertEquals(orderInSpec, PermissionIntroItem.all.map { it.title })
+        assertEquals(orderInSpec, PermissionIntroItem.allInSpec.map { it.title })
+        // 화면에 그리는 것은 그 **앞 두 줄**이다 — 순서를 유지한 채 뒤에서 뺀다.
+        assertEquals(orderInSpec.take(2), PermissionIntroItem.all.map { it.title })
     }
 }

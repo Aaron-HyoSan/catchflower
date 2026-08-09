@@ -19,10 +19,12 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
-    <!-- 화면 19 친구 초대. 화면 03(권한 안내)에서는 **요청하지 않는다** —
-         iOS 세션이 같은 결론을 냈다(진행 기록 (16)): 쓰는 화면에서 받아야
-         왜 필요한지 설명할 수 있다. 거부하면 초대 링크 단독 화면으로 대체한다. -->
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- 🔴 **`READ_CONTACTS` 선언을 지웠다**(2026-08-09 · 목표 4).
+         화면 19에서 연락처를 읽는 코드를 뗐는데 선언만 남으면, 스토어 목록과 설치
+         화면이 **"연락처를 읽는 앱"이라고 말한다** — 읽지도 않는데 그렇게 말하는 것이
+         가짜 연락처 목록을 그렸던 것과 같은 종류의 거짓이다.
+         ⚠️ 연락처 매칭(전화번호 해시 대조)을 붙일 때 **선언과 코드를 같이** 되살린다.
+              선언만 먼저 넣으면 또 이 상태가 된다. -->
 
     <!-- 카메라 없는 기기(TV 등)에 설치되지 않게. required=false로 두면
          촬영이 앱의 핵심인데 못 쓰는 설치가 생긴다. -->
