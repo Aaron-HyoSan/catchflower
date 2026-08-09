@@ -538,8 +538,12 @@ private fun FriendRanking(vm: RankingViewModel, onInvite: () -> Unit) {
     }
 
     // 친구 0~2명이면 랭킹 자체가 무의미하므로 초대 화면으로 **전체 대체** (주석 ④).
-    if (vm.effectiveShowInvite || vm.friends is FriendRankingUi.NotConfigured) {
-        NoFriendsInvite(onInvite = onInvite, onToggleDebug = vm::toggleNoFriends)
+    //
+    // ⚠️ 조건이 [RankingUiMapper.showInvite] **그대로**여야 한다. 개발 토글을 위해
+    //    `|| forceNoFriends`를 붙여 뒀던 자리인데, 그러면 테스트가 재는 조건과
+    //    화면이 쓰는 조건이 갈린다(2026-08-09에 떼면서 남긴 주석 참고).
+    if (vm.showInviteInsteadOfRanking || vm.friends is FriendRankingUi.NotConfigured) {
+        NoFriendsInvite(onInvite = onInvite)
         return
     }
 
@@ -562,11 +566,8 @@ private fun FriendRanking(vm: RankingViewModel, onInvite: () -> Unit) {
                     style = CfText.Section,
                     color = CfColor.TextPrimary,
                 )
-                Spacer(Modifier.weight(1f))
-                // ⚠️ 개발용 토글이지만 `0명 보기`라고 쓰면 **`친구 7명과 겨루는 중` 옆에
-                //    `0명`이 나란히 놓여** 어느 쪽이 데이터인지 알 수 없다.
-                //    실제로 화면에서 그렇게 읽혔다. 개발용임을 라벨에 박는다.
-                CfTextButton(text = "[개발] 친구 없는 화면", onClick = vm::toggleNoFriends)
+                // 🔴 여기 있던 `[개발] 친구 없는 화면` 버튼을 지웠다(2026-08-09).
+                //    개발용 라벨을 붙인 버튼이 **사용자 화면에 그대로 떠 있었다.**
             }
         }
         item { Podium(vm) }
@@ -676,7 +677,7 @@ private fun InvitePrompt(onInvite: () -> Unit) {
  * `아직 겨룰 친구가 없어요` / `연락처에서 지인을 찾아보세요`.
  */
 @Composable
-private fun NoFriendsInvite(onInvite: () -> Unit, onToggleDebug: () -> Unit) {
+private fun NoFriendsInvite(onInvite: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
@@ -697,8 +698,7 @@ private fun NoFriendsInvite(onInvite: () -> Unit, onToggleDebug: () -> Unit) {
             text = "초대 링크 보내기",
             onClick = onInvite,
         )
-        Spacer(Modifier.height(CfDimen.GapSmall))
-        // 개발용 — 랭킹으로 되돌리는 토글.
-        CfTextButton(text = "[개발] 랭킹으로 돌아가기", onClick = onToggleDebug)
+        // 🔴 여기 있던 `[개발] 랭킹으로 돌아가기` 버튼을 지웠다(2026-08-09).
+        //    친구 0명이 실제 상태가 된 지금, 되돌릴 랭킹 자체가 없다.
     }
 }

@@ -1,9 +1,5 @@
 package com.catchflower.app.ui.ranking
 
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,16 +28,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-import com.catchflower.app.core.KoreanText
-import com.catchflower.app.data.DummyRanking
+import com.catchflower.app.data.model.RankedEntry
 import com.catchflower.app.ui.component.CfHeader
 import com.catchflower.app.ui.component.CfPrimaryButton
-import com.catchflower.app.ui.component.CfSmallButton
 import com.catchflower.app.ui.component.CfTextButton
 import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
@@ -53,41 +45,46 @@ private enum class FriendTab { MINE, INVITE }
 /**
  * 화면 19 친구 관리·초대 — `19_친구관리.svg`.
  *
- * ⚠️ **연락처 권한을 여기서 요청한다.** iOS 세션이 화면 03(권한 안내)에서 연락처를
- *    뺐고((16) 기록) 그 이유가 "쓰는 코드가 없어서 권한을 받아도 할 일이 없다"였다.
- *    화면 19가 그 "할 일"이다. AOS도 같은 자리에서 요청해 양쪽 흐름을 맞춘다.
+ * ⚠️ **연락처를 실제로 읽지 않는다.** 서버 대조(전화번호 해시)가 없는 상태에서
+ *    실제 연락처를 읽으면 화면 03 고지("번호는 저장하지 않아요")를 지킬 방법이 없다 —
+ *    대조할 상대가 없으니 읽을 이유도 없다.
  *
- * ⚠️ **권한을 거부하면 이 화면 전체를 `초대 링크 보내기` 단독 화면으로 대체한다**
- *    (와이어프레임 주석 ④). 재요청을 강요하지 않는다 — 연락처 없이도 초대는 된다.
+ * ## 🔴 2026-08-09: 더미를 지웠다. **가짜 사람을 보여주는 것이 미구현보다 나쁘다**
  *
- * ⚠️ **연락처를 실제로 읽지 않는다.** 목록은 더미다. 서버 대조(전화번호 해시)가
- *    없는 상태에서 실제 연락처를 읽으면 화면 03 고지("번호는 저장하지 않아요")를
- *    지킬 방법이 없다 — 대조할 상대가 없으니 읽을 이유도 없다.
+ * 에뮬레이터에서 이 화면이 **스스로 모순된 상태**로 떠 있었다:
+ * 헤더는 서버가 센 `친구 0명`인데 그 밑에 `연남댁 38종`·`효산맘 31종` … **8명**이
+ * 깔려 있었다. 헤더만 실측 소스로 바꾸고((31)) 목록은 [DummyRanking]에 남겨 둔
+ * 결과다 — **한 화면에 진짜와 가짜가 같이 있으면 사용자는 가짜를 믿는다**(숫자가
+ * 작은 쪽이 틀린 것처럼 보인다).
+ *
+ * 초대하기 탭은 더 나빴다. `연락처에 캐치플라워 이웃 3명이 있어요` 아래로
+ * `김영희 010-2•••-4567` 같은 **가짜 전화번호**를 띄웠다. 연락처를 읽은 적이
+ * 없는데 읽은 것처럼 말하는 화면이고, 그건 기능 미구현이 아니라 **신뢰 사고**다.
+ *
+ * 그래서 지금은 이렇게 한다:
+ * - `내 친구` 탭 = **`friend_ranking`이 준 실제 친구**([friends] 인자). 서버가 센
+ *   [friendCount]와 **같은 출처**라 두 숫자가 어긋날 수 없다.
+ * - `초대하기` 탭 = 연락처 매칭이 붙을 때까지 **초대 링크 하나만** 둔다.
+ *   문구는 이미 [ContactsDeniedFallback]에 있던 것을 쓴다 — 새 문구를 쓰지 않는다.
+ *
+ * ⚠️ **연락처 권한을 이제 요청하지 않는다.** 매칭이 없는 동안 권한을 받아도 할 일이
+ *    없다 — iOS가 화면 03에서 연락처를 뺀 그 이유((16))가 여기에도 그대로 적용된다.
+ *    매칭이 붙으면 [ContactsPermissionPrompt]를 다시 연결한다(지우지 않고 남겨 뒀다).
  */
 @Composable
 fun FriendsScreen(
     /** `null`이면 **모른다** — 숫자를 안 쓴다(A 문서 `친구 수를 모를 때의 문구`). */
     friendCount: Int?,
+    /**
+     * `friend_ranking`이 준 **실제** 친구 목록. 나를 포함해서 넘어오므로 여기서 뺀다.
+     *
+     * 🔴 **더미로 되돌리지 마라.** 위 클래스 주석의 사고가 그것이다.
+     */
+    friends: List<RankedEntry>,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     var tab by remember { mutableStateOf(FriendTab.MINE) }
-
-    var contactsGranted by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) ==
-                PackageManager.PERMISSION_GRANTED
-        )
-    }
-    // 요청을 이미 했는가. 거부 후에도 대체 화면을 보여주려면 "아직 안 물어봄"과 구분해야 한다.
-    var asked by remember { mutableStateOf(false) }
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        contactsGranted = granted
-        asked = true
-    }
 
     Column(modifier.fillMaxSize()) {
         CfHeader(
@@ -102,21 +99,11 @@ fun FriendsScreen(
             FriendTabItem("초대하기", tab == FriendTab.INVITE) { tab = FriendTab.INVITE }
         }
 
-        when {
-            // ⚠️ **권한 게이트는 `초대하기` 탭에만 걸린다.** 처음에 화면 전체를 막았더니
-            //    `내 친구 8`이 선택된 채로 "연락처 권한이 필요해요"가 떴다 — 내 친구
-            //    목록은 우리 서버 데이터라 연락처와 아무 관계가 없다. 권한을 안 준
-            //    사용자가 이미 있는 친구도 못 보게 되는 건 명백한 잘못이다.
-            tab == FriendTab.MINE -> MyFriendsList(friendCount)
-
-            // 거부했다 → 초대 링크 단독으로 대체 (주석 ④). 재요청을 강요하지 않는다.
-            asked && !contactsGranted -> ContactsDeniedFallback()
-
-            !contactsGranted -> ContactsPermissionPrompt(
-                onRequest = { permissionLauncher.launch(Manifest.permission.READ_CONTACTS) },
-            )
-
-            else -> InviteList()
+        when (tab) {
+            FriendTab.MINE -> MyFriendsList(friendCount, friends)
+            // 연락처 매칭이 없는 동안은 **초대 링크 하나만** 둔다. 가짜 연락처 목록을
+            // 그리는 것보다 낫다(클래스 주석).
+            FriendTab.INVITE -> ContactsDeniedFallback()
         }
     }
 }
@@ -152,36 +139,17 @@ private fun RowScope.FriendTabItem(label: String, selected: Boolean, onClick: ()
     }
 }
 
-/**
- * 권한을 아직 안 물어봤다.
- *
- * 문구는 A 문서 3절 권한 재요청 시트 `연락처` 항목을 쓴다:
- * `지인을 찾으려면 연락처 권한이 필요해요` / `번호는 저장하지 않아요`.
- */
-@Composable
-private fun ContactsPermissionPrompt(onRequest: () -> Unit) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .padding(CfDimen.ScreenPadding),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            "지인을 찾으려면 연락처 권한이 필요해요",
-            style = CfText.Section,
-            color = CfColor.TextPrimary,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(CfDimen.GapSmall))
-        Text("번호는 저장하지 않아요", style = CfText.Body, color = CfColor.TextSecondary)
-        Spacer(Modifier.height(CfDimen.GapLarge))
-        CfPrimaryButton(text = "연락처에서 찾기", onClick = onRequest)
-    }
-}
+// ⚠️ **`ContactsPermissionPrompt`를 지웠다**(2026-08-09). 연락처 매칭이 없는 동안
+//    권한을 받아도 할 일이 없어서 부르는 곳이 사라졌고, 안 부르는 `@Composable`을
+//    남겨 두면 "권한을 요청하는 화면이 있다"고 읽힌다. 문구는 A 문서 3절
+//    (`지인을 찾으려면 연락처 권한이 필요해요` / `번호는 저장하지 않아요`)에 그대로
+//    있으므로 **매칭을 붙일 때 거기서 다시 가져온다** — 여기 코드가 원본이 아니다.
 
 /**
- * 권한 거부 — 초대 링크 단독 화면 (주석 ④).
+ * `초대하기` 탭 — 초대 링크 하나만 둔다 (와이어프레임 주석 ④의 대체 화면).
+ *
+ * 원래는 연락처 권한을 거부했을 때만 쓰던 화면이다. 연락처 매칭이 붙기 전까지는
+ * **모든 사용자가 이 화면을 본다** — 가짜 연락처 목록을 그리는 것보다 낫다.
  *
  * **재요청 버튼을 두지 않는다.** 주석이 "권한 재요청은 강요하지 않는다"고 못 박았고,
  * 연락처 없이도 초대 링크는 그대로 동작한다.
@@ -213,12 +181,46 @@ private fun ContactsDeniedFallback() {
     }
 }
 
-/** `내 친구 {n}` 탭 — 이미 친구인 사람. 랭킹과 같은 목록이라 닉네임만 보여준다. */
+/**
+ * `내 친구 {n}` 탭 — 이미 친구인 사람. 랭킹과 같은 목록이라 닉네임만 보여준다.
+ *
+ * 🔴 **[all]은 `friend_ranking`이 준 실제 목록이다.** [friendCount]와 **같은 출처**라야
+ *    한다 — 예전에는 헤더만 서버 숫자였고 목록은 더미여서 `친구 0명` 아래에 8명이
+ *    깔렸다(클래스 주석). 두 값의 출처가 갈리면 그 모순이 다시 생긴다.
+ */
 @Composable
-private fun MyFriendsList(friendCount: Int?) {
-    // 목록을 한 번만 만든다. `items` 블록 안에서 `friends()`를 다시 부르면
-    // 행마다 리스트를 새로 만들고 필터링한다.
-    val friends = remember { DummyRanking.friends().filterNot { it.isMe } }
+private fun MyFriendsList(friendCount: Int?, all: List<RankedEntry>) {
+    // 나를 뺀다 — `friend_ranking`은 내 행을 같이 준다(랭킹 화면이 `나`를 표시해야 해서).
+    // ⚠️ `remember(all)`로 키를 준다. 키 없이 `remember`만 쓰면 서버 응답이 늦게 와도
+    //    **첫 프레임의 빈 목록이 그대로 남는다**(더미 시절에는 항상 값이 있어서 안 보였다).
+    val friends = remember(all) { all.filterNot { it.entry.isMe } }
+
+    // A 문서 3절 빈 상태 `친구 없음`. **문구를 새로 쓰지 않는다.**
+    if (friends.isEmpty()) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(CfDimen.ScreenPadding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                "아직 겨룰 친구가 없어요",
+                style = CfText.Section,
+                color = CfColor.TextPrimary,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(CfDimen.GapSmall))
+            Text(
+                "연락처에서 지인을 찾아보세요",
+                style = CfText.Body,
+                color = CfColor.TextSecondary,
+                textAlign = TextAlign.Center,
+            )
+        }
+        return
+    }
+
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(CfDimen.ScreenPadding),
@@ -231,7 +233,7 @@ private fun MyFriendsList(friendCount: Int?) {
                 color = CfColor.TextPrimary,
             )
         }
-        items(friends, key = { it.userId }) { friend ->
+        items(friends, key = { it.entry.userId }) { friend ->
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -240,120 +242,35 @@ private fun MyFriendsList(friendCount: Int?) {
                     .padding(CfDimen.GapMedium),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Avatar(friend.nickname)
+                Avatar(friend.entry.nickname)
                 Spacer(Modifier.width(CfDimen.GapMedium))
                 Text(
-                    friend.nickname,
+                    friend.entry.nickname,
                     style = CfText.BodyBold,
                     color = CfColor.TextPrimary,
                     modifier = Modifier.weight(1f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text("${friend.speciesCount}종", style = CfText.Body, color = CfColor.TextSecondary)
-            }
-        }
-    }
-}
-
-/** `초대하기` 탭 — 가입자는 즉시 추가, 미가입자는 초대. */
-@Composable
-private fun InviteList() {
-    val onService = remember { DummyRanking.contactsOnService() }
-    val toInvite = remember { DummyRanking.contactsToInvite() }
-
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = CfDimen.ScreenPadding,
-            end = CfDimen.ScreenPadding,
-            top = CfDimen.Gap,
-            bottom = 96.dp,
-        ),
-        verticalArrangement = Arrangement.spacedBy(CfDimen.GapMedium),
-    ) {
-        item {
-            // 안내 박스 — 매칭 결과 요약 (주석 ①).
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(CfDimen.RadiusCard))
-                    .background(CfColor.PrimaryLight)
-                    .padding(CfDimen.Gap),
-            ) {
                 Text(
-                    "연락처에 캐치플라워 이웃 ${onService.size}명이 있어요",
-                    style = CfText.BodyBold,
-                    color = CfColor.Primary,
-                )
-                Spacer(Modifier.height(CfDimen.GapTiny))
-                Text(
-                    "친구로 추가하면 순위를 함께 볼 수 있어요",
-                    style = CfText.Caption,
+                    "${friend.entry.speciesCount}종",
+                    style = CfText.Body,
                     color = CfColor.TextSecondary,
                 )
             }
         }
-
-        item { SectionLabel("연락처에서 찾은 친구") }
-        items(onService, key = { it.phone }) { contact ->
-            ContactRow(contact, actionLabel = "추가", showPhone = true)
-        }
-
-        item { SectionLabel("아직 가입하지 않은 지인") }
-        items(toInvite, key = { it.phone }) { contact ->
-            // 미가입자는 번호를 보여주지 않는다 — 우리 서비스 사용자가 아니라
-            // 대조할 근거가 없고, 화면에 띄울 이유도 없다.
-            ContactRow(contact, actionLabel = "초대하기", showPhone = false)
-        }
-
-        item {
-            Spacer(Modifier.height(CfDimen.GapSmall))
-            CfPrimaryButton(text = "초대 링크 보내기", onClick = { /* TODO: 공유 시트 */ })
-        }
     }
 }
 
-@Composable
-private fun SectionLabel(text: String) {
-    Text(text, style = CfText.Section, color = CfColor.TextPrimary)
-}
-
-/**
- * 연락처 행.
- *
- * ⚠️ 번호는 [KoreanText.maskPhone]으로 **반드시 마스킹한다** (A 문서 `마스킹 필수`).
- */
-@Composable
-private fun ContactRow(
-    contact: DummyRanking.Contact,
-    actionLabel: String,
-    showPhone: Boolean,
-) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(CfDimen.RadiusCard))
-            .background(CfColor.Surface)
-            .padding(CfDimen.GapMedium),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Avatar(contact.name)
-        Spacer(Modifier.width(CfDimen.GapMedium))
-        Column(Modifier.weight(1f)) {
-            Text(contact.name, style = CfText.BodyBold, color = CfColor.TextPrimary, maxLines = 1)
-            if (showPhone) {
-                Text(
-                    KoreanText.maskPhone(contact.phone),
-                    style = CfText.Tiny,
-                    color = CfColor.TextTertiary,
-                )
-            }
-        }
-        Spacer(Modifier.width(CfDimen.GapSmall))
-        CfSmallButton(text = actionLabel, onClick = { /* TODO(서버 붙은 뒤): 친구 요청 */ })
-    }
-}
+// 🔴 **`InviteList`·`ContactRow`·`SectionLabel`을 지웠다**(2026-08-09).
+//    연락처에서 찾은 친구 3명(`김영희 010-2•••-4567` …)과 미가입 지인 3명을 그리던
+//    자리다. 전부 [DummyRanking]의 **가짜 사람·가짜 번호**였고, 화면은
+//    `연락처에 캐치플라워 이웃 3명이 있어요`라고 **읽은 적도 없는 연락처를 읽은 것처럼**
+//    말했다. 마스킹(`maskPhone`)까지 성실하게 해서 더 진짜처럼 보였다.
+//
+//    ⚠️ **다시 만들 때는 연락처 매칭(전화번호 해시 대조)과 같이 붙인다.** 화면만
+//    되살리면 같은 사고가 그대로 돌아온다. 권한 요청 UI([ContactsPermissionPrompt])는
+//    그때 쓰려고 **지우지 않고 남겨 뒀다.**
 
 /**
  * 이름 첫 글자 아바타.

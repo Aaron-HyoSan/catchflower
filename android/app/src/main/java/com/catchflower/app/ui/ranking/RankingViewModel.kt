@@ -193,13 +193,13 @@ class RankingViewModel @JvmOverloads constructor(
 
     fun flower(flowerId: Int) = repository.byId(flowerId)
 
-    /** 개발용 — 친구 0명 분기(와이어프레임 18 주석 ④)를 화면에서 볼 수 있게 한다. */
-    var forceNoFriends by mutableStateOf(false)
-        private set
-
-    fun toggleNoFriends() {
-        forceNoFriends = !forceNoFriends
-    }
-
-    val effectiveShowInvite: Boolean get() = forceNoFriends || showInviteInsteadOfRanking
+    // 🔴 **`forceNoFriends`·`toggleNoFriends`·`effectiveShowInvite`를 지웠다**(2026-08-09).
+    //    더미 시절에는 친구가 항상 8명이라 "친구 0명 분기"(와이어프레임 18 주석 ④)를
+    //    **코드로만 존재하는 화면**이었고, 그래서 눌러서 보는 토글이 필요했다.
+    //    더미를 떼면서 그 분기가 **실제 기본 화면**이 됐다 — 토글은 목적을 잃었고,
+    //    `[개발] …` 라벨을 붙인 버튼이 사용자 화면에 남아 있었다(실측: 화면 18·19).
+    //
+    //    ⚠️ 다시 만들 때는 **[showInviteInsteadOfRanking]에 손대지 않는 방법**으로 한다.
+    //       분기 조건에 `||`를 하나 더 붙이면 그 조건이 테스트가 재는 것과 달라진다
+    //       ([RankingUiMapper.showInvite]는 테스트가 있는데 `effectiveShowInvite`는 없었다).
 }

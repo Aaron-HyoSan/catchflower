@@ -224,6 +224,10 @@ private fun CatchFlowerRoot() {
                         // 화면 19는 헤더에 `뒤로`가 있는 하위 화면이라 탭 안에서 대체한다.
                         friendsOpen -> FriendsScreen(
                             friendCount = rankingViewModel.friendCount,
+                            // 🔴 **더미가 아니라 `friend_ranking` 결과를 넘긴다.**
+                            //    friendCount와 **같은 출처**여야 한다 — 갈리면
+                            //    `친구 0명` 아래에 8명이 깔린다(FriendsScreen 주석).
+                            friends = rankingViewModel.friendRanking,
                             onBack = { friendsOpen = false },
                         )
 
@@ -248,6 +252,10 @@ private fun CatchFlowerRoot() {
                     NavTab.MY -> when {
                         friendsOpen -> FriendsScreen(
                             friendCount = rankingViewModel.friendCount,
+                            // 🔴 **더미가 아니라 `friend_ranking` 결과를 넘긴다.**
+                            //    friendCount와 **같은 출처**여야 한다 — 갈리면
+                            //    `친구 0명` 아래에 8명이 깔린다(FriendsScreen 주석).
+                            friends = rankingViewModel.friendRanking,
                             onBack = { friendsOpen = false },
                         )
 
