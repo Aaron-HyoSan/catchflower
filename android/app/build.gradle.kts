@@ -52,6 +52,19 @@ android {
         buildConfigField("String", "PLANTNET_API_KEY", secret("PLANTNET_API_KEY"))
         buildConfigField("String", "KAKAO_REST_API_KEY", secret("KAKAO_REST_API_KEY"))
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", secret("KAKAO_NATIVE_APP_KEY"))
+
+        // 🔴 **넘겨줄 APK만 x86을 뺀다** — `-PcfPhoneOnly` 를 줄 때만 적용된다.
+        //
+        // APK 107MB 중 **24MB가 x86·x86_64**다. 실제 폰에는 그 ABI가 없어서
+        // **한 번도 실행되지 않는 코드**인데, 카카오톡 파일 전송(100MB)에는 그 24MB가
+        // 걸린다. 그렇다고 기본값으로 빼면 **x86 에뮬레이터에서 앱이 설치되고 나서
+        // 켜는 순간 죽는다**(`UnsatisfiedLinkError`) — 이 맥은 arm64 에뮬레이터라
+        // 내가 그 고장을 못 본다. 그래서 **넘겨줄 때만** 켠다.
+        if (project.hasProperty("cfPhoneOnly")) {
+            ndk {
+                abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+            }
+        }
     }
 
     buildFeatures {
