@@ -49,6 +49,21 @@ class FlowerRepository private constructor(val flowers: List<Flower>) {
                 instance ?: load(context).also { instance = it }
             }
 
+        /**
+         * 이미 읽어 둔 200종으로 만든다 — **JVM 테스트가 [IdentifyFlow]를 태우기 위한 문**이다.
+         *
+         * 🔴 **화면 12까지 재려면 이게 필요하다.** [get]은 `Context.assets`를 타서
+         *    JVM 테스트에서 못 쓴다. 그래서 실측 캐시 200장을 재현하는
+         *    `PlantNetReplayTest`가 `identify()`까지만 재고 **`IdentifyFlow.decide()`는
+         *    한 번도 태우지 않았다** — 즉 `MIN_CONFIDENCE_FOR_ANY_CANDIDATE`가
+         *    **사용자에게 보이는 실패율**로 얼마가 되는지 재는 검사가 없었다.
+         *    Top-1 77%는 초록인데 실제로는 8월 촬영의 72%가 화면 12로 갔다(실측 (42)).
+         *
+         * ⚠️ [instance]를 건드리지 않는다. 캐시에 넣으면 테스트가 만든 목록이
+         *    앱 경로로 새어 나간다.
+         */
+        fun forTest(flowers: List<Flower>): FlowerRepository = FlowerRepository(flowers)
+
         private fun load(context: Context): FlowerRepository {
             val text = context.assets.open(ASSET).bufferedReader().use { it.readText() }
             val array = JSONObject(text).getJSONArray("flowers")

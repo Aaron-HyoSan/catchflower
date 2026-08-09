@@ -4,6 +4,7 @@ import com.catchflower.app.core.AiDifficulty
 import com.catchflower.app.core.GamePolicy
 import com.catchflower.app.core.Rarity
 import com.catchflower.app.core.Season
+import com.catchflower.app.data.FlowerRepository
 import com.catchflower.app.data.model.Flower
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
@@ -252,6 +253,70 @@ class PlantNetReplayTest {
                 "(정답 $correctBelowFloor · 오답 $wrongBelowFloor). B-3-a 근거를 다시 계산한다",
             correctBelowFloor > wrongBelowFloor,
         )
+    }
+
+    /**
+     * 🔴 **사용자가 실제로 보는 실패율을 기록한다** — `identify()`가 아니라
+     * [IdentifyFlow.decide]까지 태운다.
+     *
+     * **왜 이 검사가 따로 있어야 하는가.** 위의 `실측 200장 Top1이 iOS와 같다`는
+     * **1순위가 맞았는가**만 본다. 그런데 화면 12로 갈지는 `decide()`가 정하고,
+     * 거기엔 `identify()`에 없는 관문이 하나 더 있다 —
+     * [GamePolicy.MIN_CONFIDENCE_FOR_ANY_CANDIDATE]. 그래서 **Top-1 77%가 초록인 채로
+     * 사용자는 대부분 실패를 본다**는 상태가 성립했고, 실제로 성립해 있었다:
+     * 실기기에서 꽃을 찍었는데 `꽃이 아닐 수도 있어요`가 떴다((42)).
+     *
+     * 실측(8월 후보풀 98종 · 캐시 200장):
+     *
+     * | 결과 | 장수 |
+     * |---|---|
+     * | 후보 0개 → 화면 12 | 66장 (33%) |
+     * | 1순위 < 0.30 → 화면 12 | 77장 (38%) |
+     * | 화면 09/09변형 | 57장 (28%) |
+     *
+     * **3연속 실패 확률이 37%다** — `꽃이 아닐 수도 있어요`(A 문서 3회 연속)는
+     * 예외 상황이 아니라 **흔한 결과**였다.
+     *
+     * ⚠️ **통과선을 걸지 않는다.** 지금 이 숫자를 "합격"으로 못 박으면 B-3-a가
+     *    결정될 때 무엇이 좋아졌는지 알 수 없다. 대신 **값이 움직이면 알도록**
+     *    현재값을 고정한다 — floor를 고치는 순간 이 테스트가 빨개져서
+     *    "얼마나 좋아졌는지"를 숫자로 들고 오게 된다.
+     */
+    @Test
+    fun `화면 12로 가는 비율을 기록한다`() = runBlocking {
+        // 8월로 고정한다 — 오너가 실기기로 찍은 달이고, 제철 달로 재면
+        // "필터가 떨군 것"이 클래스별로 흩어져 **한 사람이 겪는 실패율**이 안 보인다.
+        val month = 8
+        val candidates = candidatesFor(month)
+        val flow = IdentifyFlow(FlowerRepository.forTest(flowers))
+
+        var noCandidate = 0
+        var belowFloor = 0
+        var shown = 0
+
+        for (photo in photos) {
+            val result = recognizer(photo.body).identify(ByteArray(1), candidates)
+            when {
+                result.isEmpty() -> noCandidate++
+                flow.decide(result) == IdentifyOutcome.Failed -> belowFloor++
+                else -> shown++
+            }
+        }
+
+        val failed = noCandidate + belowFloor
+        println(
+            "${month}월 화면 12 비율 — 후보0개 $noCandidate · floor미달 $belowFloor · " +
+                "통과 $shown / ${photos.size} (실패 ${failed * 100 / photos.size}%)",
+        )
+
+        // 현재값 고정. 🔴 **이 숫자를 그냥 갱신하지 않는다** — 움직였다는 건
+        //    판별 흐름이 달라진 것이고, (42)의 진단을 다시 해야 한다는 뜻이다.
+        assertEquals("후보 0개 장수가 달라졌다 — 개화월 필터나 색인이 바뀌었다", 66, noCandidate)
+        assertEquals(
+            "floor 미달 장수가 달라졌다 — MIN_CONFIDENCE_FOR_ANY_CANDIDATE를 만졌는가",
+            77, belowFloor,
+        )
+        assertEquals("화면 09로 가는 장수가 달라졌다", 57, shown)
     }
 
     /**
