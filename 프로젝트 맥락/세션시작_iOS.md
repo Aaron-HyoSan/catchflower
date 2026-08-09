@@ -147,7 +147,7 @@ xcodebuild test -project CatchFlower.xcodeproj -scheme CatchFlower \
 
 | 항목 | 막는 것 |
 |---|---|
-| **B-3-a `identifyFailureFloor`** | 0.30이 **정답 43%를 버린다**(실측). 0.05 권고 · `오너_결정사항.md` B-3 실측 절 |
+| ~~B-3-a `identifyFailureFloor`~~ | ✅ **확정 0.05**(2026-08-09 · 진행 (44)). `GamePolicy.swift`에 반영됨 — AOS와 같은 값이어야 한다 |
 | **B-3-b 난이도 임계값 60/70/85** | 0.60 넘긴 사진이 28%뿐 — **10장 중 7장이 애매 화면으로 간다** |
 | **B-4 민들레류 통합** | PlantNet이 `Taraxacum sect.`만 준다(종 미구분) → 안 합치면 **채울 수 없는 도감 칸** |
 | **카카오 콘솔: 카카오맵/로컬 서비스 활성화** | 403 `disabled OPEN_MAP_AND_LOCAL service` · 장소명·지도 14~16·지역선택 02 |

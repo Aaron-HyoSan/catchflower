@@ -230,7 +230,8 @@ enum FixtureShot: String, CaseIterable, Sendable {
     /// 실측 0.570 — 같은 종인데 0.60 미달이라 애매 경로로 간다.
     case realLow = "real_sunflower_low.jpg"
     /// 실측 0.112 — **정답(민들레)인데 판별 실패로 간다.**
-    /// B-3 `identifyFailureFloor = 0.30`이 정답을 버리는 걸 눈으로 확인하는 버튼이다.
+    /// B-3 `identifyFailureFloor`가 정답을 버리는 걸 눈으로 확인하는 버튼이다.
+    /// ✅ 0.30 → **0.05**로 확정됐다((44)) — 이 버튼은 그 근거를 만든 도구다.
     /// 임계값 답변(B-3-a)이 오면 이 버튼의 결과가 바뀐다.
     case realFaint = "real_dandelion_faint.jpg"
 

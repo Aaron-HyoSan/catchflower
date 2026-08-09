@@ -136,7 +136,7 @@ final class RealRecognitionUITests: XCTestCase {
                 ① PlantNet 키가 안 들어갔다(Secrets.xcconfig)
                 ② 지금 달에 해바라기가 안 핀다(개화월 7~9월) — 그러면 이건 정상 동작이고
                    픽스처를 제철 꽃으로 바꿔야 한다
-                ③ identifyFailureFloor(0.30)가 정답을 버렸다 — B-3 미결 항목
+                ③ identifyFailureFloor가 정답을 버렸다 (0.30 시절의 주 원인 — (44)에서 0.05로 내렸다)
                 """)
             return
         }
@@ -152,7 +152,8 @@ final class RealRecognitionUITests: XCTestCase {
     /// **저득점 사진이 판별 실패(화면 12)로 가는 것을 고정한다.**
     ///
     /// 민들레 정답 사진(실측 0.112)을 쓴다. 실패로 가는 이유가 **달마다 다르다**:
-    /// - 3~5월: `identifyFailureFloor = 0.30`이 정답(0.112)을 버린다 — **B-3 미결 항목**
+    /// - 3~5월: `identifyFailureFloor = 0.30`이 정답(0.112)을 버렸다 — **✅ (44)에서 0.05로 확정.**
+    ///   0.112는 이제 통과한다. 이 줄은 **왜 내렸는지의 근거**로 남긴다
     /// - 6월 이후: 개화월 하드 필터가 민들레를 후보에서 뺀다 — **A-1이 옳게 도는 것**
     ///
     /// 결과는 같고 원인이 다르다. 그래서 여기서는 **경로만** 고정하고

@@ -32,7 +32,9 @@ DATASET = pathlib.Path("/private/tmp/flower_photos")
 CACHE = pathlib.Path("/private/tmp/plantnet_cache")
 
 # GamePolicy.swift 와 같은 값이어야 한다. 여기서 흩어지면 측정이 앱을 설명하지 못한다.
-IDENTIFY_FAILURE_FLOOR = 0.30
+# ✅ 2026-08-09 확정 0.30 → 0.05 (진행 (44) · 공유계약 3절).
+# ⚠️ 앱의 GamePolicy와 **같은 값이어야 한다** — 다르면 이 스크립트가 앱과 다른 결과를 보고한다.
+IDENTIFY_FAILURE_FLOOR = 0.05
 CANDIDATE_COUNT = 3
 CONFIDENCE_THRESHOLD = {"low": 0.60, "mid": 0.70, "high": 0.85}
 
@@ -302,13 +304,14 @@ def main():
     print("\n  원시T1/T3 = PlantNet 자체 정확도(속 단위) · 구T1 = 색인 수정 전 앱")
     print("  앱T1/T3   = 색인 수정 후 앱 (개화월 하드 필터 + 후보 3개 통과)")
 
-    print("\n[점수 분포 — identifyFailureFloor=0.30 이 무엇을 버리는가]")
+    # ⚠️ 값을 글자로 박지 않는다 — 상수를 바꿨을 때 **라벨이 거짓말을 한다.**
+    print(f"\n[점수 분포 — identifyFailureFloor={IDENTIFY_FAILURE_FLOOR} 이 무엇을 버리는가]")
     allscores = sorted(sc for s in stats.values() for sc in s["scores"])
     if allscores:
         for q, label in [(0.10, "10%"), (0.25, "25%"), (0.50, "중위"), (0.75, "75%"), (0.90, "90%")]:
             print(f"  {label:>4} 분위 {allscores[int(len(allscores)*q)]:.3f}")
         below = sum(1 for sc in allscores if sc < IDENTIFY_FAILURE_FLOOR)
-        print(f"  0.30 미달: {below}/{len(allscores)} ({below/len(allscores)*100:.1f}%)")
+        print(f"  {IDENTIFY_FAILURE_FLOOR} 미달: {below}/{len(allscores)} ({below/len(allscores)*100:.1f}%)")
         for name, th in sorted(CONFIDENCE_THRESHOLD.items(), key=lambda x: x[1]):
             n = sum(1 for sc in allscores if sc >= th)
             print(f"  {name} 임계 {th:.2f} 이상(1순위 크게 표시): {n}/{len(allscores)} ({n/len(allscores)*100:.1f}%)")
