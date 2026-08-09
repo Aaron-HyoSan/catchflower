@@ -87,24 +87,20 @@ class DexViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /**
-     * 빈 상태(화면 22) 확인용 토글.
-     * 0종 화면은 가입 직후에만 보이므로, 없으면 개발 중에 한 번도 못 본다.
-     */
-    var forceEmptyState by mutableStateOf(false)
-        private set
-
-    /** 화면이 그릴 기록. 빈 상태 미리보기면 비어 있는 것처럼 본다. */
-    private val visibleRecords: List<Discovery>
-        get() = if (forceEmptyState) emptyList() else records
+    // 🔴 여기 있던 `forceEmptyState` 토글을 지웠다(2026-08-09 · (38)).
+    //    빈 상태(화면 22)를 개발 중에 보기 위한 것이었는데, 헤더에 `0종 보기` 버튼이
+    //    딸려 있어서 **3종을 모은 사용자 화면에 그대로 떠 있었다** — 랭킹에서 지운
+    //    `[개발] 친구 없는 화면`과 **같은 결함**이다(`RankingScreens.kt:570`).
+    //    화면 22는 토글 없이도 볼 수 있다: `adb shell pm clear com.catchflower.app`.
+    //    그게 실제 신규 사용자가 보는 경로이므로 미리보기보다 정확하다.
 
     val collectedIds: Set<Int>
-        get() = DiscoveryRules.collectedIds(visibleRecords)
+        get() = DiscoveryRules.collectedIds(records)
 
     val collectedCount: Int get() = collectedIds.size
 
     val thisSeasonCount: Int
-        get() = DiscoveryRules.seasonCollectedCount(visibleRecords, currentMonth)
+        get() = DiscoveryRules.seasonCollectedCount(records, currentMonth)
 
     /** `도감 18% 완성` — 소수점 버린 정수 퍼센트. */
     val completionPercent: Int
@@ -123,7 +119,7 @@ class DexViewModel(app: Application) : AndroidViewModel(app) {
         get() = BADGE_STEP - (collectedCount % BADGE_STEP)
 
     val recentDiscoveries: List<Discovery>
-        get() = DiscoveryRules.recentDiscoveries(visibleRecords, RECENT_LIMIT)
+        get() = DiscoveryRules.recentDiscoveries(records, RECENT_LIMIT)
 
     /**
      * 화면 20 지표 3칸 `모은 꽃 37종 / 총 발견 112회 / 공유 26개`.
@@ -137,7 +133,7 @@ class DexViewModel(app: Application) : AndroidViewModel(app) {
      *    (등록 직후가 그렇다) — 그러면 도감은 38종인데 마이는 37종이 된다.
      */
     val profileStats: DiscoveryRules.ProfileStats?
-        get() = if (loading) null else DiscoveryRules.profileStats(visibleRecords)
+        get() = if (loading) null else DiscoveryRules.profileStats(records)
 
     /** 필터가 적용된 그리드. 화면 04의 3열 그리드가 이걸 그린다. */
     val visibleFlowers: List<Flower>
@@ -160,7 +156,7 @@ class DexViewModel(app: Application) : AndroidViewModel(app) {
             }
 
     fun discoveriesFor(flowerId: Int): List<Discovery> =
-        DiscoveryRules.forFlower(visibleRecords, flowerId)
+        DiscoveryRules.forFlower(records, flowerId)
 
     /** 화면 05 썸네일. 파일명 → 실제 파일. 없으면 실루엣을 그린다. */
     fun photoFile(discovery: Discovery): java.io.File? =
@@ -221,10 +217,6 @@ class DexViewModel(app: Application) : AndroidViewModel(app) {
             filter.collectState == CollectState.ALL &&
             filter.colors.isEmpty() && filter.rarities.isEmpty() -> "가을"
         else -> "" // 시트에서 복합 조건을 걸면 어떤 칩도 선택되지 않는다
-    }
-
-    fun toggleEmptyStatePreview() {
-        forceEmptyState = !forceEmptyState
     }
 
     private companion object {

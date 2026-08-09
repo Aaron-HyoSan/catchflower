@@ -36,6 +36,8 @@ import com.catchflower.app.ui.component.CfChip
 import com.catchflower.app.ui.component.CfPrimaryButton
 import com.catchflower.app.ui.component.CfProgressBar
 import com.catchflower.app.ui.component.CfTextButton
+import com.catchflower.app.ui.component.CfToast
+import com.catchflower.app.ui.component.rememberToaster
 import com.catchflower.app.ui.component.FlowerIllust
 import com.catchflower.app.ui.component.FlowerSilhouette
 import com.catchflower.app.ui.theme.CfColor
@@ -61,6 +63,9 @@ fun DexHomeScreen(
     modifier: Modifier = Modifier,
 ) {
     val isEmpty = vm.collectedCount == 0
+    // 예선 범위 밖 `전체 보기`(전체 발견 기록 목록 화면이 없다). 빈 람다였다((38)).
+    val toast = rememberToaster()
+    val notReady: () -> Unit = { toast(CfToast.NOT_READY) }
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
@@ -71,12 +76,7 @@ fun DexHomeScreen(
         horizontalArrangement = Arrangement.spacedBy(CfDimen.GapMedium),
         verticalArrangement = Arrangement.spacedBy(CfDimen.Gap),
     ) {
-        fullWidth {
-            DexHeader(
-                onToggleEmpty = vm::toggleEmptyStatePreview,
-                emptyPreview = vm.forceEmptyState,
-            )
-        }
+        fullWidth { DexHeader() }
 
         fullWidth {
             StatusCard(
@@ -102,7 +102,7 @@ fun DexHomeScreen(
         } else {
             // --- 화면 04 ---
             fullWidth {
-                SectionRow(title = "최근 발견한 꽃", actionText = "전체 보기", onAction = {})
+                SectionRow(title = "최근 발견한 꽃", actionText = "전체 보기", onAction = notReady)
             }
             fullWidth {
                 RecentRow(
@@ -168,8 +168,18 @@ private fun androidx.compose.foundation.lazy.grid.LazyGridScope.fullWidth(
     }
 }
 
+/**
+ * 헤더. **A 문서 화면 04 표에는 `내 꽃 도감` 한 줄뿐이다** — 버튼이 없다.
+ *
+ * 🔴 여기 `0종 보기` 개발 토글이 있었다(2026-08-09에 지웠다 · (38)).
+ *    "출시 전에 뺀다"고 주석까지 달려 있었는데 **3종을 모은 화면에 그대로 떠 있었다.**
+ *    랭킹의 `[개발] 친구 없는 화면`과 같은 결함이고, 같은 이유로 못 봤다 —
+ *    **개발용 버튼은 잘 동작하기 때문에** 아무 증상이 없다.
+ *    `ButtonLabelSourceTest`가 이제 이 자리를 지킨다 — A 문서 표에 있는 문구만
+ *    버튼이 될 수 있으므로, 개발용 토글은 이름을 어떻게 짓든 걸린다.
+ */
 @Composable
-private fun DexHeader(onToggleEmpty: () -> Unit, emptyPreview: Boolean) {
+private fun DexHeader() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -181,12 +191,6 @@ private fun DexHeader(onToggleEmpty: () -> Unit, emptyPreview: Boolean) {
             style = CfText.ScreenTitle,
             color = CfColor.TextPrimary,
             modifier = Modifier.weight(1f),
-        )
-        // 개발용 토글. 화면 22를 실제로 보기 위한 것이고 출시 전에 뺀다.
-        CfTextButton(
-            text = if (emptyPreview) "0종 해제" else "0종 보기",
-            onClick = onToggleEmpty,
-            color = CfColor.TextTertiary,
         )
     }
 }

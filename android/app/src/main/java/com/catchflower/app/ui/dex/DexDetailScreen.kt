@@ -30,6 +30,8 @@ import com.catchflower.app.ui.component.CfAttributeChip
 import com.catchflower.app.ui.component.CfHeader
 import com.catchflower.app.ui.component.CfStat
 import com.catchflower.app.ui.component.CfTextButton
+import com.catchflower.app.ui.component.CfToast
+import com.catchflower.app.ui.component.rememberToaster
 import com.catchflower.app.ui.component.CfVisibilityBadge
 import com.catchflower.app.ui.component.FlowerIllust
 import com.catchflower.app.ui.component.FlowerSilhouette
@@ -71,6 +73,9 @@ fun DexDetailScreen(
     }
 
     val collected = flower.id in vm.collectedIds
+    // 예선 범위 밖 `공유`(외부 공유 시트). 빈 람다였다((38)).
+    val toast = rememberToaster()
+    val notReady: () -> Unit = { toast(CfToast.NOT_READY) }
     val discoveries = vm.discoveriesFor(flower.id)
     val similar = vm.similarTo(flower)
 
@@ -84,7 +89,7 @@ fun DexDetailScreen(
                 onBack = onBack,
                 trailing = {
                     // 미발견 종은 공유할 기록이 없다.
-                    if (collected) CfTextButton(text = "공유", onClick = {})
+                    if (collected) CfTextButton(text = "공유", onClick = notReady)
                     else Spacer(Modifier.size(CfDimen.GapLarge))
                 },
             )

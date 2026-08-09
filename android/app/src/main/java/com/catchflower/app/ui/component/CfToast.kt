@@ -30,4 +30,32 @@ enum class CfToast(val message: String) {
 
     /** A 문서 3절: `지도 공유 완료 | 지도에 공유했어요` — 화면 13의 `공유하기`. */
     MAP_SHARED("지도에 공유했어요"),
+
+    /**
+     * A 문서 3절 `아직 안 만든 기능을 눌렀을 때`: `예선 범위 밖 기능 | 아직 준비 중이에요`
+     *
+     * 🔴 **예선 범위에서 버튼 10개가 눌려도 아무 일도 안 했다**(2026-08-09 · (38)).
+     *    코드에는 `TODO`가 달려 있었지만 **화면에는 아무 표시가 없어서** 누른 사람은
+     *    앱이 고장난 것으로 읽는다. 시연에서 눌리는 것이 대부분 그 버튼들이다.
+     *
+     * ⚠️ **이 토스트가 뜨는 것은 기능이 아니다.** 기능이 없다는 안내이므로
+     *    `구현현황_AOS.md`에 ✅를 주지 않는다.
+     */
+    NOT_READY("아직 준비 중이에요"),
+}
+
+/**
+ * 토스트를 띄운다. 부르는 쪽이 `Toast.makeText(...).show()`를 매번 쓰지 않게 한다.
+ *
+ * ⚠️ **`LENGTH_SHORT`다.** [CfToast.NOT_READY]는 누를 때마다 뜨는데, 길게 두면
+ *    연달아 눌렀을 때 큐에 쌓여 다른 화면에서까지 뜬다.
+ */
+@androidx.compose.runtime.Composable
+fun rememberToaster(): (CfToast) -> Unit {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    return { toast ->
+        android.widget.Toast
+            .makeText(context, toast.message, android.widget.Toast.LENGTH_SHORT)
+            .show()
+    }
 }

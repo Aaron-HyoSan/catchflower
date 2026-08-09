@@ -33,6 +33,8 @@ import com.catchflower.app.ui.ranking.RankingUiMapper
 import com.catchflower.app.ui.component.CfSecondaryButton
 import com.catchflower.app.ui.component.CfStat
 import com.catchflower.app.ui.component.CfTextButton
+import com.catchflower.app.ui.component.CfToast
+import com.catchflower.app.ui.component.rememberToaster
 import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
 import com.catchflower.app.ui.theme.CfText
@@ -68,6 +70,10 @@ fun MyScreen(
     onRetryProfile: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // 예선 범위 밖 버튼들이 쓴다. **아무 일도 안 하는 버튼을 남기지 않는다**((38)) —
+    // 코드에 `TODO`만 달려 있으면 누른 사람에게는 앱이 고장난 것으로 보인다.
+    val toast = rememberToaster()
+    val notReady: () -> Unit = { toast(CfToast.NOT_READY) }
 
     LazyColumn(
         modifier.fillMaxSize(),
@@ -82,11 +88,11 @@ fun MyScreen(
             ) {
                 Text("마이", style = CfText.ScreenTitle, color = CfColor.TextPrimary)
                 Spacer(Modifier.weight(1f))
-                CfTextButton(text = "설정", onClick = { /* TODO(화면 22): 설정 */ })
+                CfTextButton(text = "설정", onClick = { notReady() })
             }
         }
 
-        item { ProfileBlock(profile = profile, onRetry = onRetryProfile) }
+        item { ProfileBlock(profile = profile, onRetry = onRetryProfile, notReady = notReady) }
 
         // 지표 3칸 — 종수(경쟁 축) / 발견 횟수(활동량) / 공유 수(기여도).
         //
@@ -154,11 +160,11 @@ fun MyScreen(
                 label = "내가 공유한 꽃",
                 // 위 지표 3칸의 `공유`와 **같은 값을 읽는다.** 각자 세면 갈라진다.
                 value = stats?.let { "${it.shareCount}개" },
-                onClick = { /* TODO(화면 15·16 이후): 내 공유 목록 */ },
+                onClick = notReady,
             )
             MenuRow(label = "지난 시즌 기록", value = null, onClick = onOpenLastSeason)
-            MenuRow(label = "알림 설정", value = null, onClick = { /* TODO(화면 22) */ })
-            MenuRow(label = "고객문의", value = null, onClick = { /* TODO(화면 22) */ })
+            MenuRow(label = "알림 설정", value = null, onClick = notReady)
+            MenuRow(label = "고객문의", value = null, onClick = notReady)
         }
     }
 }
@@ -177,7 +183,12 @@ fun MyScreen(
  *    사용자에게 1위 칭호를 붙인다.** 값이 오면 이 자리에 다시 넣는다 — §9에 올렸다.
  */
 @Composable
-private fun ProfileBlock(profile: RankingUiMapper.ProfileUi, onRetry: () -> Unit) {
+private fun ProfileBlock(
+    profile: RankingUiMapper.ProfileUi,
+    onRetry: () -> Unit,
+    /** 예선 범위 밖 `프로필 수정`이 쓴다. */
+    notReady: () -> Unit,
+) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -223,7 +234,7 @@ private fun ProfileBlock(profile: RankingUiMapper.ProfileUi, onRetry: () -> Unit
         }
         Spacer(Modifier.height(CfDimen.Gap))
         if (profile.nickname != null) {
-            CfSecondaryButton(text = "프로필 수정", onClick = { /* TODO(화면 22 이후) */ })
+            CfSecondaryButton(text = "프로필 수정", onClick = notReady)
         } else {
             // 못 받은 프로필을 고칠 수는 없다. `프로필 수정`을 열면 빈 칸을 저장해
             // **닉네임을 지운다.**
@@ -382,6 +393,8 @@ fun SeasonResultScreen(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val toast = rememberToaster()
+    val notReady: () -> Unit = { toast(CfToast.NOT_READY) }
 
     LazyColumn(
         modifier.fillMaxSize(),
@@ -544,7 +557,7 @@ fun SeasonResultScreen(
             Spacer(Modifier.height(CfDimen.GapSmall))
             com.catchflower.app.ui.component.CfGhostButton(
                 text = "결과 공유하기",
-                onClick = { /* TODO(주석 ④): 이미지 카드 저장·외부 공유 */ },
+                onClick = notReady,
             )
         }
     }

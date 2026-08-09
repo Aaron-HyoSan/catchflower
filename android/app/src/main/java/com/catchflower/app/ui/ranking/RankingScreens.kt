@@ -31,6 +31,8 @@ import com.catchflower.app.data.model.RankedEntry
 import com.catchflower.app.data.model.RankingRules
 import com.catchflower.app.ui.component.CfSmallButton
 import com.catchflower.app.ui.component.CfTextButton
+import com.catchflower.app.ui.component.CfToast
+import com.catchflower.app.ui.component.rememberToaster
 import com.catchflower.app.ui.component.FlowerIllust
 import com.catchflower.app.ui.component.PhotoPlaceholder
 import com.catchflower.app.ui.theme.CfColor
@@ -136,6 +138,8 @@ private fun RankingTabs(current: RankingTab, onSelect: (RankingTab) -> Unit) {
 @Composable
 private fun RegionRanking(vm: RankingViewModel, onPickRegion: () -> Unit, onCapture: () -> Unit) {
     val state = vm.region
+    val toast = rememberToaster()
+    val notReady: () -> Unit = { toast(CfToast.NOT_READY) }
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
@@ -207,7 +211,9 @@ private fun RegionRanking(vm: RankingViewModel, onPickRegion: () -> Unit, onCapt
                     //    수 있어서 이미 보여 준 순위를 다시 가리킨다.
                     CfTextButton(
                         text = "${(state.rows.lastOrNull()?.rank ?: 0) + 1}위부터 더 보기",
-                        onClick = { /* TODO(§9): 페이지 추가 로드 — 서버 함수에 offset이 없다 */ },
+                        // 🔴 서버 함수에 offset이 없어 더 못 읽는다(§9). 빈 람다로 두면
+                        //    눌러도 아무 일이 없어서 목록이 고장난 것으로 보인다((38)).
+                        onClick = notReady,
                     )
                 }
             }

@@ -35,6 +35,8 @@ import com.catchflower.app.data.model.RankedEntry
 import com.catchflower.app.ui.component.CfHeader
 import com.catchflower.app.ui.component.CfPrimaryButton
 import com.catchflower.app.ui.component.CfTextButton
+import com.catchflower.app.ui.component.CfToast
+import com.catchflower.app.ui.component.rememberToaster
 import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
 import com.catchflower.app.ui.theme.CfText
@@ -85,12 +87,16 @@ fun FriendsScreen(
     modifier: Modifier = Modifier,
 ) {
     var tab by remember { mutableStateOf(FriendTab.MINE) }
+    // 예선 범위 밖 버튼(`검색`·`초대 링크 보내기`). 빈 람다로 두면 눌러도 아무 일이
+    // 없어서 앱이 고장난 것으로 보인다((38)).
+    val toast = rememberToaster()
+    val notReady: () -> Unit = { toast(CfToast.NOT_READY) }
 
     Column(modifier.fillMaxSize()) {
         CfHeader(
             title = "친구",
             onBack = onBack,
-            trailing = { CfTextButton(text = "검색", onClick = { /* TODO(서버 붙은 뒤): 닉네임 검색 */ }) },
+            trailing = { CfTextButton(text = "검색", onClick = notReady) },
         )
 
         Row(Modifier.fillMaxWidth()) {
@@ -103,7 +109,7 @@ fun FriendsScreen(
             FriendTab.MINE -> MyFriendsList(friendCount, friends)
             // 연락처 매칭이 없는 동안은 **초대 링크 하나만** 둔다. 가짜 연락처 목록을
             // 그리는 것보다 낫다(클래스 주석).
-            FriendTab.INVITE -> ContactsDeniedFallback()
+            FriendTab.INVITE -> ContactsDeniedFallback(notReady)
         }
     }
 }
@@ -155,7 +161,10 @@ private fun RowScope.FriendTabItem(label: String, selected: Boolean, onClick: ()
  * 연락처 없이도 초대 링크는 그대로 동작한다.
  */
 @Composable
-private fun ContactsDeniedFallback() {
+private fun ContactsDeniedFallback(
+    /** 예선 범위 밖 `초대 링크 보내기`가 쓴다 — 공유 시트가 아직 없다. */
+    notReady: () -> Unit,
+) {
     Column(
         Modifier
             .fillMaxSize()
@@ -177,7 +186,7 @@ private fun ContactsDeniedFallback() {
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(CfDimen.GapLarge))
-        CfPrimaryButton(text = "초대 링크 보내기", onClick = { /* TODO: 공유 시트 */ })
+        CfPrimaryButton(text = "초대 링크 보내기", onClick = notReady)
     }
 }
 
