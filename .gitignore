@@ -35,6 +35,14 @@ __pycache__/
 # PDF 변환 중간 HTML — 정상 종료 시 지워지지만 실패하면 남는다
 제출물/.*.build.html
 
+# 플레이 영상 녹화 부산물 — 컷 확인용 스크린샷·추출 프레임·에뮬레이터 로그.
+# 재생성: python3 제출물/_tools/record_play_video.py (PlantNet 1건)
+#         python3 제출물/_tools/trim_play_video.py   (호출 0건 · 프레임만 다시 뽑는다)
+# mp4 둘은 커밋한다(원본 157초 + 제출용 51초 · 각 3.5MB · 제출물이다).
+제출물/영상/_check_*.png
+제출물/영상/_frames_*/
+제출물/영상/_emulator.log
+
 # 1차 필터 실측 데이터셋 (사진 1,000장 · 45MB)
 # 재생성: python3 android/_tools/fetch_prefilter_dataset.py
 # 커밋하지 않는다 — 측정할 때만 필요하고 시드가 고정이라 언제든 같은 입력을 만든다.
