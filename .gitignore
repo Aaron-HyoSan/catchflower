@@ -32,6 +32,9 @@ __pycache__/
 ~$*.xlsx
 ~$*.docx
 
+# PDF 변환 중간 HTML — 정상 종료 시 지워지지만 실패하면 남는다
+제출물/.*.build.html
+
 # 1차 필터 실측 데이터셋 (사진 1,000장 · 45MB)
 # 재생성: python3 android/_tools/fetch_prefilter_dataset.py
 # 커밋하지 않는다 — 측정할 때만 필요하고 시드가 고정이라 언제든 같은 입력을 만든다.

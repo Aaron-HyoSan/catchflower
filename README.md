@@ -8,8 +8,8 @@
 | | |
 |---|---|
 | **플랫폼** | Android (API 26+ · 실기기 확인: Galaxy A25 / Android 16) · iOS 동시 개발 |
-| **APK 내려받기** | [Releases](../../releases/latest) — `app-debug.apk` |
-| **소개 페이지** | [GitHub Pages](../../deployments) |
+| **APK 내려받기** | [Releases](../../releases/latest) — `catchflower-v1.0.apk` (105MB) |
+| **소개 페이지** | **https://aaron-hyosan.github.io/catchflower/** |
 | **AI 인식** | PlantNet `k-eastern-asia` (4,932종) + ML Kit 온디바이스 1차 필터 |
 | **지도** | 카카오맵 SDK (벡터 타일 · 핀 · 클러스터링) |
 | **백엔드** | Supabase (Postgres + RLS + 익명 인증) |
@@ -22,7 +22,7 @@
 
 **1. APK 설치 (가장 빠름)**
 
-[Releases](../../releases/latest)에서 `app-debug.apk`를 안드로이드 폰으로 내려받아 설치한다.
+[Releases](../../releases/latest)에서 `catchflower-v1.0.apk`를 안드로이드 폰으로 내려받아 설치한다.
 `설정 → 보안 → 출처를 알 수 없는 앱`을 허용해야 한다.
 
 **2. 소스에서 빌드**
@@ -63,8 +63,9 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 | 문서 | 내용 |
 |---|---|
-| [`제출물/게임_소개.md`](제출물/게임_소개.md) | 게임 개요 · 플레이 방법 · 실행 방법 |
-| [`제출물/AI_활용_기술문서.md`](제출물/AI_활용_기술문서.md) | AI 도구 · 프롬프트 · 활용 내역 |
+| [`제출물/게임_소개.md`](제출물/게임_소개.md) · [PDF](제출물/게임_소개.pdf) | 게임 개요 · 플레이 방법 · 실행 방법 |
+| [`제출물/AI_활용_기술문서.md`](제출물/AI_활용_기술문서.md) · [PDF](제출물/AI_활용_기술문서.pdf) | AI 도구 · 프롬프트 · 활용 내역 |
+| [`제출물/팀원_롤_기술서.md`](제출물/팀원_롤_기술서.md) · [PDF](제출물/팀원_롤_기술서.pdf) | 팀원별 역할 · 담당 영역 (양식) |
 | **[`프로젝트 맥락/진행.md`](프로젝트%20맥락/진행.md)** | **개발 전 과정 47회차 기록** — 결정과 그 근거, 밟은 함정 전부 |
 | [`프로젝트 맥락/구현현황_AOS.md`](프로젝트%20맥락/구현현황_AOS.md) | 무엇이 되고 **무엇이 안 되나**(이유까지) |
 | [`프로젝트 맥락/공유계약_iOS_AOS.md`](프로젝트%20맥락/공유계약_iOS_AOS.md) | iOS·Android가 혼자 못 바꾸는 것(필드명·enum·정책값) |
