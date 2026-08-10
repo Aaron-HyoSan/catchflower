@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>캐치플라워 — 꽃을 찍어 모으는 수집 게임</title>
+<meta name="description" content="꽃을 찍으면 AI가 종을 판별해 도감에 모으고, 지도에 남기고, 동네끼리 랭킹으로 경쟁하는 안드로이드 게임.">
+<meta property="og:title" content="캐치플라워 (CatchFlower)">
+<meta property="og:description" content="포켓몬GO의 수집 재미를 실제 자연으로. 우리나라에 실제로 피는 꽃 200종.">
+<style>
+  :root{
+    --green:#1f5c3d; --green-l:#e8f2ec; --ink:#16211b; --gray:#6b7770;
+    --line:#e2e8e4; --bg:#fbfcfb; --warn:#b4550f;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.75 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--green)}
+  .wrap{max-width:980px;margin:0 auto;padding:0 20px}
+
+  /* hero */
+  header{background:linear-gradient(160deg,#1f5c3d 0%,#2d7550 60%,#3d8f63 100%);color:#fff;padding:64px 0 56px;text-align:center}
+  header h1{margin:0 0 6px;font-size:clamp(34px,7vw,54px);letter-spacing:-.02em}
+  header .en{opacity:.72;font-size:15px;letter-spacing:.14em;margin-bottom:22px}
+  header p.pitch{margin:0 auto 12px;max-width:640px;font-size:clamp(17px,3.4vw,21px);font-weight:600;line-height:1.6}
+  header p.sub{margin:0 auto;max-width:640px;opacity:.86;font-size:15px}
+  .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+  .btn{display:inline-block;padding:14px 26px;border-radius:999px;text-decoration:none;font-weight:700;font-size:16px;border:2px solid transparent}
+  .btn.p{background:#fff;color:var(--green)}
+  .btn.s{border-color:rgba(255,255,255,.55);color:#fff}
+  .note{margin-top:14px;font-size:13px;opacity:.72}
+
+  section{padding:56px 0;border-bottom:1px solid var(--line)}
+  section h2{font-size:clamp(21px,4.2vw,27px);margin:0 0 8px;letter-spacing:-.01em}
+  section h2 .num{color:var(--green);font-size:.7em;margin-right:8px;vertical-align:.08em}
+  section .lead{color:var(--gray);margin:0 0 28px;font-size:15px}
+
+  /* spec table */
+  table{width:100%;border-collapse:collapse;font-size:15px;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{width:34%;color:var(--gray);font-weight:600;background:#fafbfa;white-space:nowrap}
+  tr:last-child th,tr:last-child td{border-bottom:0}
+
+  /* shots */
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:22px}
+  .shot{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+  .shot img{width:100%;display:block;background:#f3f5f4}
+  .shot .cap{padding:11px 13px;font-size:13px;line-height:1.5}
+  .shot .cap b{display:block;font-size:14px;margin-bottom:2px}
+  .shot .cap span{color:var(--gray)}
+  .tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;vertical-align:1px}
+  .tag.real{background:var(--green-l);color:var(--green)}
+  .tag.wf{background:#f1f0ea;color:#7a6f4e}
+
+  /* flow */
+  ol.flow{list-style:none;counter-reset:f;padding:0;margin:0}
+  ol.flow li{counter-increment:f;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px 16px 60px;position:relative;margin-bottom:10px;font-size:15px}
+  ol.flow li::before{content:counter(f);position:absolute;left:18px;top:15px;width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;font-weight:700;font-size:14px;display:grid;place-items:center}
+  ol.flow li b{display:block;margin-bottom:2px}
+  ol.flow li span{color:var(--gray)}
+
+  /* design cards */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+  .card{background:#fff;border:1px solid var(--line);border-left:4px solid var(--green);border-radius:12px;padding:18px 20px}
+  .card h3{margin:0 0 8px;font-size:16.5px}
+  .card p{margin:0 0 8px;font-size:14.5px;line-height:1.7}
+  .card .src{font-size:12.5px;color:var(--gray)}
+  .num-big{color:var(--green);font-weight:800}
+
+  .callout{background:#fff7ef;border:1px solid #f0d9bf;border-radius:12px;padding:16px 18px;font-size:14.5px;line-height:1.7}
+  .callout b{color:var(--warn)}
+
+  .links{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+  .links a{display:block;background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 18px;text-decoration:none;color:var(--ink)}
+  .links a b{display:block;color:var(--green);font-size:15px;margin-bottom:3px}
+  .links a span{font-size:13.5px;color:var(--gray)}
+
+  footer{padding:40px 0 56px;text-align:center;color:var(--gray);font-size:13.5px}
+  code{background:#eef2ef;padding:1.5px 6px;border-radius:5px;font-size:.9em;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  pre{background:#16211b;color:#dfe9e3;padding:16px 18px;border-radius:12px;overflow-x:auto;font-size:13.5px;line-height:1.65}
+  pre code{background:none;padding:0;color:inherit}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>캐치플라워</h1>
+    <div class="en">C A T C H F L O W E R</div>
+    <p class="pitch">꽃을 찍으면 AI가 종을 판별해 도감에 모으고, 지도에 남기고,<br>동네 이웃끼리 시즌 랭킹으로 경쟁하는 모바일 게임</p>
+    <p class="sub">포켓몬GO의 수집 재미를 <b>실제 자연</b>으로 옮겼다. 몬스터 대신 <b>우리나라에 실제로 피는 꽃 200종</b>이고,
+      판별은 그림이 아니라 <b>PlantNet AI가 사진을 보고</b> 한다. 계절이 지나면 그 꽃은 다음 해까지 못 잡는다.</p>
+    <div class="cta">
+      <a class="btn p" href="https://github.com/Aaron-HyoSan/catchflower/releases/latest">APK 내려받기 (Android)</a>
+      <a class="btn s" href="https://github.com/Aaron-HyoSan/catchflower">소스 코드 보기</a>
+    </div>
+    <div class="note">Android 8.0(API 26) 이상 · 실기기 확인: Galaxy A25 / Android 16 · 105MB</div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2><span class="num">01</span>한눈에</h2>
+    <table>
+      <tr><th>장르</th><td>위치 기반 수집 · 도감 완성 · 지역 랭킹</td></tr>
+      <tr><th>플랫폼</th><td>Android (API 26+) — 카메라·GPS를 쓰므로 브라우저 실행은 불가하다. <b>iOS 동시 개발</b></td></tr>
+      <tr><th>AI 인식</th><td>PlantNet <code>k-eastern-asia</code>(4,932종) + ML Kit 온디바이스 1차 필터</td></tr>
+      <tr><th>지도</th><td>카카오맵 SDK — 벡터 타일 · 핀 · 클러스터링</td></tr>
+      <tr><th>백엔드</th><td>Supabase (Postgres + RLS + 익명 인증)</td></tr>
+      <tr><th>규모</th><td>main 14,789줄 + 테스트 10,084줄 · 화면 22개 중 19개 동작 · 도감 200종</td></tr>
+      <tr><th>테스트</th><td>JVM 409개(33 클래스) · 계측 47개 · <b>돌연변이 검증 182건</b></td></tr>
+      <tr><th>개발 방식</th><td>Claude Code · iOS/Android 터미널 2개 병행 · 진행 기록 47회차</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="num">02</span>실제 화면</h2>
+    <p class="lead"><span class="tag real">실기</span>는 앱을 실제로 띄워 찍은 화면이다.
+      <span class="tag wf">설계</span>는 카메라 하드웨어가 필요해 에뮬레이터로 담을 수 없는 구간이라 와이어프레임으로 싣는다.</p>
+    <div class="shots">
+      <div class="shot"><img src="shots/dex.png" alt="도감 홈">
+        <div class="cap"><b>도감 홈 <span class="tag real">실기</span></b><span>200칸 중 발견한 3칸만 색이 있다. 못 잡은 꽃은 실루엣</span></div></div>
+      <div class="shot"><img src="shots/dex_detail.png" alt="도감 상세">
+        <div class="cap"><b>도감 상세 <span class="tag real">실기</span></b><span>학명·과·개화기와 <b>내가 찍은 사진</b>이 함께 남는다</span></div></div>
+      <div class="shot"><img src="shots/map.png" alt="지도">
+        <div class="cap"><b>지도 <span class="tag real">실기</span></b><span>카카오 벡터 타일 위에 내 발견 핀이 실제로 찍힌다</span></div></div>
+      <div class="shot"><img src="shots/ranking.png" alt="랭킹">
+        <div class="cap"><b>동네 랭킹 <span class="tag real">실기</span></b><span>서버가 센 순위. 동 인원이 적으면 구로 넓힌다</span></div></div>
+      <div class="shot"><img src="shots/region.png" alt="활동 지역 선택">
+        <div class="cap"><b>활동 지역 <span class="tag real">실기</span></b><span>현재 위치를 실제로 역지오코딩해 동을 찾는다</span></div></div>
+      <div class="shot"><img src="shots/my.png" alt="마이페이지">
+        <div class="cap"><b>마이 <span class="tag real">실기</span></b><span>모은 꽃·발견 횟수·공유 수. 근거 없는 값은 두지 않았다</span></div></div>
+      <div class="shot"><img src="shots/07_카메라.svg" alt="카메라">
+        <div class="cap"><b>꽃 촬영 <span class="tag wf">설계</span></b><span>앨범 사진은 등록할 수 없다 — 직접 찍어야 한다</span></div></div>
+      <div class="shot"><img src="shots/08_AI분석중.svg" alt="AI 분석중">
+        <div class="cap"><b>AI 분석중 <span class="tag wf">설계</span></b><span>온디바이스 필터 → 개화월 후보 압축 → PlantNet</span></div></div>
+      <div class="shot"><img src="shots/09_판별확인.svg" alt="판별 확인">
+        <div class="cap"><b>판별 확인 <span class="tag wf">설계</span></b><span>후보를 보여주고 <b>사용자가 고른다.</b> AI를 단정하지 않는다</span></div></div>
+      <div class="shot"><img src="shots/10_신규등록.svg" alt="신규 등록">
+        <div class="cap"><b>신규 등록 <span class="tag wf">설계</span></b><span>도감 칸이 채워지는 순간</span></div></div>
+      <div class="shot"><img src="shots/13_지도공유설정.svg" alt="지도 공유 설정">
+        <div class="cap"><b>지도 공유 <span class="tag wf">설계</span></b><span>공개 범위를 <b>명시적으로</b> 고른다. 기본은 비공개</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="num">03</span>어떻게 노는가</h2>
+    <p class="lead">촬영 한 번이 도감 · 지도 · 랭킹 세 곳에 동시에 남는다.</p>
+    <ol class="flow">
+      <li><b>꽃을 찾아 찍는다 <span style="color:var(--gray);font-weight:400">(화면 07)</span></b>
+        <span>앨범 사진은 안 된다. 걸어 나가서 직접 찍어야 게임이 성립한다</span></li>
+      <li><b>AI가 종을 좁힌다 <span style="color:var(--gray);font-weight:400">(화면 08)</span></b>
+        <span>① ML Kit이 <b>꽃인지</b> 먼저 본다(온디바이스·무료) → 꽃이 아니면 유료 API를 부르지 않는다(차단율 92.4%)
+        ② 지금 <b>피는 달</b>의 종만 후보로 좁힌다(8월 = 98종) → ③ PlantNet에 보낸다</span></li>
+      <li><b>후보 중에서 내가 고른다 <span style="color:var(--gray);font-weight:400">(화면 09)</span></b>
+        <span>AI가 단정하지 않는다. 최종 결정은 사람이 한다</span></li>
+      <li><b>도감 칸이 채워진다 <span style="color:var(--gray);font-weight:400">(화면 10 · 11)</span></b>
+        <span>처음 잡은 꽃이면 신규 등록, 이미 있으면 재발견으로 횟수가 오른다</span></li>
+      <li><b>지도에 남길지 고른다 <span style="color:var(--gray);font-weight:400">(화면 13)</span></b>
+        <span>기본은 비공개다. 공개 범위를 사용자가 직접 정한다</span></li>
+      <li><b>지도 · 도감 · 랭킹에 반영된다 <span style="color:var(--gray);font-weight:400">(화면 14 · 04 · 17)</span></b>
+        <span>같은 동네 이웃들과 이번 시즌 수집 종 수로 순위를 겨룬다</span></li>
+    </ol>
+    <div class="callout" style="margin-top:20px">
+      <b>계절이 규칙이다.</b> 겨울에 피는 꽃이 6종뿐이라 12~2월은 휴지기로 두고 시즌을 3~8월 / 9~11월로 나눴다.
+      개화월 하드 필터가 없으면 PlantNet이 11월에 "벚꽃"을 1순위로 준다. 그래서 <b>후보가 0개인 달에는 네트워크를 아예 타지 않는다.</b>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="num">04</span>설계에서 가장 신경 쓴 것</h2>
+    <p class="lead">기능을 늘리는 대신 <b>틀렸는지 알 수 있게</b> 만드는 데 시간을 썼다.</p>
+    <div class="cards">
+      <div class="card">
+        <h3>1. 유료 API를 함부로 부르지 않는다</h3>
+        <p>온디바이스 필터로 <span class="num-big">92.4%</span>를 미리 걸러내고, 개화월 후보가 0개면 네트워크를 타지 않는다.
+          호출 <b>직전</b>에 로그를 남겨 <b>어느 촬영이 과금됐는지 사후에 확인</b>할 수 있다.</p>
+        <div class="src">근거 · <code>진행.md</code> (15)(46)</div>
+      </div>
+      <div class="card">
+        <h3>2. AI 점수를 신뢰도로 착각하지 않았다</h3>
+        <p>PlantNet 점수는 4,932종에 퍼진 확률이라 <b>정답도 0.1 근처에 흔히 온다.</b>
+          실패 임계값을 0.30으로 뒀더니 <b>버려진 4장이 전부 정답</b>이었다(실기기 실측).
+          0.05로 내려 1순위 정답률 50% → <span class="num-big">80%</span>가 됐다.</p>
+        <div class="src">근거 · <code>진행.md</code> (43)(44)</div>
+      </div>
+      <div class="card">
+        <h3>3. 실패 화면이 원인을 가리지 않게 했다</h3>
+        <p><code>어떤 꽃인지 알 수 없었어요</code>는 원인이 세 가지인데(API가 못 알아봄 / 도감·개화월에서 걸림 / 점수 미달)
+          <b>화면에는 똑같이 보인다.</b> 로그 네 줄로 갈라 두고 <b>그 로그의 내용까지 테스트로 고정</b>했다 —
+          로그는 조용해져도 증상이 없다.</p>
+        <div class="src">근거 · <code>진행.md</code> (46)</div>
+      </div>
+      <div class="card">
+        <h3>4. "테스트가 초록"을 증거로 쓰지 않았다</h3>
+        <p>초록 249개 상태에서 앱이 죽고 화면에 <code>null</code>이 떠 있었다.
+          JVM 테스트로 <b>원리적으로 못 재는 층</b>을 문서화하고, <b>돌연변이 <span class="num-big">182건</span></b>으로
+          검사가 실제로 빨개지는지 매번 확인했다.</p>
+        <div class="src">근거 · <code>진행.md</code> (31)(38)(41)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="num">05</span>실행 방법</h2>
+    <p class="lead">둘 중 하나면 된다.</p>
+    <h3 style="font-size:16.5px;margin:0 0 8px">방법 1 — APK 설치 (가장 빠름)</h3>
+    <p style="margin:0 0 10px;font-size:15px"><a href="https://github.com/Aaron-HyoSan/catchflower/releases/latest">Releases</a>에서
+      <code>catchflower-v1.0.apk</code>를 안드로이드 폰으로 내려받아 설치한다.
+      <code>설정 → 보안 → 출처를 알 수 없는 앱</code>을 허용해야 한다.</p>
+    <h3 style="font-size:16.5px;margin:22px 0 8px">방법 2 — 소스에서 빌드</h3>
+<pre><code>git clone https://github.com/Aaron-HyoSan/catchflower.git
+cd catchflower/android
+cp local.properties.template local.properties   # 키를 채운다
+./gradlew :app:assembleDebug
+adb install -r app/build/outputs/apk/debug/app-debug.apk</code></pre>
+    <div class="callout" style="margin-top:18px">
+      <b>키가 없어도 앱은 죽지 않는다.</b> 판별은 Mock으로, 지도·장소명은 꺼진 상태로 돈다.
+      실제 판별을 보려면 <code>local.properties</code>에 PlantNet·카카오·Supabase 키를 넣는다.<br><br>
+      <b>지도는 키해시 등록이 필요하다.</b> 카카오 콘솔에 <b>빌드에 쓴 키스토어의 SHA-1</b>을 등록하지 않으면
+      <code>vector/auth</code>가 <b>401</b>을 주고 타일이 안 그려진다. 그래서 배포 APK는 <b>키해시가 등록된 디버그 키</b>로 서명했다 —
+      release 키로 다시 서명하면 지도만 조용히 죽는다.
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="num">06</span>문서</h2>
+    <p class="lead">무엇을 했는지가 아니라 <b>무엇이 틀렸는지</b>를 남겼다.</p>
+    <div class="links">
+      <a href="https://github.com/Aaron-HyoSan/catchflower/blob/main/제출물/게임_소개.md"><b>게임 소개 및 설명서</b><span>개요 · 플레이 방법 · 실행 방법</span></a>
+      <a href="https://github.com/Aaron-HyoSan/catchflower/blob/main/제출물/AI_활용_기술문서.md"><b>AI 활용 기술 문서</b><span>사용한 AI 도구 · 프롬프트 · 활용 내역</span></a>
+      <a href="https://github.com/Aaron-HyoSan/catchflower/blob/main/프로젝트%20맥락/진행.md"><b>개발 전 과정 47회차</b><span>결정과 그 근거, 밟은 함정 전부</span></a>
+      <a href="https://github.com/Aaron-HyoSan/catchflower/blob/main/프로젝트%20맥락/구현현황_AOS.md"><b>구현 현황</b><span>무엇이 되고 <b>무엇이 안 되나</b> — 이유까지</span></a>
+      <a href="https://github.com/Aaron-HyoSan/catchflower/blob/main/프로젝트%20맥락/공유계약_iOS_AOS.md"><b>iOS·Android 공유 계약</b><span>혼자 못 바꾸는 필드명 · enum · 정책값</span></a>
+      <a href="https://github.com/Aaron-HyoSan/catchflower/tree/main/와이어프레임"><b>와이어프레임 22장</b><span>화면 설계 + 흐름도 2장</span></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    캐치플라워 (CatchFlower) · 2026<br>
+    <a href="https://github.com/Aaron-HyoSan/catchflower">github.com/Aaron-HyoSan/catchflower</a>
+  </div>
+</footer>
+
+</body>
+</html>
