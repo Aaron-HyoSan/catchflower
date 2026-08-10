@@ -122,11 +122,12 @@ fun DexDetailScreen(
                     color = CfColor.TextSecondary,
                 )
                 Spacer(Modifier.height(CfDimen.GapTiny))
-                // 속성 칩 3종 — 계절 / 희귀도 / 대표 색상 (와이어프레임 주석 ②)
+                // 속성 칩 — 계절 / 희귀도 / 대표 색상 (와이어프레임 주석 ②).
+                // ⚠️ **3개 고정이 아니다.** 신규 1,857종은 대표색이 없고 278종은 계절도
+                //    없다 — 고정으로 그리면 **테두리만 있는 빈 칩**이 나온다(계약 1-1-c).
+                //    희귀도는 전 종에 있으므로 줄이 비지는 않는다.
                 Row(horizontalArrangement = Arrangement.spacedBy(CfDimen.GapSmall)) {
-                    CfAttributeChip(label = flower.season.label)
-                    CfAttributeChip(label = flower.rarity.label)
-                    CfAttributeChip(label = flower.color)
+                    flower.attributeChips.forEach { CfAttributeChip(label = it) }
                 }
             }
         }
@@ -141,7 +142,12 @@ fun DexDetailScreen(
             }
         }
 
-        item {
+        // 🔴 **낼 문장이 하나도 없으면 섹션을 그리지 않는다.** 신규 1,857종은 서식지가
+        //    없고 그중 개화기까지 모르는 종은 `꽃 이야기` 아래가 **완전히 빈다** —
+        //    제목만 남은 섹션은 정보가 아니라 고장으로 보인다. 문구를 만들어 채우는 것은
+        //    금지되어 있으므로(A 문서) **자리를 없앤다** (계약 1-2-c와 같은 원칙).
+        val story = flower.storyText
+        if (story != null || similar.isNotEmpty()) item {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -153,11 +159,13 @@ fun DexDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(CfDimen.GapSmall),
             ) {
                 Text(text = "꽃 이야기", style = CfText.Section, color = CfColor.TextPrimary)
-                Text(
-                    text = flowerStory(flower),
-                    style = CfText.Body,
-                    color = CfColor.TextSecondary,
-                )
+                if (story != null) {
+                    Text(
+                        text = story,
+                        style = CfText.Body,
+                        color = CfColor.TextSecondary,
+                    )
+                }
                 if (similar.isNotEmpty()) {
                     // A 문서: `비슷한 꽃 · 해당화, 찔레꽃`
                     Text(
@@ -313,20 +321,14 @@ private fun DiscoveryRow(
     }
 }
 
-/**
- * 꽃 이야기 본문.
- *
- * ⚠️ 와이어프레임 주석 ④는 "2~3문장 고정 분량"이라고 정했지만
- *    **200종의 실제 이야기 텍스트는 아직 없다** (마스터 데이터에 컬럼이 없다).
- *    지금은 가진 데이터(개화기·서식지·희귀도)로 조립한다.
- *    없는 문장을 지어내는 것보다 이게 낫다 — 나중에 컬럼이 추가되면 그걸 쓴다.
- *    문장 형식은 A 문서 어미 규칙(`~어요/~아요`)을 따른다.
- */
-private fun flowerStory(flower: Flower): String {
-    val bloom = "${flower.bloomLabel}에 피어요."
-    val where = "${flower.habitat}에서 흔히 만납니다."
-    return "$bloom $where"
-}
+// 꽃 이야기 본문 조립은 `Flower.storyText`로 옮겼다.
+//
+// ⚠️ 와이어프레임 주석 ④는 "2~3문장 고정 분량"이라고 정했지만 **실제 이야기 텍스트는
+//    아직 없다**(마스터 데이터에 컬럼이 없다). 가진 데이터(개화기·서식지)로 조립한다.
+//
+// 🔴 여기 있던 것을 모델로 올린 이유: **2,057종에서는 절이 빠지는 종이 생겼고**
+//    같은 조립을 화면 09·22도 한다. 화면마다 따로 분기하면 한 군데를 빠뜨려도
+//    아무 검사도 빨개지지 않는다 — 그래서 판정을 한 곳에 둔다.
 
 private fun monthDay(timestamp: Long): String {
     val cal = Calendar.getInstance().apply { timeInMillis = timestamp }

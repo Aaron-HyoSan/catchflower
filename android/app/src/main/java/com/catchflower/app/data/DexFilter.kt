@@ -52,8 +52,12 @@ data class DexFilter(
                 CollectState.COLLECTED -> flower.id in collectedIds
                 CollectState.NOT_COLLECTED -> flower.id !in collectedIds
             }
-            collectOk &&
-                (seasons.isEmpty() || flower.season in seasons) &&
+            // 🔴 `season`이 null인 278종은 **어떤 계절 칩에도 걸리지 않는다** (계약 1-1-d).
+            //    그게 맞다 — 근거 없는 계절을 찍어 넣으면 `봄 꽃 보기`에 여름 꽃이 섞인다.
+            //    `flower.season in seasons`로도 같은 답이 나오지만, null이 의도인지
+            //    실수인지 읽는 사람이 알 수 없어서 명시한다.
+            val seasonOk = seasons.isEmpty() || flower.season?.let { it in seasons } == true
+            collectOk && seasonOk &&
                 (colors.isEmpty() || flower.color in colors) &&
                 (rarities.isEmpty() || flower.rarity in rarities)
         }

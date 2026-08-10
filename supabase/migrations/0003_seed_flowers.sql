@@ -1,4 +1,4 @@
--- 도감 마스터 200종 적재
+-- 도감 마스터 — 사람이 정한 200종 (id 1~200)
 --
 -- **생성물이다. 직접 고치지 않는다.** 원본은 `공용_적재/seed_flowers_sql.py`이고
 -- 그 입력은 `공용_적재/flowers.json`(← `꽃도감/꽃목록_200종.csv`)이다.
@@ -6,10 +6,16 @@
 --
 -- `bloom_months`는 **이미 파싱된 값**이다 (공유계약 1-2: 파싱은 단 한 번).
 -- 적용: 0001_init.sql 다음에 SQL Editor에서 Run. 여러 번 돌려도 안전하다.
+--
+-- ⚠️ **여기에 신규 1,857종은 없다.** 그건 `0006_seed_flowers_2057.sql`이고,
+--    0001의 제약(`id between 1 and 200` · `season not null` 등) 때문에
+--    **0005가 먼저 돌아야** 들어간다. 파일이 두 개인 이유가 그것이다.
+-- ⚠️ **`bloom_source` 컬럼을 여기서 적지 않는다.** 이 파일은 그 컬럼이 생기기 전
+--    스키마에서도 돌아야 한다(합본은 번호순이다). 0005가 기본값 `'human'`을 주고,
+--    id 1~200은 실제로 사람이 정한 값이라 그 기본값이 사실과 맞다.
 
 insert into public.flowers
-  (id, name, scientific_name, family, bloom_months, bloom_label,
-   season, color, rarity, habitat, ai_difficulty, similar_flower_ids, illust_batch)
+  (id, name, scientific_name, family, bloom_months, bloom_label, season, color, rarity, habitat, ai_difficulty, similar_flower_ids, illust_batch)
 values
   (1, '개나리', 'Forsythia koreana', '물푸레나무과', '{3,4}', '3~4월', 'spring', '노랑', 'common', '담장·공원 울타리', 'low', '{13}', 1),
   (2, '진달래', 'Rhododendron mucronulatum', '진달래과', '{3,4}', '3~4월', 'spring', '분홍', 'common', '산지·공원 사면', 'mid', '{3,4}', 1),
@@ -225,12 +231,13 @@ on conflict (id) do update set
   similar_flower_ids = excluded.similar_flower_ids,
   illust_batch       = excluded.illust_batch;
 
--- 적재 검증. 200이 아니면 뭔가 빠진 것이다.
+-- 적재 검증. 200종보다 적으면 뭔가 빠진 것이다.
+-- (더 많은 것은 실패가 아니다 — 뒤 파일이 이미 돌았을 수 있다.)
 do $$
 declare n int;
 begin
   select count(*) into n from public.flowers;
-  if n <> 200 then
-    raise exception '도감 종수가 %개다. 200이어야 한다', n;
+  if n < 200 then
+    raise exception '도감 종수가 %개다. 200종 이상이어야 한다', n;
   end if;
 end $$;

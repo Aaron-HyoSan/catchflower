@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.catchflower.app.R
 import com.catchflower.app.data.LocationPermissionPrompt
 import com.catchflower.app.ui.component.CfPrimaryButton
 import com.catchflower.app.ui.component.CfTextButton
@@ -244,7 +245,14 @@ private fun CameraOverlay(
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            CfTextButton(text = "닫기", onClick = onClose, color = Color.White)
+            // 아이콘은 컬러 그대로 쓴다 — 납품 아이콘 8종의 평균 밝기가 136~223이라
+            // 어두운 카메라 chrome 위에서도 보인다(실측 2026-08-11).
+            CfTextButton(
+                text = "닫기",
+                onClick = onClose,
+                iconRes = R.drawable.ic_close,
+                color = Color.White,
+            )
             Text(
                 text = "꽃 촬영",
                 style = CfText.ScreenTitle,
@@ -252,7 +260,12 @@ private fun CameraOverlay(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.weight(1f),
             )
-            CfTextButton(text = "도움말", onClick = onHelp, color = Color.White)
+            CfTextButton(
+                text = "도움말",
+                onClick = onHelp,
+                iconRes = R.drawable.ic_help,
+                color = Color.White,
+            )
         }
 
         // --- 가이드 영역 ---
@@ -358,8 +371,13 @@ private fun CameraOverlay(
         ) {
             CameraSideButton(
                 // 플래시는 상태가 보여야 한다. 아이콘만 두면 켜졌는지 알 수 없다.
+                //
+                // 🔴 **아이콘은 두 상태가 같다** — 납품 아트가 `플래시` 한 장뿐이고,
+                //    "끄기"를 뜻하는 그림(사선 그은 번개)이 없다. 그래서 상태는
+                //    **라벨만** 나른다. 아이콘으로 켜짐/꺼짐을 읽으려 하면 안 된다.
                 label = if (flashOn) "플래시 끄기" else "플래시",
                 onClick = onToggleFlash,
+                iconRes = R.drawable.ic_flash,
             )
 
             // 셔터 지름 80px (와이어프레임 주석 ④). 라벨 `찍기`를 안에 넣는다 —
@@ -380,14 +398,31 @@ private fun CameraOverlay(
                 )
             }
 
-            CameraSideButton(label = "전환", onClick = onSwitch)
+            CameraSideButton(
+                label = "전환",
+                onClick = onSwitch,
+                iconRes = R.drawable.ic_switch_camera,
+            )
         }
     }
 }
 
-/** 좌우 보조 버튼. 최소 터치 영역 44px (와이어프레임 주석 ④). */
+/**
+ * 좌우 보조 버튼. 최소 터치 영역 44px (와이어프레임 주석 ④).
+ *
+ * [iconRes]를 줘도 [label]은 필수다 — A 문서 1절 44번(아이콘 단독 금지)이고,
+ * 여기서는 그 밖에 이유가 하나 더 있다: **`플래시`는 아이콘이 상태를 못 나른다**
+ * (꺼짐 그림이 납품에 없다). 라벨을 지우면 켜졌는지 알 방법이 사라진다.
+ *
+ * 어두운 chrome 위 대비를 재고 넣었다 — 측면 버튼 배경 `0xFF3A3A3A` 기준으로
+ * 플래시 7.5:1 · 전환 4.2:1, 3:1 미달 픽셀 0~3%(실측 2026-08-11).
+ */
 @Composable
-private fun CameraSideButton(label: String, onClick: () -> Unit) {
+private fun CameraSideButton(
+    label: String,
+    onClick: () -> Unit,
+    @androidx.annotation.DrawableRes iconRes: Int? = null,
+) {
     Box(
         Modifier
             .size(CfDimen.MinTouch + 16.dp)
@@ -396,7 +431,16 @@ private fun CameraSideButton(label: String, onClick: () -> Unit) {
             .clickable(onClickLabel = label, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, style = CfText.Tiny, color = Color.White, textAlign = TextAlign.Center)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(1.dp),
+        ) {
+            if (iconRes != null) {
+                // 18dp — 60dp 원 안에 라벨 두 줄(`플래시 끄기`)이 함께 들어가야 한다.
+                com.catchflower.app.ui.component.CfIcon(id = iconRes, size = 18.dp)
+            }
+            Text(label, style = CfText.Tiny, color = Color.White, textAlign = TextAlign.Center)
+        }
     }
 }
 

@@ -210,7 +210,7 @@ private fun VisibilityRow(
     onSelect: () -> Unit,
 ) {
     val detail = detailOf(option)
-    Column(
+    Row(
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(CfDimen.RadiusCard))
@@ -225,15 +225,39 @@ private fun VisibilityRow(
             // 두 줄을 한 덩어리로 읽는다. 안 묶으면 라벨과 부연을 따로 읽어서
             // 무엇을 고르는 항목인지 흐려진다.
             .clearAndSetSemantics { contentDescription = "${option.label}. $detail" },
-        verticalArrangement = Arrangement.spacedBy(CfDimen.GapTiny),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(CfDimen.GapMedium),
     ) {
-        Text(
-            option.label,
-            style = CfText.BodyBold,
-            color = if (isSelected) CfColor.Primary else CfColor.TextPrimary,
-        )
-        Text(detail, style = CfText.Caption, color = CfColor.TextSecondary)
+        // 아이콘은 **장식이다** — 선택 여부는 배경·테두리·라벨 색이 이미 나른다
+        // (여기서 아이콘을 회색조로 돌리면 두 행이 "둘 다 안 골라진 것"처럼 보인다).
+        // 위 `clearAndSetSemantics`가 행 전체를 한 덩어리로 읽으므로 낭독에도 안 낀다.
+        iconOf(option)?.let { com.catchflower.app.ui.component.CfIcon(id = it, size = 22.dp) }
+        Column(verticalArrangement = Arrangement.spacedBy(CfDimen.GapTiny)) {
+            Text(
+                option.label,
+                style = CfText.BodyBold,
+                color = if (isSelected) CfColor.Primary else CfColor.TextPrimary,
+            )
+            Text(detail, style = CfText.Caption, color = CfColor.TextSecondary)
+        }
     }
+}
+
+/**
+ * 공개 범위 아이콘.
+ *
+ * ⚠️ [Visibility.PRIVATE]은 **`null`이다.** 이 화면의 선택지는
+ * [VISIBILITY_OPTIONS](공개·친구만) 둘뿐이고 `비공개`는 `공유하지 않기` 버튼으로
+ * 처리된다 — 납품 `비공개.png`(자물쇠)를 여기 끼우면 **없는 선택지 하나를 그린다.**
+ *
+ * ⚠️ `else`로 닫지 않는다. 범위가 하나 늘면 여기서 컴파일이 깨져야 한다
+ * ([com.catchflower.app.ui.component.iconRes]와 같은 이유).
+ */
+@androidx.annotation.DrawableRes
+private fun iconOf(option: Visibility): Int? = when (option) {
+    Visibility.PUBLIC -> com.catchflower.app.R.drawable.ic_public
+    Visibility.FRIENDS -> com.catchflower.app.R.drawable.ic_friends_only
+    Visibility.PRIVATE -> null
 }
 
 /**

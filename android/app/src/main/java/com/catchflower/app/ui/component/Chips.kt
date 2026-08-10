@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.catchflower.app.R
 import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
 import com.catchflower.app.ui.theme.CfText
@@ -193,7 +194,12 @@ fun CfHeader(
     ) {
         if (onBack != null) {
             // 아이콘 단독 금지 규칙: 뒤로가기는 `뒤로` 텍스트를 병기한다.
-            CfTextButton(text = "뒤로", onClick = onBack, color = CfColor.TextPrimary)
+            CfTextButton(
+                text = "뒤로",
+                onClick = onBack,
+                iconRes = R.drawable.ic_back,
+                color = CfColor.TextPrimary,
+            )
         } else {
             Box(Modifier.padding(start = CfDimen.GapMedium))
         }

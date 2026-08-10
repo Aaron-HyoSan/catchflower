@@ -1,5 +1,6 @@
 package com.catchflower.app.ui.dex
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.catchflower.app.R
 import com.catchflower.app.data.model.Discovery
 import com.catchflower.app.data.model.Flower
 import com.catchflower.app.ui.component.CfChip
@@ -117,6 +119,7 @@ fun DexHomeScreen(
                     title = "전체 ${vm.allFlowers.size}종",
                     actionText = "필터",
                     onAction = onOpenFilter,
+                    actionIcon = R.drawable.ic_filter,
                 )
             }
             fullWidth(padded = false) {
@@ -262,7 +265,12 @@ private fun StatusCard(
 }
 
 @Composable
-private fun SectionRow(title: String, actionText: String, onAction: () -> Unit) {
+private fun SectionRow(
+    title: String,
+    actionText: String,
+    onAction: () -> Unit,
+    @DrawableRes actionIcon: Int? = null,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -273,7 +281,7 @@ private fun SectionRow(title: String, actionText: String, onAction: () -> Unit) 
             color = CfColor.TextPrimary,
             modifier = Modifier.weight(1f),
         )
-        CfTextButton(text = actionText, onClick = onAction)
+        CfTextButton(text = actionText, onClick = onAction, iconRes = actionIcon)
     }
 }
 
@@ -458,11 +466,15 @@ private fun EmptyStateBlock(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        Text(
-                            text = flower.bloomLabel,
-                            style = CfText.Tiny,
-                            color = CfColor.TextTertiary,
-                        )
+                        // 개화기를 모르는 종은 **줄을 그리지 않는다** (계약 1-2-c).
+                        // 빈 문자열을 넣으면 빈 줄이 생겨 셀 높이만 들쭉날쭉해진다.
+                        flower.bloomText?.let {
+                            Text(
+                                text = it,
+                                style = CfText.Tiny,
+                                color = CfColor.TextTertiary,
+                            )
+                        }
                     }
                 }
             }

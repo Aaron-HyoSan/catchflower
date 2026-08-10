@@ -1,5 +1,6 @@
 package com.catchflower.app.ui.component
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -19,7 +19,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.catchflower.app.ui.theme.CfColor
@@ -165,15 +164,21 @@ fun CfSmallButton(
 /**
  * Text — 최소 강조 (`전체 보기`, `필터`, `초기화`). 밑줄 없음.
  *
- * [icon]을 줘도 텍스트는 필수다 — 아이콘 단독 버튼 금지 규칙을
+ * [iconRes]를 줘도 텍스트는 필수다 — 아이콘 단독 버튼 금지 규칙(A 문서 1절 44번)을
  * 시그니처 수준에서 못 박는다.
+ *
+ * 🔴 **`ImageVector`를 받지 않는다.** 이전 시그니처는 `icon: ImageVector?`였고
+ *    [Icon]으로 그려 **`tint` 한 색으로 덮었다.** 납품 아이콘은 컬러(분홍 꽃잎·노란
+ *    꽃심)라서 그렇게 그리면 **초록 실루엣**이 된다([CfIcon]에 실측이 적혀 있다).
+ *    게다가 그 파라미터는 **호출하는 곳이 한 곳도 없었다** — 죽은 파라미터였다.
+ *    납품 PNG를 받으려면 `@DrawableRes Int`여야 한다.
  */
 @Composable
 fun CfTextButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
+    @DrawableRes iconRes: Int? = null,
     color: Color = CfColor.TextSecondary,
 ) {
     TextButton(
@@ -185,13 +190,10 @@ fun CfTextButton(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(CfDimen.GapTiny),
         ) {
-            if (icon != null) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null, // 텍스트가 옆에 있으므로 중복 낭독을 막는다
-                    tint = color,
-                    modifier = Modifier.padding(end = 0.dp),
-                )
+            if (iconRes != null) {
+                // 텍스트가 옆에 있으므로 contentDescription은 주지 않는다(중복 낭독).
+                // 크기는 라벨과 같은 눈높이로 18dp — 24dp는 텍스트보다 커서 라벨이 딸려 보인다.
+                CfIcon(id = iconRes, size = 18.dp)
             }
             Text(text = text, style = CfText.ButtonText, color = color)
         }

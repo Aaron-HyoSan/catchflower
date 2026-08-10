@@ -109,20 +109,27 @@ abstract class SyncSharedAssets : DefaultTask() {
         target.mkdirs()
         source.get().asFile.copyTo(target.resolve("flowers.json"), overwrite = true)
 
-        // 일러스트: `001_개나리 1.png` → `flower_illust/001.png`
+        // 일러스트: `0001_개나리 1.png` → `flower_illust/0001.png`
         val illustDir = target.resolve("flower_illust")
         illustDir.deleteRecursively()
         illustDir.mkdirs()
 
-        val numbered = "^(\\d{3})_.*\\.png$".toRegex()
+        // 🔴 **3자리는 999번까지만 받는다.** 도감이 2,057종이 됐으므로 4자리로 간다.
+        //    ⚠️ 이 정규식과 `Flower.illustAssetName`의 `%04d`는 **같아야 한다.**
+        //    한쪽만 고치면 빌드가 그 파일을 **조용히 건너뛰고**(정규식 불일치) 또는
+        //    엉뚱한 이름으로 복사해서, 앱에서는 **그 칸만 빈다** — 예외도 안 나고
+        //    빌드 로그의 장수만 줄어든다.
+        //    3자리도 계속 받는다: 오너가 옛 이름(`001_`)으로 다시 납품해도
+        //    조용히 사라지는 대신 4자리로 정규화되어 들어간다.
+        val numbered = "^(\\d{3,4})_.*\\.png$".toRegex()
         var copied = 0
-        val seen = mutableSetOf<String>()
+        val seen = mutableSetOf<Int>()
         illustSource.get().asFile.listFiles().orEmpty().sorted().forEach { f ->
-            val id = numbered.find(f.name)?.groupValues?.get(1) ?: return@forEach
-            // 같은 번호가 두 개면(`001_개나리.png`와 `001_개나리 2.png`) 조용히
+            val id = numbered.find(f.name)?.groupValues?.get(1)?.toInt() ?: return@forEach
+            // 같은 번호가 두 개면(`0001_개나리.png`와 `001_개나리 2.png`) 조용히
             // 하나가 이기고 어느 쪽이 들어갔는지 알 수 없다. 빌드를 세운다.
             check(seen.add(id)) { "일러스트 도감번호 $id 가 중복이다: ${f.name}" }
-            f.copyTo(illustDir.resolve("$id.png"), overwrite = true)
+            f.copyTo(illustDir.resolve("%04d.png".format(id)), overwrite = true)
             copied++
         }
         // 200장 중 몇 장이 빠져도 앱은 잘 돈다 — 그 칸만 빈다. 그래서 여기서 센다.

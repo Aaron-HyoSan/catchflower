@@ -1,6 +1,7 @@
 package com.catchflower.app.recognizer
 
 import com.catchflower.app.core.AiDifficulty
+import com.catchflower.app.core.BloomSource
 import com.catchflower.app.core.GamePolicy
 import com.catchflower.app.core.Rarity
 import com.catchflower.app.core.Season
@@ -42,10 +43,9 @@ class PlantNetReplayTest {
         JSONObject(stream.bufferedReader().use { it.readText() })
     }
 
-    /** 도감 200종. JVM 테스트는 assets를 못 읽어서 픽스처가 함께 들고 있다. */
-    private val flowers: List<Flower> by lazy {
-        val arr = fixture.getJSONArray("flowers")
-        (0 until arr.length()).map { i ->
+    private fun dex(key: String): List<Flower> {
+        val arr = fixture.getJSONArray(key)
+        return (0 until arr.length()).map { i ->
             val o = arr.getJSONObject(i)
             val months = o.getJSONArray("bloom_months")
             Flower(
@@ -55,6 +55,10 @@ class PlantNetReplayTest {
                 family = "",
                 bloomMonths = (0 until months.length()).map { months.getInt(it) },
                 bloomLabel = "",
+                // 판별 자체는 `bloomSource`를 안 본다(개화월과 학명만 쓴다). 그런데
+                // **개화월 필터가 도는지 재려면 이 축이 필요하다** — 아래
+                // `개화월 필터가 근거 있는 종을 실제로 좁힌다`가 이걸로 표본을 가른다.
+                bloomSource = BloomSource.fromWire(o.getString("bloom_source")),
                 season = Season.SPRING,
                 color = "",
                 rarity = Rarity.COMMON,
@@ -66,6 +70,20 @@ class PlantNetReplayTest {
             )
         }
     }
+
+    /**
+     * **대조군 200종.** JVM 테스트는 assets를 못 읽어서 픽스처가 함께 들고 있다.
+     *
+     * 🔴 **여기를 2,057종으로 바꾸지 않는다.** 아래 기대값(Top-1 77.0% · 클래스별
+     *    95/95/90/62.5/42.5 · 화면12 66/42/92)은 **이 200종에서 나온 숫자**이고
+     *    iOS 실측과 비교하는 근거다. 확장 도감을 넣으면 숫자가 전부 움직이는데,
+     *    그러면 "확장 때문인가 파이프라인이 깨진 건가"를 가릴 수 없다.
+     *    확장 쪽은 [flowersFull]로 **따로** 잰다.
+     */
+    private val flowers: List<Flower> by lazy { dex("flowers") }
+
+    /** 앱이 실제로 싣는 도감 2,057종. 확장이 판별을 어떻게 바꾸는지 잰다. */
+    private val flowersFull: List<Flower> by lazy { dex("flowers_full") }
 
     private val index by lazy { ScientificNameIndex(flowers) }
 
@@ -119,7 +137,12 @@ class PlantNetReplayTest {
     fun `픽스처가 붙어 있다`() {
         // ⚠️ 비면 아래 테스트들이 **0장을 돌고 통과한다.** 실측 단계에서 한 번 당한 함정이다.
         assertEquals("사진 200장이 아니다", 200, photos.size)
-        assertEquals("도감 200종이 아니다", GamePolicy.TOTAL_FLOWER_COUNT, flowers.size)
+        // 🔴 **대조군은 200종으로 못 박는다** — `TOTAL_FLOWER_COUNT`를 쓰면 안 된다.
+        //    확장할 때 그 상수가 2057이 되면서 이 단정이 **저절로 따라 움직였다**.
+        //    그러면 대조군이 통째로 갈려도 아무것도 빨개지지 않는다.
+        assertEquals("대조군이 200종이 아니다", 200, flowers.size)
+        assertEquals("전체 도감이 ${GamePolicy.TOTAL_FLOWER_COUNT}종이 아니다",
+            GamePolicy.TOTAL_FLOWER_COUNT, flowersFull.size)
         assertEquals(5, truth.size)
     }
 
@@ -333,6 +356,135 @@ class PlantNetReplayTest {
             42, belowFloor,
         )
         assertEquals("화면 09로 가는 장수가 달라졌다", 92, shown)
+    }
+
+    /**
+     * 🔴 **2,057종 확장이 판별을 어떻게 바꾸는가** — 앱이 실제로 싣는 도감으로 잰다.
+     *
+     * **왜 대조군과 따로 재는가.** 위 테스트들은 200종에서 iOS와의 일치를 본다.
+     * 그런데 사용자가 쓰는 건 2,057종이고, 그쪽 숫자를 **아무도 재지 않으면**
+     * "등록했다"가 "동작한다"로 읽힌다. 계약 1-2-b에 적은 값이 이 표다:
+     *
+     * | | Top-1 | Top-3 | 화면12 | 후보풀 |
+     * |---|---|---|---|---|
+     * | 대조군 200종 | 77.0% | 77.5% | 60 | 70 |
+     * | **확장 2,057종** | **75.0%** | **83.0%** | **42** | 1,590 |
+     *
+     * **Top-1이 내려가는 것이 정상이다.** 후보가 70종에서 1,590종으로 늘어 신규종이
+     * 기존종의 1순위 자리를 뺏는다. 대신 Top-3가 오르고 화면 12가 줄어든다 —
+     * **사용자가 보는 결과는 나아진다.** 그래서 Top-1 하나로 판정하지 않는다.
+     *
+     * ⚠️ 여기서 재는 것은 **캐시 200장(흔한 5종)뿐**이다. 신규 1,857종의 판별 정확도는
+     *    **측정되지 않았다** — 이 표본에 그 종의 사진이 아예 없다. 이 테스트가 초록인
+     *    것은 "확장이 기존종을 해치지 않았다"까지만 뜻한다.
+     */
+    @Test
+    fun `확장 2057종이 기존종 판별을 해치지 않는다`() = runBlocking {
+        val fullIndex = ScientificNameIndex(flowersFull)
+        fun candidates(month: Int) = flowersFull.filter { month in it.bloomMonths }.map { it.id }
+        // 정답 인정 집합도 **확장 도감 기준으로 다시 만든다** — 같은 속의 신규종이
+        // 1순위가 되는 경우가 있고, 그건 오답이 아니다(속 단위 인정은 iOS와 같은 규칙).
+        val genera = fixture.getJSONObject("class_to_genera")
+        val fullTruth = genera.keys().asSequence().associateWith { cls ->
+            val list = genera.getJSONArray(cls)
+            val names = (0 until list.length()).map { list.getString(it) }
+            flowersFull.filter { it.scientificName.substringBefore(' ') in names }
+                .map { it.id }.toSet()
+        }
+
+        var top1 = 0
+        var top3 = 0
+        for (photo in photos) {
+            val month = peakMonth.getValue(photo.cls)
+            val result = PlantNetRecognizer(
+                index = fullIndex,
+                apiKey = "replay",
+                transport = object : PlantNetRecognizer.Transport {
+                    override suspend fun post(url: String, contentType: String, b: ByteArray) =
+                        200 to photo.body
+                },
+            ).identify(ByteArray(1), candidates(month))
+            val ok = fullTruth.getValue(photo.cls)
+            if (result.firstOrNull()?.flowerId in ok) top1++
+            if (result.any { it.flowerId in ok }) top3++
+        }
+
+        val t1 = top1 * 100.0 / photos.size
+        val t3 = top3 * 100.0 / photos.size
+        println("확장 2,057종 — Top-1 ${"%.1f".format(t1)}% · Top-3 ${"%.1f".format(t3)}%")
+
+        // 계약 1-2-b에 적은 값을 고정한다. 움직이면 cascade나 색인이 바뀐 것이다.
+        assertEquals("확장 Top-1이 계약에 적은 75.0%와 다르다", 75.0, t1, 0.01)
+        assertEquals("확장 Top-3이 계약에 적은 83.0%와 다르다", 83.0, t3, 0.01)
+        // 🔴 **관계를 단정한다.** 숫자만 고정하면 "왜 이 값을 받아들였는가"가 사라진다.
+        //    확장을 받아들인 근거는 Top-1 손실보다 Top-3 이득이 크다는 것이다.
+        assertTrue("확장으로 Top-3이 대조군(77.5%)보다 나아지지 않았다면 확장 근거가 사라진다",
+            t3 > 77.5)
+    }
+
+    /**
+     * 🔴 **개화월 배열이 성립하는가** — 중복도 13개월도 없어야 한다.
+     *
+     * **이 검사가 실제 결함 9건을 잡았다.** `observed_run`이 양방향으로 각각 11칸을
+     * 걸어서, 12달 전부에 관찰 기록이 있는 상록수(개산초·광나무·굴거리나무·꽝꽝나무·
+     * 멀구슬나무·왕백량금·자금우·조록나무·팔손이)에 **23개월**을 줬다.
+     *
+     * ⚠️ **판별은 멀쩡했다.** 필터가 `month in bloomMonths`라서 중복이 있어도 옳게 돈다.
+     *    드러난 자리는 문구였다 — `bloom_label`이 `months[0]`~`months[-1]`을 읽어
+     *    **`6~4월`**을 만들고 화면 09에 `6~4월에 피는 꽃`으로 나갔다.
+     *    즉 **판별 지표로는 절대 안 보이는 결함**이고, 개수를 세어서 잡았다.
+     */
+    @Test
+    fun `개화월 배열에 중복도 13개월도 없다`() {
+        val dup = flowersFull.filter { it.bloomMonths.size != it.bloomMonths.toSet().size }
+        val over = flowersFull.filter { it.bloomMonths.size > 12 }
+        assertTrue("개화월에 중복이 있는 종 ${dup.size}개: " +
+            dup.take(5).joinToString { "${it.id} ${it.name} ${it.bloomMonths}" }, dup.isEmpty())
+        assertTrue("개화월이 12개월을 넘는 종 ${over.size}개", over.isEmpty())
+    }
+
+    /**
+     * 🔴 **개화월 하드 필터가 실제로 좁히는가** — 단, **근거 있는 종에서만 잰다.**
+     *
+     * 처음엔 "최대 후보풀이 전체의 절반 미만"으로 단정했는데 **빨개졌다**(6월 1,728종 =
+     * 84%). 그런데 **그건 결함이 아니었다** — 근거 없는 1,017종을 전월 허용으로 둔 것이
+     * 계약 1-2-b의 결정 자체다(좁히면 종을 지운다). 즉 **내가 잰 축이 틀렸다.**
+     * 그 종들을 섞어 놓고 재면 필터가 도는지 안 도는지 **원리상 알 수 없다.**
+     *
+     * 그래서 근거 있는 1,040종(`human`·`draft`·`observed`)만 본다. 실측:
+     *
+     * | | 1월 | 6월 | 12월 |
+     * |---|---|---|---|
+     * | 근거 있는 1,040종 | 27 (2%) | 748 (**71%**) | 30 (3%) |
+     * | 근거 약한 1,017종 | 759 (75%) | 980 (96%) | 656 (65%) |
+     *
+     * **근거 있는 쪽은 달에 따라 2%~71%로 움직인다** — 필터가 도는 증거다.
+     * cascade가 망가져 대다수가 전월 허용이 되면 이 폭이 사라진다.
+     */
+    @Test
+    fun `개화월 필터가 근거 있는 종을 실제로 좁힌다`() {
+        // ⚠️ **표본을 `bloomSource`로 가른다.** 처음엔 "개화월 12개월 미만"으로 갈랐는데
+        //    그러면 peak_window(9개월)가 근거 있는 쪽에 섞여 1,040종이어야 하는 표본이
+        //    **1,770종**이 됐고, 폭이 3.6배로 줄어 단정이 빨개졌다 —
+        //    코드가 아니라 **내가 다른 것을 재고 있었다.**
+        val evidenced = flowersFull.filter {
+            it.bloomSource in setOf(BloomSource.HUMAN, BloomSource.DRAFT, BloomSource.OBSERVED)
+        }
+        val pool = (1..12).map { m -> evidenced.count { m in it.bloomMonths } }
+        val always = flowersFull.count { it.bloomMonths.size == 12 }
+        println("근거 있는 ${evidenced.size}종 월별 후보풀 $pool · 전월 허용 $always 종")
+
+        assertEquals("근거 있는 종이 1,040종(human 200 + draft 803 + observed 37)이 아니다",
+            1040, evidenced.size)
+        // 전월 허용 = ⑤ unknown 278 + 12달 전부에 관찰이 있는 상록수 9 = 287.
+        assertEquals("전월 허용 종수가 달라졌다 — cascade ⑤나 observed_run이 바뀌었다",
+            287, always)
+        // 🔴 **폭을 단정한다.** 개수 하나를 고정하면 "필터가 도는가"를 못 재고,
+        //    비율만 보면 우연히 통과한다. 겨울과 초여름의 차이가 필터의 본체다.
+        //    실측: 1월 27종(2%) ~ 6월 748종(71%) = 27배.
+        assertTrue("가장 좁은 달(${pool.min()}종)과 가장 넓은 달(${pool.max()}종)의 차이가 " +
+            "10배 미만이다 — 개화월 필터가 사실상 꺼진 것이다", pool.max() > pool.min() * 10)
+        assertTrue("겨울(1월 ${pool[0]}종)이 근거 있는 종의 10%를 넘는다", pool[0] < evidenced.size / 10)
     }
 
     /**

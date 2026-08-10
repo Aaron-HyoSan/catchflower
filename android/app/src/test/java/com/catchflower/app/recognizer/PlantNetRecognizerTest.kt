@@ -1,6 +1,7 @@
 package com.catchflower.app.recognizer
 
 import com.catchflower.app.core.AiDifficulty
+import com.catchflower.app.core.BloomSource
 import com.catchflower.app.core.GamePolicy
 import com.catchflower.app.core.Rarity
 import com.catchflower.app.core.Season
@@ -38,6 +39,7 @@ class PlantNetRecognizerTest {
         family = "테스트과",
         bloomMonths = bloomMonths,
         bloomLabel = "테스트",
+        bloomSource = BloomSource.HUMAN,
         season = Season.SUMMER,
         color = "빨강",
         rarity = Rarity.COMMON,

@@ -1,6 +1,7 @@
 package com.catchflower.app.data
 
 import com.catchflower.app.core.AiDifficulty
+import com.catchflower.app.core.BloomSource
 import com.catchflower.app.core.Rarity
 import com.catchflower.app.core.Season
 import com.catchflower.app.data.model.Flower
@@ -31,6 +32,7 @@ class DexFilterTest {
         family = "테스트과",
         bloomMonths = bloomMonths,
         bloomLabel = "3~4월",
+        bloomSource = BloomSource.HUMAN,
         season = season,
         color = color,
         rarity = rarity,

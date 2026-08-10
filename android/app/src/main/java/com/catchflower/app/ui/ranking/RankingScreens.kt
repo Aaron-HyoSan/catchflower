@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.catchflower.app.R
 import com.catchflower.app.core.KoreanText
 import com.catchflower.app.data.model.RankedEntry
 import com.catchflower.app.data.model.RankingRules
@@ -71,7 +72,11 @@ fun RankingScreen(
             Text("랭킹", style = CfText.ScreenTitle, color = CfColor.TextPrimary)
             Spacer(Modifier.weight(1f))
             when (vm.tab) {
-                RankingTab.REGION -> CfTextButton(text = "지난 시즌", onClick = onOpenLastSeason)
+                RankingTab.REGION -> CfTextButton(
+                    text = "지난 시즌",
+                    onClick = onOpenLastSeason,
+                    iconRes = R.drawable.ic_season,
+                )
                 RankingTab.FRIENDS -> CfTextButton(text = "친구 관리", onClick = onOpenFriends)
             }
         }

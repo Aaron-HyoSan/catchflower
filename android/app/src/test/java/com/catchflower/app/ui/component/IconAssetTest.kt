@@ -65,10 +65,62 @@ class IconAssetTest {
         assertEquals(
             "리소스에 들어온 아이콘 목록이 바뀌었다 — 화면에서 실제로 쓰는지 확인하고 이 목록을 고친다",
             listOf(
-                "ic_capture", "ic_person_add", "ic_place",
+                "ic_back", "ic_cancel", "ic_capture", "ic_close", "ic_filter",
+                "ic_flash", "ic_friends_only", "ic_help", "ic_person_add",
+                "ic_place", "ic_public", "ic_season", "ic_switch_camera",
                 "ic_tab_dex", "ic_tab_map", "ic_tab_my", "ic_tab_ranking",
             ),
             names,
+        )
+    }
+
+    /**
+     * 리소스에 있는 아이콘을 **코드가 실제로 쓴다.**
+     *
+     * 🔴 위 [쓰지_않는_아이콘을_넣지_않았다]는 **목록이 바뀌었는지만** 본다 —
+     *    목록에 이름을 넣고 아무도 안 쓰면 그대로 초록이다. 실제로 그랬다:
+     *    `ic_retry`·`ic_region`이 **다섯 밀도에 다 있는데 참조 0곳**이었고
+     *    (생성 스크립트가 만들고, 붙일 자리가 아트와 안 맞아 안 붙였다),
+     *    빌드·테스트·화면 전부 정상이었다.
+     *
+     * ⚠️ 남아 있으면 다음 사람이 **"쓰라고 만든 것"으로 읽고 자리를 만든다** —
+     *    죽은 버튼이 되는 경로다. 생성 스크립트도 같은 것을 세지만
+     *    (`build_android_ui_icons.py`의 `sweep`), 그건 **스크립트를 돌려야** 돈다.
+     */
+    @Test
+    fun 리소스에_있는_아이콘을_코드가_쓴다() {
+        val sources = mainSources.joinToString("\n") { bodyOf(it) }
+        val unused = densityDirs.getValue("mdpi").listFiles().orEmpty()
+            .filter { it.extension == "png" }
+            .map { it.nameWithoutExtension }
+            .filter { !sources.contains("R.drawable.$it") }
+            .sorted()
+        assertEquals(
+            "res/에 있는데 코드에서 아무도 안 쓰는 아이콘이다 — 지우거나 붙인다: $unused",
+            emptyList<String>(),
+            unused,
+        )
+    }
+
+    /**
+     * **위 검사가 실제로 빨개질 수 있다** — 없는 리소스 이름을 하나 넣어 확인한다.
+     *
+     * 🔴 이 대조군이 없으면 `sources.contains(...)`가 **항상 참이 되는 실수**
+     *    (예: `R.drawable.` 접두사를 빼먹어 `it`만 찾는 것 — 파일명 문자열은
+     *    KDoc·주석 어디에나 있다)를 알아챌 방법이 없다. 그러면 위 검사는
+     *    영구히 초록이고 아무것도 막지 못한다.
+     */
+    @Test
+    fun 미사용_검사가_실제로_잡는다() {
+        val sources = mainSources.joinToString("\n") { bodyOf(it) }
+        assertTrue(
+            "쓰지 않는 이름(ic_definitely_unused)을 '쓴다'고 판정한다 — 이 검사는 무력하다",
+            !sources.contains("R.drawable.ic_definitely_unused"),
+        )
+        // 그리고 실제로 쓰는 것은 찾아야 한다(양쪽 다 확인).
+        assertTrue(
+            "실제로 쓰는 ic_tab_dex를 못 찾는다 — 경로나 주석 제거가 잘못됐다",
+            sources.contains("R.drawable.ic_tab_dex"),
         )
     }
 

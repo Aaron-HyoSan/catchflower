@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><title>0378_고광나무</title><defs><linearGradient id="lg1" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#89BF66"/><stop offset="1" stop-color="#3F6F20"/></linearGradient>
+<linearGradient id="lg2" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#89BF66"/><stop offset="1" stop-color="#3F6F20"/></linearGradient>
+<linearGradient id="lg3" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FBFAF7"/><stop offset="1" stop-color="#E9E7E3"/></linearGradient>
+<radialGradient id="rg4" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg5" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg6" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg7" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg8" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg9" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg10" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg11" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg12" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg13" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg14" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg15" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg16" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg17" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg18" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg19" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg20" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg21" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg22" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg23" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg24" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg25" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg26" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg27" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg28" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg29" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg30" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg31" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg32" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg33" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg34" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg35" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg36" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg37" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg38" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg39" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg40" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<radialGradient id="rg41" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FCFBF9"/><stop offset="1" stop-color="#D5D4D0"/></radialGradient>
+<linearGradient id="lg42" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8A6038"/><stop offset="1" stop-color="#4A3018"/></linearGradient></defs><g transform="translate(256 356.0) rotate(-33.3) scale(-1 1)"><path d="M0 0 L16.6 -56.0 L40.5 -27.2 L132.2 -43.9 L90.9 -16.4 L202.1 -16.5 L110.0 0.0 L202.1 16.5 L90.9 16.4 L132.2 43.9 L40.5 27.2 L16.6 56.0 Z" fill="url(#lg1)"/><path d="M4 0L181.8 0" stroke="#38611C" stroke-width="2.2" opacity="0.55" fill="none"/></g>
+<g transform="translate(256 342.9) rotate(38.6) scale(1 1)"><path d="M0 0 L16.5 -52.0 L40.4 -25.2 L131.9 -40.7 L90.7 -15.3 L201.6 -15.3 L109.7 0.0 L201.6 15.3 L90.7 15.3 L131.9 40.7 L40.4 25.2 L16.5 52.0 Z" fill="url(#lg2)"/><path d="M4 0L181.4 0" stroke="#38611C" stroke-width="2.2" opacity="0.55" fill="none"/></g>
+<rect x="249.5" y="333.1" width="13" height="168.9" rx="6.5" fill="url(#lg42)"/>
+<path d="M256 194.0C285.3 235.5 304.9 290.6 285.3 333.1C265.8 345.6 246.2 345.6 226.7 333.1C207.1 290.6 226.7 235.5 256 194.0Z" fill="url(#lg3)"/>
+<circle cx="253.9" cy="292.2" r="10.9" fill="url(#rg4)"/>
+<circle cx="234.9" cy="323.2" r="10.9" fill="url(#rg5)"/>
+<circle cx="248.3" cy="258.1" r="10.4" fill="url(#rg6)"/>
+<circle cx="293.1" cy="315.8" r="9.0" fill="url(#rg7)"/>
+<circle cx="231.1" cy="291.1" r="8.0" fill="url(#rg8)"/>
+<circle cx="256.9" cy="275.3" r="9.4" fill="url(#rg9)"/>
+<circle cx="250.5" cy="291.5" r="10.7" fill="url(#rg10)"/>
+<circle cx="256.5" cy="244.2" r="10.6" fill="url(#rg11)"/>
+<circle cx="294.7" cy="305.6" r="10.7" fill="url(#rg12)"/>
+<circle cx="231.6" cy="246.4" r="7.3" fill="url(#rg13)"/>
+<circle cx="246.7" cy="286.8" r="9.7" fill="url(#rg14)"/>
+<circle cx="250.8" cy="290.2" r="9.8" fill="url(#rg15)"/>
+<circle cx="274.7" cy="303.6" r="9.5" fill="url(#rg16)"/>
+<circle cx="280.7" cy="292.0" r="10.0" fill="url(#rg17)"/>
+<circle cx="277.2" cy="229.5" r="9.8" fill="url(#rg18)"/>
+<circle cx="250.7" cy="259.6" r="9.1" fill="url(#rg19)"/>
+<circle cx="266.4" cy="247.7" r="7.8" fill="url(#rg20)"/>
+<circle cx="284.6" cy="311.6" r="7.8" fill="url(#rg21)"/>
+<circle cx="276.1" cy="257.4" r="7.7" fill="url(#rg22)"/>
+<circle cx="282.8" cy="293.3" r="7.1" fill="url(#rg23)"/>
+<circle cx="268.6" cy="224.9" r="9.7" fill="url(#rg24)"/>
+<circle cx="262.8" cy="293.7" r="7.2" fill="url(#rg25)"/>
+<circle cx="262.1" cy="253.3" r="8.0" fill="url(#rg26)"/>
+<circle cx="261.8" cy="226.7" r="7.3" fill="url(#rg27)"/>
+<circle cx="239.4" cy="245.2" r="9.0" fill="url(#rg28)"/>
+<circle cx="270.0" cy="308.4" r="9.5" fill="url(#rg29)"/>
+<circle cx="273.2" cy="235.5" r="10.4" fill="url(#rg30)"/>
+<circle cx="266.1" cy="212.8" r="8.0" fill="url(#rg31)"/>
+<circle cx="269.7" cy="231.2" r="7.9" fill="url(#rg32)"/>
+<circle cx="290.9" cy="322.3" r="8.4" fill="url(#rg33)"/>
+<circle cx="229.9" cy="284.8" r="10.7" fill="url(#rg34)"/>
+<circle cx="276.3" cy="303.3" r="10.5" fill="url(#rg35)"/>
+<circle cx="217.4" cy="303.6" r="10.1" fill="url(#rg36)"/>
+<circle cx="288.4" cy="278.8" r="9.2" fill="url(#rg37)"/>
+<circle cx="226.7" cy="276.4" r="7.4" fill="url(#rg38)"/>
+<circle cx="278.4" cy="240.0" r="7.2" fill="url(#rg39)"/>
+<circle cx="257.1" cy="225.5" r="9.7" fill="url(#rg40)"/>
+<circle cx="287.7" cy="326.6" r="10.0" fill="url(#rg41)"/></svg>

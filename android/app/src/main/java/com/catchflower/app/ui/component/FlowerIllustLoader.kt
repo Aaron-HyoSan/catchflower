@@ -9,18 +9,23 @@ import com.catchflower.app.data.model.Flower
 import java.io.IOException
 
 /**
- * 꽃 일러스트 200장(`assets/flower_illust/001.png` … `200.png`)을 읽는다.
+ * 꽃 일러스트(`assets/flower_illust/0001.png` …)를 읽는다.
  *
  * 원본은 `꽃도감/꽃도감_일러스트/`이고 빌드가 번호만 남겨 복사한다
  * (`app/build.gradle.kts`의 `SyncSharedAssets`).
  *
+ * ⚠️ **일러스트 수는 종수보다 적다.** 도감은 2,057종인데 납품된 그림은 200장이다
+ *    (계약 1-5). 즉 **없는 것이 정상 상태**이고, 그래서 아래 [missing] 로그는
+ *    종당 한 번이 아니라 **상한을 둔다** — 1,857건을 찍으면 logcat 링버퍼가
+ *    판별 진단 로그 4줄을 밀어낸다.
+ *
  * ⚠️ **파일 키는 도감번호다. 이름이 아니다.** macOS는 파일명의 한글을 **NFD(자모 분리)** 로
- *    저장하는데 `flowers.json`의 `name`은 NFC다. `"%03d_%s.png".format(id, name)`으로
- *    조립해서 찾으면 **200종 전부 못 찾는다** — 눈으로는 같은 글자라 원인을 찾기 어렵다.
+ *    저장하는데 `flowers.json`의 `name`은 NFC다. `"%04d_%s.png".format(id, name)`으로
+ *    조립해서 찾으면 **전 종 못 찾는다** — 눈으로는 같은 글자라 원인을 찾기 어렵다.
  *    번호만 쓰면 이 문제가 아예 생기지 않는다.
  *
  * ⚠️ **캐시가 필수다.** 512×512 RGBA 한 장이 메모리에서 **1MB**이고 200장은 **200MB**다.
- *    도감 그리드(화면 04)는 200칸을 스크롤하므로 캐시가 없으면 스크롤할 때마다 디코딩하고,
+ *    도감 그리드(화면 04)는 2,057칸을 스크롤하므로 캐시가 없으면 스크롤할 때마다 디코딩하고,
  *    무제한 캐시면 OOM으로 죽는다. [LruCache]로 상한을 둔다.
  *
  * ⚠️ **디코딩 크기를 화면 크기에 맞춘다.** 84dp 셀에 512px 원본을 그대로 올리면
@@ -46,10 +51,16 @@ object FlowerIllustLoader {
     /**
      * 없는 것으로 확인된 번호. 매 프레임 `assets.open`으로 예외를 만들지 않기 위해 기억한다.
      *
-     * ⚠️ 200장이 다 있는 게 정상이지만 **한 장이 빠져도 앱은 잘 돈다** — 그 칸만 빈다.
-     *    그래서 조용히 넘기지 않고 한 번은 로그를 남긴다.
+     * ⚠️ **없는 게 정상이다** — 2,057종 중 그림은 200장뿐이다(계약 1-5).
+     *    그래도 조용히 넘기지는 않는다: 200장이 **전부** 안 나오는 상황(자산 복사 실패,
+     *    자릿수 불일치)과 "아직 안 온 그림"이 화면에서 똑같이 보이기 때문이다.
+     *    다만 종당 한 줄씩 찍으면 1,857줄이 되어 logcat 5MiB 링버퍼가
+     *    판별 진단 로그를 밀어낸다 — 그래서 [MISSING_LOG_LIMIT]까지만 찍고 끊는다.
      */
     private val missing = HashSet<Int>()
+
+    /** 누락 로그 상한. 넘으면 마지막에 요약 한 줄만 남긴다. */
+    private const val MISSING_LOG_LIMIT = 20
 
     /**
      * [flower]의 일러스트. 없으면 null — 호출부가 플레이스홀더로 되돌린다.
@@ -81,7 +92,13 @@ object FlowerIllustLoader {
             }
         } catch (e: IOException) {
             // 파일이 없다 (복사 누락 · 배치 미납품). 한 번만 알린다.
-            if (missing.add(id)) Log.w(TAG, "일러스트 없음: $path")
+            if (missing.add(id)) {
+                when {
+                    missing.size <= MISSING_LOG_LIMIT -> Log.w(TAG, "일러스트 없음: $path")
+                    missing.size == MISSING_LOG_LIMIT + 1 ->
+                        Log.w(TAG, "일러스트 없음이 ${MISSING_LOG_LIMIT}건을 넘었다 — 이후 생략")
+                }
+            }
             null
         } catch (e: OutOfMemoryError) {
             // 디코딩은 OOM을 Error로 던진다 — catch하지 않으면 앱이 죽는다.

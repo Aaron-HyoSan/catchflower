@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><title>1006_벌깨덩굴</title><defs><linearGradient id="lg1" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#789B54"/><stop offset="1" stop-color="#304F10"/></linearGradient>
+<linearGradient id="lg2" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#789B54"/><stop offset="1" stop-color="#304F10"/></linearGradient>
+<linearGradient id="lg3" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#CDBADF"/><stop offset="1" stop-color="#836A9C"/></linearGradient>
+<linearGradient id="lg4" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#CDBADF"/><stop offset="1" stop-color="#836A9C"/></linearGradient>
+<linearGradient id="lg5" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#CDBADF"/><stop offset="1" stop-color="#836A9C"/></linearGradient>
+<linearGradient id="lg6" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#CDBADF"/><stop offset="1" stop-color="#836A9C"/></linearGradient>
+<linearGradient id="lg7" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#CDBADF"/><stop offset="1" stop-color="#836A9C"/></linearGradient>
+<linearGradient id="lg8" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#CDBADF"/><stop offset="1" stop-color="#836A9C"/></linearGradient>
+<linearGradient id="lg9" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#CDBADF"/><stop offset="1" stop-color="#836A9C"/></linearGradient>
+<linearGradient id="lg10" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#CDBADF"/><stop offset="1" stop-color="#836A9C"/></linearGradient>
+<linearGradient id="lg11" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#CDBADF"/><stop offset="1" stop-color="#836A9C"/></linearGradient>
+<linearGradient id="lg12" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#CDBADF"/><stop offset="1" stop-color="#836A9C"/></linearGradient>
+<linearGradient id="lg13" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#70964B"/><stop offset="1" stop-color="#345611"/></linearGradient></defs><g transform="translate(256 344.0) rotate(-22.6) scale(-1 1)"><path d="M0.0 -0.0 L5.7 -7.0 L11.4 -11.5 L17.1 -15.2 L22.8 -18.4 L28.5 -25.2 L34.2 -23.5 L39.9 -25.5 L45.6 -27.2 L51.3 -32.6 L57.0 -29.7 L62.7 -30.4 L68.5 -30.9 L74.2 -35.2 L79.9 -31.1 L85.6 -30.8 L91.3 -30.2 L97.0 -29.4 L102.7 -32.4 L108.4 -27.1 L114.1 -25.6 L119.8 -23.9 L125.5 -26.1 L131.2 -20.0 L136.9 -17.8 L142.6 -15.4 L148.3 -16.9 L154.0 -10.1 L159.7 -7.2 L165.4 -4.0 L171.1 -0.0 L171.1 0.0 L165.4 4.0 L159.7 7.2 L154.0 10.1 L148.3 16.9 L142.6 15.4 L136.9 17.8 L131.2 20.0 L125.5 26.1 L119.8 23.9 L114.1 25.6 L108.4 27.1 L102.7 32.4 L97.0 29.4 L91.3 30.2 L85.6 30.8 L79.9 31.1 L74.2 35.2 L68.5 30.9 L62.7 30.4 L57.0 29.7 L51.3 32.6 L45.6 27.2 L39.9 25.5 L34.2 23.5 L28.5 25.2 L22.8 18.4 L17.1 15.2 L11.4 11.5 L5.7 7.0 L0.0 0.0Z" fill="url(#lg1)"/><path d="M4 0L147.2 0" stroke="#2A460E" stroke-width="2.2" opacity="0.55" fill="none"/></g>
+<g transform="translate(256 344.0) rotate(29.0) scale(1 1)"><path d="M0.0 -0.0 L6.1 -7.4 L12.3 -12.1 L18.4 -16.0 L24.5 -19.4 L30.7 -26.5 L36.8 -24.8 L43.0 -26.9 L49.1 -28.7 L55.2 -34.4 L61.4 -31.3 L67.5 -32.1 L73.6 -32.6 L79.8 -37.1 L85.9 -32.8 L92.0 -32.4 L98.2 -31.8 L104.3 -31.0 L110.5 -34.1 L116.6 -28.5 L122.7 -27.0 L128.9 -25.2 L135.0 -27.5 L141.1 -21.1 L147.3 -18.7 L153.4 -16.2 L159.5 -17.8 L165.7 -10.6 L171.8 -7.6 L178.0 -4.2 L184.1 -0.0 L184.1 0.0 L178.0 4.2 L171.8 7.6 L165.7 10.6 L159.5 17.8 L153.4 16.2 L147.3 18.7 L141.1 21.1 L135.0 27.5 L128.9 25.2 L122.7 27.0 L116.6 28.5 L110.5 34.1 L104.3 31.0 L98.2 31.8 L92.0 32.4 L85.9 32.8 L79.8 37.1 L73.6 32.6 L67.5 32.1 L61.4 31.3 L55.2 34.4 L49.1 28.7 L43.0 26.9 L36.8 24.8 L30.7 26.5 L24.5 19.4 L18.4 16.0 L12.3 12.1 L6.1 7.4 L0.0 0.0Z" fill="url(#lg2)"/><path d="M4 0L158.3 0" stroke="#2A460E" stroke-width="2.2" opacity="0.55" fill="none"/></g>
+<rect x="248.5" y="378.0" width="15" height="124.0" rx="7.5" fill="url(#lg13)"/>
+<path d="M256 228C246.0 212 236 216 236 230C236 242 248.0 241 256 235Z" fill="url(#lg3)"/>
+<path d="M256 228C266.0 212 276 216 276 230C276 242 264.0 241 256 235Z" fill="url(#lg4)"/>
+<path d="M256 258C242.5 242 229 246 229 260C229 272 245.2 271 256 265Z" fill="url(#lg5)"/>
+<path d="M256 258C269.5 242 283 246 283 260C283 272 266.8 271 256 265Z" fill="url(#lg6)"/>
+<path d="M256 288C239.0 272 222 276 222 290C222 302 242.4 301 256 295Z" fill="url(#lg7)"/>
+<path d="M256 288C273.0 272 290 276 290 290C290 302 269.6 301 256 295Z" fill="url(#lg8)"/>
+<path d="M256 318C235.5 302 215 306 215 320C215 332 239.6 331 256 325Z" fill="url(#lg9)"/>
+<path d="M256 318C276.5 302 297 306 297 320C297 332 272.4 331 256 325Z" fill="url(#lg10)"/>
+<path d="M256 348C232.0 332 208 336 208 350C208 362 236.8 361 256 355Z" fill="url(#lg11)"/>
+<path d="M256 348C280.0 332 304 336 304 350C304 362 275.2 361 256 355Z" fill="url(#lg12)"/></svg>

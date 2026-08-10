@@ -2,6 +2,7 @@ package com.catchflower.app.data
 
 import android.content.Context
 import com.catchflower.app.core.AiDifficulty
+import com.catchflower.app.core.BloomSource
 import com.catchflower.app.core.GamePolicy
 import com.catchflower.app.core.Rarity
 import com.catchflower.app.core.Season
@@ -9,12 +10,13 @@ import com.catchflower.app.data.model.Flower
 import org.json.JSONObject
 
 /**
- * 도감 마스터 200종을 assets에서 읽는다.
+ * 도감 마스터 **2,057종**을 assets에서 읽는다.
  *
- * 원본은 `꽃도감/꽃목록_200종.csv` → `_tools/build_app_data.py` → `flowers.json`.
- * **CSV를 직접 고치지 않는다** (생성물이다).
+ * 원본은 `꽃도감/꽃목록_확장_2057종.csv` + `꽃목록_200종.csv`(id 1~200) →
+ * `공용_적재/flower_master.py` → `꽃도감/_tools/build_app_data.py` → `flowers.json`.
+ * **CSV도 JSON도 직접 고치지 않는다** (둘 다 생성물이다).
  *
- * 서버(Supabase)가 붙어도 이 200종은 앱 번들에 남긴다 — 도감 화면이 네트워크 없이 떠야 한다.
+ * 서버(Supabase)가 붙어도 이 2,057종은 앱 번들에 남긴다 — 도감 화면이 네트워크 없이 떠야 한다.
  */
 class FlowerRepository private constructor(val flowers: List<Flower>) {
 
@@ -35,10 +37,32 @@ class FlowerRepository private constructor(val flowers: List<Flower>) {
     /** 화면 05·09의 '비슷한 꽃' — 도감 안에 있는 것만. */
     fun similarTo(flower: Flower): List<Flower> = flower.similarFlowerIds.mapNotNull(byId::get)
 
-    /** 화면 06 색상 필터에 쓰는 대표색 목록. */
-    val colors: List<String> by lazy { flowers.map { it.color }.distinct() }
+    /**
+     * 화면 06 색상 필터에 쓰는 대표색 목록.
+     *
+     * ⚠️ **빈 문자열을 뺀다.** 신규 1,857종은 대표색이 없어서 그대로 두면
+     *    목록에 `""` 항목이 하나 생기고, 그게 칩으로 그려지면 **테두리만 있는 칩**이 된다.
+     */
+    val colors: List<String> by lazy { flowers.mapNotNull { it.color.ifEmpty { null } }.distinct() }
 
     companion object {
+        /**
+         * 도감은 **번들 자산에서만** 읽는다. `flowers` 표를 REST로 읽지 않는다.
+         *
+         * 🔴 **여기에 함정이 하나 잠들어 있다 — 지금은 안 터지지만 이유를 적어 둔다.**
+         *    이 자산은 값이 없는 칸을 **빈 문자열 `""`** 로 준다(`color`·`habitat`·
+         *    `bloom_label`). 그런데 **DB(`0006` 적재)는 같은 칸을 `null`로** 넣는다 —
+         *    `is null` 검사가 서고 잊은 분기가 크게 터지도록 일부러 그렇게 정했다
+         *    (계약 1-1-c 정정). 즉 **두 원본의 표현이 다르다.**
+         *
+         *    그래서 누군가 나중에 도감을 REST로 갈아 끼우면, 아래 `getString("color")`가
+         *    JSON `null`을 만나 **기기에서는 `"null"` 네 글자를 돌려준다**(그 문자열이
+         *    속성 칩에 그려진다). JVM `org.json`에서는 예외라 **유닛 테스트만 빨개지고
+         *    기기에서는 조용히 틀린다** — 방향이 반대라 픽스처로는 절대 못 잡는다.
+         *    `season`이 이미 그 경로라서 `isNull`로 판정하고 있다(아래).
+         *
+         *    → REST로 바꿀 때는 **`getString`을 쓰는 칸 전부를 `isNull` 분기로** 옮긴다.
+         */
         private const val ASSET = "flowers.json"
 
         @Volatile
@@ -80,7 +104,14 @@ class FlowerRepository private constructor(val flowers: List<Flower>) {
                         List(arr.length()) { arr.getInt(it) }
                     },
                     bloomLabel = o.getString("bloom_label"),
-                    season = Season.fromWire(o.getString("season")),
+                    bloomSource = BloomSource.fromWire(o.getString("bloom_source")),
+                    // 🔴 **`isNull`로 판정한다.** `optString("season")`을 쓰면
+                    //    JSON `null`에 대해 **기기에서는 `"null"`**(문자열 네 글자),
+                    //    **JVM 테스트에서는 `""`** 를 준다 — org.json 구현이 다르다.
+                    //    즉 픽스처로 짠 유닛 테스트는 초록인데 **기기에서만**
+                    //    `error("알 수 없는 season: null")`로 죽는다. 278종이 여기 걸린다.
+                    season = if (o.isNull("season")) null
+                    else Season.fromWire(o.getString("season")),
                     color = o.getString("color"),
                     rarity = Rarity.fromWire(o.getString("rarity")),
                     habitat = o.getString("habitat"),
@@ -95,11 +126,19 @@ class FlowerRepository private constructor(val flowers: List<Flower>) {
                 )
             }
 
-            // 적재 단위로 검증한다. 200종이 아니면 도감 진행률(`37 / 200종`)이 틀리고
+            // 적재 단위로 검증한다. 종수가 다르면 도감 진행률(`37 / 2057종`)이 틀리고
             // 그건 화면 04·10·22에 그대로 노출된다.
             check(flowers.size == GamePolicy.TOTAL_FLOWER_COUNT) {
                 "도감이 ${GamePolicy.TOTAL_FLOWER_COUNT}종이어야 한다. 실제 ${flowers.size}종"
             }
+            // 🔴 개수만 세면 **번호가 겹치거나 비어도 통과한다.** 2,057종에서는
+            //    눈으로 못 본다 — 그리고 `discoveries.flower_id`가 외래키라
+            //    번호가 밀리면 **사용자 발견 기록이 다른 꽃을 가리킨다**(계약 1-5).
+            //    적재 스크립트도 같은 검사를 하지만, 번들이 갈아 끼워질 수 있으니 여기서도 센다.
+            val ids = flowers.mapTo(HashSet(flowers.size)) { it.id }
+            check(ids.size == flowers.size) { "도감번호가 중복이다 (고유 ${ids.size} / ${flowers.size}종)" }
+            val missing = (1..GamePolicy.TOTAL_FLOWER_COUNT).firstOrNull { it !in ids }
+            check(missing == null) { "도감번호 ${missing}번이 없다 — 1~${GamePolicy.TOTAL_FLOWER_COUNT} 연속이어야 한다" }
             return FlowerRepository(flowers)
         }
     }

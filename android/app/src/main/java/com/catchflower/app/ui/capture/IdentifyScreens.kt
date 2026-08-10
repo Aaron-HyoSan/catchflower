@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.catchflower.app.R
 import com.catchflower.app.core.GamePolicy
 import com.catchflower.app.core.KoreanText
 import com.catchflower.app.data.model.Flower
@@ -93,7 +94,12 @@ fun AnalyzingScreen(
         )
 
         Spacer(Modifier.height(40.dp))
-        CfTextButton(text = "취소", onClick = onCancel, color = Color.White)
+        CfTextButton(
+            text = "취소",
+            onClick = onCancel,
+            iconRes = R.drawable.ic_cancel,
+            color = Color.White,
+        )
     }
 }
 
@@ -181,9 +187,9 @@ private fun ConfidentBody(
         FlowerIllust(flower = flower, size = 96.dp)
 
         Spacer(Modifier.height(12.dp))
-        // `장미과 · 5~6월에 피는 꽃`
+        // `장미과 · 5~6월에 피는 꽃` — 개화기를 모르는 종은 `장미과`만 (계약 1-2-c).
         Text(
-            text = "${flower.family} · ${flower.bloomLabel}에 피는 꽃",
+            text = flower.familyAndBloom(detailSuffix = "에 피는 꽃"),
             style = CfText.Body,
             color = CfColor.TextSecondary,
             textAlign = TextAlign.Center,
@@ -286,7 +292,7 @@ private fun CandidateCard(candidate: RankedCandidate, onClick: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(flower.name, style = CfText.BodyBold, color = CfColor.TextPrimary)
             Text(
-                text = "${flower.family} · ${flower.bloomLabel}",
+                text = flower.familyAndBloom(),
                 style = CfText.Caption,
                 color = CfColor.TextSecondary,
             )

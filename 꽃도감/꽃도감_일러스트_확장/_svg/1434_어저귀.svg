@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><title>1434_어저귀</title><defs><linearGradient id="lg1" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#89BF66"/><stop offset="1" stop-color="#3F6F20"/></linearGradient>
+<linearGradient id="lg2" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#89BF66"/><stop offset="1" stop-color="#3F6F20"/></linearGradient>
+<radialGradient id="rg3" cx="0.5" cy="0.5" r="0.7" fx="0.5" fy="0.62"><stop offset="0" stop-color="#F4D0DC"/><stop offset="1" stop-color="#BA8093"/></radialGradient>
+<radialGradient id="rg4" cx="0.5" cy="0.5" r="0.75" fx="0.35" fy="0.3"><stop offset="0" stop-color="#FFF7DC"/><stop offset="1" stop-color="#BFB490"/></radialGradient>
+<linearGradient id="lg5" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#83BB5E"/><stop offset="1" stop-color="#457923"/></linearGradient></defs><g transform="translate(256 356.0) rotate(-32.3) scale(-1 1)"><path d="M0 0 L12.1 -69.4 L29.6 -33.7 L96.7 -54.3 L66.5 -20.3 L147.8 -20.5 L80.4 0.0 L147.8 20.5 L66.5 20.3 L96.7 54.3 L29.6 33.7 L12.1 69.4 Z" fill="url(#lg1)"/><path d="M4 0L133.0 0" stroke="#38611C" stroke-width="2.2" opacity="0.55" fill="none"/></g>
+<g transform="translate(256 356.0) rotate(33.1) scale(1 1)"><path d="M0 0 L14.7 -57.3 L35.8 -27.8 L117.1 -44.8 L80.5 -16.8 L178.9 -16.9 L97.3 0.0 L178.9 16.9 L80.5 16.8 L117.1 44.8 L35.8 27.8 L14.7 57.3 Z" fill="url(#lg2)"/><path d="M4 0L161.0 0" stroke="#38611C" stroke-width="2.2" opacity="0.55" fill="none"/></g>
+<rect x="249.5" y="306.9" width="13" height="195.1" rx="6.5" fill="url(#lg5)"/>
+<ellipse cx="256" cy="250" rx="113.9" ry="98.0" fill="url(#rg3)"/>
+<path d="M256 250L256.0 152.0" stroke="#F5D4DF" stroke-width="4" opacity="0.7" fill="none"/>
+<path d="M256 250L364.3 219.7" stroke="#F5D4DF" stroke-width="4" opacity="0.7" fill="none"/>
+<path d="M256 250L322.9 329.2" stroke="#F5D4DF" stroke-width="4" opacity="0.7" fill="none"/>
+<path d="M256 250L189.1 329.2" stroke="#F5D4DF" stroke-width="4" opacity="0.7" fill="none"/>
+<path d="M256 250L147.7 219.7" stroke="#F5D4DF" stroke-width="4" opacity="0.7" fill="none"/>
+<circle cx="256.0" cy="250.0" r="12.0" fill="url(#rg4)"/></svg>

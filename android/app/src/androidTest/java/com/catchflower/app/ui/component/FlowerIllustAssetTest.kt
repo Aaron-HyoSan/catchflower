@@ -12,43 +12,77 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * 꽃 일러스트 200장이 **APK 안에 실제로 있고 디코딩되는가.**
+ * 꽃 일러스트가 **APK 안에 실제로 있고 디코딩되는가.**
  *
  * ⚠️ **화면으로는 절대 못 잡는다.** 파일이 없으면 [FlowerIllust]가 플레이스홀더로
  *    되돌리므로 **예외도 안 나고 빈 칸도 안 생긴다** — 그냥 "아트가 아직 안 온 종"처럼
- *    보인다. 200칸 중 몇 개가 그런지 눈으로 세는 것은 불가능하다.
+ *    보인다. 몇 칸이 그런지 눈으로 세는 것은 불가능하다.
  *
  * ⚠️ **JVM 테스트로는 할 수 없다.** `BitmapFactory`도 `assets`도 android.jar에서는
  *    껍데기다. 실제 APK에 패키징된 것을 확인해야 의미가 있으므로 계측 테스트다.
+ *
+ * 🔴 **"일러스트 개수 == 종 수"는 더 이상 단정할 수 없다** (계약 1-5).
+ *    도감은 2,057종이고 납품된 그림은 200장이다 — 없는 것이 정상 상태다.
+ *    그래서 검사 축을 뒤집었다: **assets에 실제로 들어간 파일 목록**을 기준으로
+ *    (a) 목록이 비거나 줄지 않았는가 (b) 파일과 [Flower.illustAssetName]의 규칙이
+ *    같은가 (c) 있는 파일이 규격대로인가 를 본다.
+ *    (b)가 이 파일의 새 핵심이다 — 파일명 자릿수를 한쪽만 고치면 200장이 **전부**
+ *    안 나오는데, 화면에서는 "아직 안 온 그림"과 **완전히 같아 보인다.**
  */
 @RunWith(AndroidJUnit4::class)
 class FlowerIllustAssetTest {
 
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
+    /** APK에 들어간 일러스트 파일명. `SyncSharedAssets`가 번호만 남겨 복사한 결과다. */
+    private fun assetNames(): List<String> =
+        context.assets.list("flower_illust").orEmpty().sorted()
+
+    private companion object {
+        /**
+         * 지금까지 납품된 장수. **리터럴이다.**
+         *
+         * ⚠️ [GamePolicy.TOTAL_FLOWER_COUNT]를 쓰면 안 된다 — 종수를 2,057로 올리는
+         *    순간 이 단정이 **따라 움직여서** 아무것도 빨개지지 않는다(이미 한 번
+         *    당했다: `PlantNetReplayTest`의 대조군 크기).
+         *    그림이 더 오면 이 숫자를 **손으로** 올린다.
+         */
+        const val DELIVERED = 200
+    }
+
     /**
-     * 200종 전부 파일이 있는가.
+     * 납품된 200장이 APK 안에 있고, **파일명 규칙이 코드와 같은가.**
      *
-     * ⚠️ 개수를 [GamePolicy.TOTAL_FLOWER_COUNT]로 단정한다. "있는 것만 다 열렸다"로
-     *    쓰면 목록이 비어도 통과한다 — 0개 중 0개 성공은 성공이 아니다.
+     * ⚠️ 여기서 "있는 것만 다 열렸다"로 쓰면 목록이 비어도 통과한다 —
+     *    0개 중 0개 성공은 성공이 아니다. 그래서 [DELIVERED] 하한을 둔다.
      */
     @Test
-    fun 도감_200종의_일러스트가_모두_있다() {
-        val flowers = FlowerRepository.get(context).flowers
-        assertEquals(
-            "도감 종 수가 정책 상수와 다르다",
-            GamePolicy.TOTAL_FLOWER_COUNT,
-            flowers.size,
-        )
-
-        val missing = flowers.filter { flower ->
-            runCatching { context.assets.open(flower.illustAssetName).close() }.isFailure
-        }.map { "${it.id} ${it.name}" }
-
+    fun 납품된_일러스트가_APK에_들어있고_코드와_같은_이름이다() {
+        val names = assetNames()
         assertTrue(
-            "일러스트 없는 종 ${missing.size}개: ${missing.take(20)}",
-            missing.isEmpty(),
+            "assets/flower_illust 에 파일이 ${names.size}개다 — ${DELIVERED}장 이상이어야 한다. " +
+                "빌드의 SyncSharedAssets가 복사에 실패했거나 정규식이 원본 파일명과 안 맞는다",
+            names.size >= DELIVERED,
         )
+
+        // 🔴 파일명 규칙 대조. `Flower.illustAssetName`이 `%04d`인데 자산이 `001.png`면
+        //    (또는 그 반대면) **한 장도 안 열린다.** 두 규칙이 한 군데서만 바뀌는 것이
+        //    이 프로젝트에서 실제로 예고된 함정이라(계약 1-5) 여기서 직접 맞춰 본다.
+        val flowers = FlowerRepository.get(context).flowers
+        val expected = flowers.associateBy { it.illustAssetName.substringAfterLast('/') }
+        val orphan = names.filterNot { it in expected }
+        assertTrue(
+            "코드가 찾지 않는 이름의 일러스트 ${orphan.size}개: ${orphan.take(10)} — " +
+                "Flower.illustAssetName(%04d)과 SyncSharedAssets의 복사 이름이 어긋났거나, " +
+                "도감에 없는 번호가 납품됐다(그 그림은 앱에서 영원히 안 보인다)",
+            orphan.isEmpty(),
+        )
+
+        // 자산에 있는 종은 반드시 열려야 한다. (이름이 맞아도 패키징이 깨질 수 있다.)
+        val unopenable = flowers.filter { it.illustAssetName.substringAfterLast('/') in names }
+            .filter { runCatching { context.assets.open(it.illustAssetName).close() }.isFailure }
+            .map { "${it.id} ${it.name}" }
+        assertTrue("파일은 있는데 열리지 않는 종: ${unopenable.take(10)}", unopenable.isEmpty())
     }
 
     /**
@@ -56,24 +90,50 @@ class FlowerIllustAssetTest {
      *
      * ⚠️ **알파 채널이 핵심이다.** 배경이 불투명하면 도감 셀의 원형 배경 위에
      *    **흰 사각형이 얹혀 보인다.** 발주서는 투명을 요구했고 실측으로 확인했지만,
-     *    배치 3(65종)이 나중에 들어오므로 그때 규격이 어긋나는 것을 여기서 잡는다.
+     *    남은 1,857종이 배치로 들어오므로 그때 규격이 어긋나는 것을 여기서 잡는다.
+     *
+     * ⚠️ **종을 도는 게 아니라 파일을 돈다.** 종을 돌면 없는 파일에서 `open`이 던져
+     *    1,857종 앞에서 첫 칸부터 실패한다 — 그건 규격 위반이 아니라 미납품이다.
      */
     @Test
     fun 일러스트가_512픽셀_투명배경이다() {
-        val flowers = FlowerRepository.get(context).flowers
-        val wrong = mutableListOf<String>()
+        val names = assetNames()
+        assertTrue("검사할 일러스트가 0장이다", names.size >= DELIVERED)
 
-        flowers.forEach { flower ->
+        val wrong = mutableListOf<String>()
+        names.forEach { name ->
             val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            context.assets.open(flower.illustAssetName).use {
+            context.assets.open("flower_illust/$name").use {
                 BitmapFactory.decodeStream(it, null, options)
             }
             if (options.outWidth != 512 || options.outHeight != 512) {
-                wrong += "${flower.id} ${flower.name} ${options.outWidth}x${options.outHeight}"
+                wrong += "$name ${options.outWidth}x${options.outHeight}"
             }
         }
 
-        assertTrue("512x512가 아닌 일러스트: ${wrong.take(10)}", wrong.isEmpty())
+        assertTrue("512x512가 아닌 일러스트 ${wrong.size}장: ${wrong.take(10)}", wrong.isEmpty())
+    }
+
+    /**
+     * **그림 없는 종이 앱을 세우지 않는가.**
+     *
+     * 2,057종 중 1,857종은 파일이 없다. [FlowerIllustLoader]는 null을 돌려주고
+     * 호출부가 플레이스홀더로 되돌려야 한다 — 여기서 예외가 나면 도감 스크롤이
+     * 200번째 칸에서 죽는다.
+     */
+    @Test
+    fun 그림_없는_종은_null을_돌려주고_죽지_않는다() {
+        val names = assetNames().toSet()
+        val withoutFile = FlowerRepository.get(context).flowers
+            .filter { it.illustAssetName.substringAfterLast('/') !in names }
+
+        // 없는 종이 하나도 없다면 이 테스트는 아무것도 재지 않는다. 그 상태를 드러낸다.
+        Log.i("FlowerIllustAsset", "그림 없는 종 ${withoutFile.size}종 / 파일 ${names.size}장")
+
+        withoutFile.take(50).forEach { flower ->
+            assertEquals("${flower.id} ${flower.name}: 파일이 없는데 비트맵이 나왔다",
+                null, FlowerIllustLoader.load(context, flower, 200))
+        }
     }
 
     /**
