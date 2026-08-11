@@ -341,6 +341,44 @@ bloom_source)`가 그 유일한 결정점이고, 클라이언트는 **문자열�
 **`dong_code`와 `gu_code`를 둘 다 저장하는 이유:** B-6이 "동 단위 10명 미만이면
 구 단위로 확장"이라 **런타임에 동에서 구를 유도할 수 없다.** 적재 시점에 둘 다 넣는다.
 
+### 1-3-b. likes · comments (화면 16 반응) — **2026-08-11 추가**
+
+원본은 `supabase/migrations/0007_likes_comments.sql`이다.
+A 문서 16번 표(`좋아요 12 · 댓글 3` · `댓글을 남겨보세요` · 버튼 `등록`)가 요구한 것.
+
+**likes** — ⚠️ **`id` 컬럼이 없다.** `(discovery_id, user_id)`가 곧 기본키다.
+별도 id를 두면 같은 사람이 같은 기록에 두 번 넣을 수 있고, 그러면 `좋아요 12`가
+**12명이 아니라 12번**이 된다(화면에서 구별이 안 된다).
+
+| 컬럼 | 타입 | 비고 |
+|---|---|---|
+| `discovery_id` | uuid | pk 1/2 |
+| `user_id` | uuid | pk 2/2 |
+| `created_at` | timestamptz | |
+
+**comments**
+
+| 컬럼 | 타입 | 비고 |
+|---|---|---|
+| `id` | uuid | |
+| `discovery_id` | uuid | |
+| `user_id` | uuid | |
+| `body` | text | **1~200자** (C-9). 서버 제약 `comments_body_len` |
+| `created_at` | timestamptz | 화면 16은 **최신순** |
+| `deleted_at` | timestamptz \| null | **soft delete.** null이 아니면 안 보인다 |
+
+🔴 **양쪽 다 `select count(*)`로 세지 않는다.** RPC `discovery_reactions(d_id)`가
+`like_count` · `comment_count` · `liked_by_me` **셋을 한 번에** 준다 — 각자 세면
+왕복이 3번이고, "내가 눌렀는가"를 따로 물어야 한다.
+
+⚠️ **볼 수 없는 기록에는 0이 나온다(오류가 아니다).** 이 함수는 `security definer`가
+아니라 호출자의 RLS를 그대로 타므로, 비공개 기록에는 `0 · 0 · false`가 온다.
+**0을 "반응이 없다"로 화면에 쓰면 안 된다** — 화면 16은 기록 본문을 먼저 읽으므로
+거기서 못 읽히면 그 화면 자체를 열지 않는 것이 맞다.
+
+🔴 **삭제 규칙(C-9 권고):** 댓글은 **수정 불가**다. `update` 정책은 `deleted_at`을
+채우는 것만 허용하고, 지울 수 있는 사람은 **작성자와 사진 소유자**다.
+
 ### 1-4. enum 값 — 문자열을 못 박는다
 
 **숫자 대신 문자열을 쓴다.** 나중에 값이 추가돼도 순서가 안 깨진다.

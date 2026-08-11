@@ -9,20 +9,22 @@
 --     **마지막 결과만 보여준다** — 앞 문장 결과가 조용히 가려진다(실제로 겪었다).
 --     그래서 확인 항목을 전부 한 문장에 넣었다. 문장을 추가하지 않는다.
 --
---  결과가 표로 나온다. **`판정` 칸이 14줄 전부 ✅ 여야 한다.**
+--  결과가 표로 나온다. **`판정` 칸이 17줄 전부 ✅ 여야 한다.**
 --  하나라도 ❌ 면 그 줄을 그대로 개발자(클로드)에게 보여주면 된다.
 --
---  ⚠️ **표가 아니라 빨간 오류가 나면 그것도 답이다.** 7·10번은 함수를 실제로
+--  ⚠️ **표가 아니라 빨간 오류가 나면 그것도 답이다.** 8·11·14·17번은 함수를 실제로
 --     불러 보는 줄이라, 그 함수가 없으면 표가 아니라 오류로 끝난다
 --     (`function public.dong_member_count(...) does not exist`처럼 **없는 것의
 --     이름이 오류에 나온다**). 그 문장을 그대로 보여주면 된다.
 
 with 검사 as (
 
-  select 1 as 순서, '표(table) 6개' as 항목, '6' as 기대,
+  -- 0007에서 둘 늘었다(`likes` · `comments`).
+  select 1 as 순서, '표(table) 8개' as 항목, '8' as 기대,
          (select count(*) from pg_tables
            where schemaname = 'public'
-             and tablename in ('flowers','users','discoveries','friendships','blocks','reports')
+             and tablename in ('flowers','users','discoveries','friendships','blocks','reports',
+                               'likes','comments')
          )::text as 실제
 
   union all
@@ -50,8 +52,8 @@ with 검사 as (
 
   union all
   -- 0005에서 하나 늘었다(`bloom_months_sane`). 0004에서 둘
-  -- (`enforce_region_change` · `dong_member_count`).
-  select 5, '함수(function) 13개', '13',
+  -- (`enforce_region_change` · `dong_member_count`). 0007에서 셋.
+  select 5, '함수(function) 16개', '16',
          (select count(*) from pg_proc p
             join pg_namespace n on n.oid = p.pronamespace
            where n.nspname = 'public'
@@ -60,20 +62,25 @@ with 검사 as (
                                'is_blocked_between','is_report_hidden',
                                'handle_new_user','set_captured_date',
                                'enforce_region_change','dong_member_count',
-                               'bloom_months_sane')
+                               'bloom_months_sane',
+                               -- 0007
+                               'can_see_discovery','is_discovery_owner','discovery_reactions')
          )::text
 
   union all
   -- `flowers`까지 6개다. 도감 마스터도 RLS를 켜고 "누구나 읽기" 정책을 따로 준다 —
   -- 켜지 않으면 anon 키로 **쓰기까지** 열린다.
-  select 6, 'RLS 켜진 표 6개', '6',
+  select 6, 'RLS 켜진 표 8개', '8',
          (select count(*) from pg_tables
            where schemaname = 'public' and rowsecurity = true
-             and tablename in ('flowers','users','discoveries','friendships','blocks','reports')
+             and tablename in ('flowers','users','discoveries','friendships','blocks','reports',
+                               -- 🔴 0007. 여기 RLS를 안 켜면 **비공개 기록의 댓글이
+                               --    anon 키로 전부 읽힌다** — 앱 화면에는 증상이 없다.
+                               'likes','comments')
          )::text
 
   union all
-  select 7, '접근정책(policy) 17개', '17',
+  select 7, '접근정책(policy) 23개', '23',
          (select count(*) from pg_policies where schemaname = 'public')::text
 
   union all
@@ -142,6 +149,33 @@ with 검사 as (
                        and not public.bloom_months_sane('{6,6,7}'::int[])
                        and not public.bloom_months_sane('{0,13}'::int[])
                       then 'ok' else '막지 않는다' end)
+
+  -- ── 여기부터 0007(좋아요 · 댓글) ──
+
+  union all
+  -- 🔴 **`can_see_discovery`가 비공개 기록을 막는가.** 이게 뚫리면 **비공개 기록의
+  --    댓글이 읽힌다** — 기록 본문은 안 보이는데 댓글은 보이는 상태고, 우리 앱은
+  --    기록을 먼저 읽으므로 **화면에 아무 증상이 없다.** API로만 새어 나간다.
+  --    지금 로그인 없이(anon) 부르면 `auth.uid()`가 null이라 **무엇도 보여선 안 된다.**
+  --    없는 uuid로 부른다 — false가 정상이고, 여기서 보는 것은 "함수가 돌고 막는가"다.
+  select 15, '기록 열람 판정이 anon에게 아무것도 안 준다', 'ok',
+         (select case when public.can_see_discovery('00000000-0000-0000-0000-000000000000') = false
+                      then 'ok' else '막지 않는다' end)
+
+  union all
+  -- C-9 200자. 🔴 **제약이 붙었는가**를 본다 — 클라이언트만 막으면 API로 우회된다.
+  select 16, '댓글 200자 제한이 붙었다', '1',
+         (select count(*) from pg_constraint
+           where conrelid = 'public.comments'::regclass
+             and contype = 'c' and conname = 'comments_body_len')::text
+
+  union all
+  -- 화면 16 `좋아요 12 · 댓글 3`. 함수가 **불릴 수 있는가.**
+  -- 없는 기록으로 부르면 0·0·false가 나온다 — 그게 정상이다.
+  select 17, '반응 집계 함수가 실제로 돈다', 'ok',
+         (select case when (select count(*) from
+                     public.discovery_reactions('00000000-0000-0000-0000-000000000000')) = 1
+                      then 'ok' else '결과 없음' end)
 
 )
 select

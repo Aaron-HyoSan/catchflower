@@ -138,6 +138,79 @@ def check_no_subquery_in_check(sql, name, problems):
                 f" (immutable 함수로 감싼다): {body.strip()[:60]}…")
 
 
+def check_function_defined_before_use(files, problems):
+    """🔴 정책이 **아직 없는 함수**를 부르는가 — 붙여넣기가 그 자리에서 멈춘다.
+
+    `create policy`는 본문의 함수를 **그 시점에** 찾는다. 뒤에서 만들면
+    `ERROR: function public.xxx(uuid) does not exist`로 끝난다. 그런데 문법은
+    완벽하고, `pglast`는 존재 여부를 안 보므로 **문법 검사는 PASS다**
+    (머리말의 "못 잡는 것" 1번 — 0007을 쓸 때 실제로 이 순서로 썼다).
+
+    ⚠️ **파일 하나만 보면 안 된다.** 오너는 합본을 번호순으로 한 번에 돌리므로,
+       0007의 정책이 0001의 함수를 부르는 것은 **정상**이다. 그래서 전체 파일을
+       번호순으로 이어 붙인 위치를 기준으로 앞뒤를 판정한다.
+
+    ⚠️ 이 검사는 `public.` 접두사가 붙은 호출만 본다. 스키마 없이 부르면 못 잡지만,
+       이 저장소는 `search_path`를 못 믿어서 전부 `public.`을 붙이는 규칙이다.
+
+    🔴 **이 검사의 첫 red는 검사 잘못이었다** — 0001을 잡았는데 0001은 실서버에서
+       이미 정상으로 돌았다. 원인은 `create\\s+policy` 정규식이 **주석 안의
+       "create policy`가 붙었다는 것과…"** 를 코드로 읽은 것이다. 이 저장소에서
+       주석을 코드로 읽은 게 **세 번째**다(`statement_language` · 금지어 목록).
+       그래서 문장 쪼개기는 `pglast.split`에 맡기고, 주석은 먼저 지운다.
+
+    🔴 **그걸 고친 뒤 PASS는 우연이었다.** 순서를 실제로 뒤집는 돌연변이를 넣었는데
+       **초록이 나왔다.** 원인: 정의 위치는 `strip_comments(sql)`의 오프셋으로,
+       호출 위치는 **원문** 오프셋으로 재고 있었다 — 주석을 지운 쪽이 훨씬 짧으니
+       **두 좌표계를 비교한 값에는 아무 의미가 없었다**(정의가 항상 앞처럼 보였다).
+       그래서 오프셋을 버리고 **문장 번호 하나**로만 판정한다. 파일을 가로질러
+       번호가 이어지므로 합본 순서와 같다. (돌연변이 대조 완료 — 아래 red 확인.)
+    """
+    def strip_comments(s):
+        # `$$ … $$` 본문 안의 `--`는 주석이 아닐 수 있으나, 여기서는 정책만 보므로
+        # 본문을 먼저 비우고 줄 주석을 지운다(`statement_language`와 같은 순서).
+        s = re.sub(r"\$\$.*?\$\$", "$$$$", s, flags=re.S)
+        return re.sub(r"--[^\n]*", "", s)
+
+    defined = {}          # 이름 → 정의된 문장 번호
+    used = []             # (문장 번호, 파일, 줄, 이름)
+    seq = 0
+    for path in files:
+        sql = path.read_text(encoding="utf-8")
+        for stmt in pglast.split(sql):
+            seq += 1
+            clean = strip_comments(stmt)
+
+            m = re.search(
+                r"create\s+(?:or\s+replace\s+)?function\s+public\.([a-z0-9_]+)",
+                clean, flags=re.I,
+            )
+            if m:
+                defined.setdefault(m.group(1).lower(), seq)
+                continue
+
+            if not re.match(r"\s*create\s+policy\b", clean, flags=re.I):
+                continue
+            # 줄 번호는 메시지용이다 — 판정에는 쓰지 않는다(위 🔴 참고).
+            head = stmt.strip().splitlines()[0][:40]
+            at = sql.find(head)
+            line = sql[:at].count("\n") + 1 if at >= 0 else 0
+            for fm in re.finditer(r"public\.([a-z0-9_]+)\s*\(", clean, flags=re.I):
+                used.append((seq, path.name, line, fm.group(1).lower()))
+
+    for seq_used, fname, line, fn in used:
+        if fn not in defined:
+            problems.append(
+                f"{fname}:{line} 정책이 `public.{fn}()`을 부르는데 **정의가 어디에도 없다** —"
+                " 오너의 붙여넣기가 여기서 멈춘다")
+        elif defined[fn] > seq_used:
+            problems.append(
+                f"{fname}:{line} 정책이 `public.{fn}()`을 부르는데 **그 함수를 뒤에서 만든다** —"
+                " create policy는 그 시점에 함수를 찾으므로 오너의 붙여넣기가 여기서 멈춘다"
+                " (함수를 정책보다 앞으로 옮긴다)")
+    return len(used)
+
+
 def main():
     files = sorted(MIGRATIONS.glob("[0-9][0-9][0-9][0-9]_*.sql"))
     if not files:
@@ -177,12 +250,18 @@ def main():
         total_blocks += blocks + sql_bodies
         print(f"  OK   {name}  ({len(stmts)}문장 · plpgsql {blocks} · sql함수 {sql_bodies})")
 
+    # 파일을 가로질러 본다 — 합본은 번호순으로 한 번에 도므로 앞뒤가 파일 경계를 넘는다.
+    policy_calls = check_function_defined_before_use(files, problems)
+
     if problems:
         print(f"\n🔴 문제 {len(problems)}건")
         for p in problems:
             print("   -", p)
         return 1
-    print(f"\n판정: PASS — {len(files)}개 파일 · plpgsql {total_blocks}블록")
+    # 🔴 **센 개수를 찍는다.** 정책 안 함수 호출이 0개면 그건 PASS가 아니라
+    #    정규식이 안 맞아서 **아무것도 안 본 것**이다(이 저장소가 반복해 당한 실패).
+    print(f"\n판정: PASS — {len(files)}개 파일 · plpgsql {total_blocks}블록 ·"
+          f" 정책이 부르는 함수 {policy_calls}곳(전부 앞에서 정의됨)")
     return 0
 
 
