@@ -1185,7 +1185,7 @@ CI에서 빠진다.
 **계측 46개(실행 43 · 건너뜀 3 = 유료 잠금)** — ML Kit·실호출·실제 파일시스템이 필요해
 에뮬레이터에서 돈다. **11개 클래스 전부**를 적는다(아래가 합계 46이 되어야 한다):
 `SquareCropTest` 10 · `IdentifyPipelineTest` 7 · **`PersistenceTest` 6** ·
-**`FlowerIllustAssetTest` 6(2026-08-11 추가 · 🔴 기기 미실행)** · `AuthLiveTest` 3 ·
+**`FlowerIllustAssetTest` 6(2026-08-11 추가 · ✅ 기기 실행됨 · 돌연변이 대조됨)** · `AuthLiveTest` 3 ·
 `LocationPermissionPromptTest` 3 · `OnboardingStateTest` 3 · `QaSwitchReadableTest` 2 ·
 `PreFilterBenchmark` 1 ·
 <!-- 🔴 원래 여기 6개 클래스만 적고 총계를 45라고 했다 — **나열의 합은 29**였다.
@@ -1201,9 +1201,17 @@ CI에서 빠진다.
 실패로 세면 정상 동작을 고치려 든다. 결과는 (43) · 2-12.
 **`LocationPermissionPromptTest` 3** · **`AuthLiveTest` 3(실제 Supabase · 무료)** ·
 **`OnboardingStateTest` 3(온보딩↔촬영 화면 플래그 공유 — 화면으로는 첫 실행에 거부한 경우만 보인다)** ·
-**`FlowerIllustAssetTest` 5** — 일러스트 200장이 **APK 안에** 있고 축소 디코딩되는가.
-한 장이 없어도 플레이스홀더로 되돌아가 **예외도 빈 칸도 없다.** 개수를 `TOTAL_FLOWER_COUNT`로
-단정한다 — "있는 것만 다 열렸다"로 쓰면 **목록이 비어도 통과**한다.
+**`FlowerIllustAssetTest` 6** — 일러스트 200장이 **APK 안에** 있고 축소 디코딩되는가.
+한 장이 없어도 플레이스홀더로 되돌아가 **예외도 빈 칸도 없다.** 하한은 납품 장수
+`DELIVERED = 200` **리터럴**이다 — `TOTAL_FLOWER_COUNT`로 쓰면 종수를 2,057로 올리는 순간
+단정이 **따라 움직여서 아무것도 빨개지지 않는다**(`PlantNetReplayTest` 대조군 크기에서 이미 당했다).
+🔴 **2026-08-11 기기 실행: 6개 통과 · 건너뜀 0.** 통과 자체는 증거가 아니어서 납품 1장을 빼는
+돌연변이로 대조했고 **3개가 red**가 됐다. 그 과정에서 결함 하나가 나왔다 — 실패 문구가
+`검사할 일러스트가 0장이다`인데 조건은 `>= 200`이라 **199장에서도 "0장"이라고 말했다**(자산이
+통째로 안 들어간 것으로 읽혀 `SyncSharedAssets`를 뒤지게 된다). 이제 실제 수를 말한다.
+⚠️ **돌연변이 대상은 `assets/`가 아니다** — `android/app/src/main/assets/flower_illust/`는
+**존재하지 않는다**(빌드가 `꽃도감/꽃도감_일러스트/`에서 `build/generated/assets/`로 만든다).
+없는 경로에 `mv`를 걸면 **`mv`만 실패하고 테스트는 그대로 초록**이라, 진짜 통과와 구별되지 않는다.
 
 🔴 **JVM으로는 못 하는 것이 따로 있다. 이 경고가 이제 실측 사실이다 — 결함 하나가 여기서 새어 나갔다.**
    `android.util.Log`가 JVM 스텁이라 손상 격리(`quarantine`) 경로를 탈 수 없고,
