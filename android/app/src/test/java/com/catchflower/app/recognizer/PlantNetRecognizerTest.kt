@@ -32,10 +32,12 @@ class PlantNetRecognizerTest {
         name: String,
         scientificName: String,
         bloomMonths: List<Int>,
+        aliases: List<String> = emptyList(),
     ) = Flower(
         id = id,
         name = name,
         scientificName = scientificName,
+        scientificAliases = aliases,
         family = "테스트과",
         bloomMonths = bloomMonths,
         bloomLabel = "테스트",

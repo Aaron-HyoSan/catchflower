@@ -29,6 +29,7 @@ class DexFilterTest {
         id = id,
         name = "꽃$id",
         scientificName = "Test $id",
+        scientificAliases = emptyList(),
         family = "테스트과",
         bloomMonths = bloomMonths,
         bloomLabel = "3~4월",

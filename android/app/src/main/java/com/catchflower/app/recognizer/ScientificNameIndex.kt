@@ -38,9 +38,36 @@ class ScientificNameIndex(flowers: List<Flower>) {
         for (flower in flowers) {
             val name = normalize(flower.scientificName)
             if (name.isEmpty()) continue
-            exact[name] = flower.id
+            // 🔴 **먼저 넣은 것을 지킨다.** 도감 2,057종 안에 정규화가 겹치는 학명이
+            //    9쌍 있다(`take(2)`가 아종·품종 표기를 지우기 때문이다). 덮어쓰면
+            //    **뒤에 오는 큰 번호가 이겨서** 사람이 정한 200종이 확장분에 밀린다:
+            //    `Rudbeckia hirta`가 원추천인국(107)이 아니라 수잔루드베키아(1315)로
+            //    번역됐다 — 실측 응답 **11장**이 이 경로였다. 계약 1-1-a가 200종을
+            //    지키기로 정했으므로 색인도 그쪽을 지켜야 한다.
+            //    ⚠️ 화면에는 증상이 없다(둘 다 실재하는 꽃 이름이다). 지표는 속 단위라
+            //       두 종이 같은 속이어서 **원리상 안 움직인다.** `…IndexTest`가 고정한다.
+            exact.putIfAbsent(name, flower.id)
             val genus = name.substringBefore(' ')
             if (genus.isNotEmpty()) byGenus.getOrPut(genus) { mutableListOf() }.add(flower.id)
+        }
+
+        // 계약 1-1-e. **별칭은 `exact`에만 넣는다 — `byGenus`는 건드리지 않는다.**
+        //
+        // 🔴 속 색인에도 넣어 봤더니 **노리지 않은 종이 함께 움직였다**: 9월에
+        //    `Erigeron annuus`(개망초)와 `Erigeron strigosus`가 `민망초` → `망초`로
+        //    바뀌었다. 별칭이 속의 **후보 순서**를 바꿔 버린 것이다(실측 24건 → 22건).
+        //    별칭은 "이 이름은 저 종이다"라는 말이지 "이 속에 종이 하나 더 있다"가 아니다.
+        //
+        // ⚠️ **`putIfAbsent`다.** 별칭이 실재하는 종의 학명을 덮으면 **그 종을 정확히
+        //    맞혀도 가로챈다**(`Lythrum salicaria`가 털부처꽃을 빼앗는 그 경로).
+        //    적재 쪽 `scientific_aliases.self_check` ②-b가 그런 별칭을 애초에 막지만,
+        //    자산은 갈아 끼워질 수 있으므로 여기서도 순서로 막는다.
+        for (flower in flowers) {
+            for (alias in flower.scientificAliases) {
+                val name = normalize(alias)
+                if (name.isEmpty()) continue
+                exact.putIfAbsent(name, flower.id)
+            }
         }
         this.exact = exact
         // 원본이 id 순이지만 의존하지 않고 정렬한다 — 동점일 때 결과가 결정론적이어야 한다.
@@ -68,8 +95,25 @@ class ScientificNameIndex(flowers: List<Flower>) {
         }
     }
 
-    private companion object {
-        /** 대소문자·여분 공백·품종 표기(`var.`·`subsp.`)를 지우고 속+종 두 낱말만 남긴다. */
+    companion object {
+        /**
+         * 대소문자·여분 공백·품종 표기(`var.`·`subsp.`)를 지우고 속+종 두 낱말만 남긴다.
+         *
+         * 🔴 **`var.`·`subsp.` 치환은 실은 아무 일도 하지 않는다** (실측). `take(2)`가
+         *    앞 두 낱말만 남기는데 학명에서 그 표기는 **항상 세 번째 낱말 이후**에 온다 —
+         *    도감·실측 응답·개명 목록을 합친 **학명 2,185개에서 치환을 빼도 결과가 한 건도
+         *    안 바뀐다.** 진짜 일하는 것은 `take(2)`다. 방어적으로 남긴다.
+         *
+         * 🔴 **그리고 `take(2)`가 아종·품종의 구분을 지운다.** `Lythrum salicaria subsp.
+         *    anceps`와 `Lythrum salicaria`가 같은 값이 되어 **다른 두 종이 한 칸을
+         *    다툰다**(도감 2,057종에 9쌍 있다). 그래서 위 `init`이 `putIfAbsent`로
+         *    먼저 넣은 것을 지킨다. `take(3)`으로 늘리면 2,057종 전부의 매칭이 바뀌므로
+         *    실측 없이 손대지 않는다.
+         *
+         * ⚠️ **`공용_적재/scientific_aliases.normalize`와 결과가 같아야 한다.** 한쪽만
+         *    바뀌면 별칭이 **조용히 안 먹는다**(화면에는 다른 꽃 이름이 예쁘게 나온다).
+         *    그 파일의 자기검사가 이 파일을 읽어서 학명 2,185개로 대조한다.
+         */
         fun normalize(name: String): String =
             name.lowercase()
                 .replace("var.", " ")

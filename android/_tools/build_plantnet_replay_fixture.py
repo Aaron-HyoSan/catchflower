@@ -119,6 +119,24 @@ def main():
     if len(control) != 200:
         sys.exit(f"대조군 200종을 못 뽑았다: {len(control)}종")
 
+    # 🔴 **별칭이 실렸는지 센다** (계약 1-1-e). 자산이 별칭 없이 만들어져도 아래
+    #    대조군 검사는 통과한다(학명·개화월은 그대로다) — 그리고 별칭은 속 단위
+    #    지표에 안 나타나므로 **테스트도 전부 초록이다.** 세는 것 말고 방법이 없다.
+    #    ⚠️ 16은 `공용_적재/scientific_aliases.py`가 원본이다. 거기서 읽는다 —
+    #       숫자를 두 군데 적으면 한쪽만 고쳐도 아무도 모른다.
+    sys.path.insert(0, str(ROOT / "공용_적재"))
+    import scientific_aliases  # noqa: E402
+    n_alias = sum(len(f["scientific_aliases"]) for f in flowers)
+    if n_alias != len(scientific_aliases.ALIASES):
+        sys.exit(f"🔴 자산의 학명 별칭이 {n_alias}개다 — "
+                 f"{len(scientific_aliases.ALIASES)}개여야 한다(계약 1-1-e).\n"
+                 "  python3 꽃도감/_tools/build_app_data.py 를 먼저 돌린다.")
+    # 대조군 200종에 전부 들어 있어야 한다 — 실측으로 확인된 16건이 다 거기 있다.
+    n_control = sum(len(f["scientific_aliases"]) for f in control)
+    if n_control != n_alias:
+        sys.exit(f"🔴 별칭 {n_alias}개 중 {n_control}개만 대조군(id≤200)에 있다 — "
+                 "확장분에 별칭이 붙었다면 판단 근거를 다시 본다(계약 1-1-e).")
+
     def slim(fs):
         # `bloom_source`도 담는다 — **개화월 필터가 도는지 재려면 이 축이 필요하다.**
         # 근거 있는 종(human·draft·observed)과 근거 없는 종(peak_window·unknown)을
@@ -126,10 +144,16 @@ def main():
         # 후자는 의도적으로 전 달에 오르기 때문이다(계약 1-2-b ⑤).
         # 개월 수로 대신 가르려 했더니 peak_window(9개월)가 근거 있는 쪽에 섞여
         # 1,040종이어야 하는 표본이 1,770종이 됐다 — **다른 것을 재고 있었다.**
+        # 🔴 `scientific_aliases`도 담는다 (계약 1-1-e). 안 담으면 `PlantNetReplayTest`가
+        #    별칭 없는 색인으로 재게 되는데, **지표가 그대로 나오므로 아무도 모른다**
+        #    (별칭은 속 단위 지표에 원리상 안 나타난다). 즉 "재고 있다"는 착각만 남는다.
+        #    `f["scientific_aliases"]`를 `.get`으로 읽지 않는다 — 칸이 없으면 여기서
+        #    죽어야 한다(빈 목록으로 조용히 넘어가면 위와 같은 상태가 된다).
         return [
             {"id": f["id"], "name": f["name"],
              "scientific_name": f["scientific_name"], "bloom_months": f["bloom_months"],
-             "bloom_source": f["bloom_source"]}
+             "bloom_source": f["bloom_source"],
+             "scientific_aliases": f["scientific_aliases"]}
             for f in fs
         ]
 

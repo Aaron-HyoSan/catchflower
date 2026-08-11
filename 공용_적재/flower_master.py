@@ -34,9 +34,16 @@
 import csv
 import os
 import re
+import sys
 import unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# ⚠️ 이 폴더를 경로에 넣는다 — 양쪽 플랫폼의 적재 스크립트가 각자 다른
+#    작업 폴더에서 이 모듈을 임포트하므로 상대 임포트를 못 쓴다.
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+import scientific_aliases  # noqa: E402  (위 sys.path 조작 뒤여야 한다)
+
 ROOT = os.path.dirname(HERE)
 CSV_200 = os.path.join(ROOT, "꽃도감", "꽃목록_200종.csv")
 CSV_2057 = os.path.join(ROOT, "꽃도감", "꽃목록_확장_2057종.csv")
@@ -401,6 +408,18 @@ def build_master():
             raise ValueError("이름이 중복된다: %s (%d, %d)" % (name, name_to_id[name], fid))
         name_to_id[name] = fid
 
+    # 학명 별칭 — 계약 1-1-e. **id별로 미리 모아 둔다.**
+    # 🔴 이름을 못 찾은 별칭은 `scientific_aliases`가 자기검사로 막지만, 여기서도
+    #    **세어서** 아래 `_verify`가 대조한다 — 조용히 건너뛰면 넣은 줄 수와
+    #    동작하는 줄 수가 갈리고 화면에 증상이 없다.
+    aliases_by_id = {}
+    for raw_name, korean in scientific_aliases.ALIASES.items():
+        fid = name_to_id.get(nfc(korean))
+        if fid is None:
+            raise ValueError("별칭 `%s`의 꽃 `%s`이 도감에 없다 — 오타인가"
+                             % (raw_name, korean))
+        aliases_by_id.setdefault(fid, []).append(raw_name)
+
     flowers = []
     stats = {}
     dangling = []
@@ -477,6 +496,8 @@ def build_master():
             "ai_difficulty": difficulty,
             "similar_flower_ids": similar_ids,
             "similar_flower_names": similar_names,
+            # 계약 1-1-e. 대부분 빈 배열이다 — 23종만 값이 있다.
+            "scientific_aliases": aliases_by_id.get(fid, []),
             "illust_batch": illust_batch,
         })
 
@@ -576,6 +597,50 @@ def _verify(flowers):
         # 사람이 정한 200종은 **전부** 채워져 있어야 한다. 하나라도 비면 초안이 섞인 것이다.
         if f["bloom_source"] == BLOOM_HUMAN and not (f["color"] and f["habitat"]):
             problems.append("%d %s 사람이 정한 종인데 색·서식지가 비었다" % (f["id"], f["name"]))
+        # 🔴 **별칭이 자기 학명과 같으면 아무 일도 안 한다** — 넣은 줄 수가
+        #    부풀어 "이만큼 고쳤다"는 착각이 생긴다(계약 1-1-e).
+        own = " ".join(f["scientific_name"].lower().split()[:2])
+        for alias in f["scientific_aliases"]:
+            if " ".join(alias.lower().split()[:2]) == own:
+                problems.append("%d %s 별칭 %r이 자기 학명과 같다 — 무의미하다"
+                                % (f["id"], f["name"], alias))
+
+    # 🔴 **별칭 총수를 센다.** 하나라도 조용히 사라지면 여기서 걸린다 —
+    #    개별 종을 보는 위 루프로는 "전부 빠진" 경우를 못 잡는다(전부 빈 배열이면
+    #    루프가 한 번도 안 돌고 통과한다. 이 저장소가 반복해 당한 형태다).
+    total_aliases = sum(len(f["scientific_aliases"]) for f in flowers)
+    expected_aliases = len(scientific_aliases.ALIASES)
+    if total_aliases != expected_aliases:
+        problems.append("별칭이 %d개여야 하는데 %d개가 실렸다 — 조용히 빠진 것이 있다"
+                        % (expected_aliases, total_aliases))
+
+    # 🔴 **별칭이 도감의 "다른 종의 학명"을 빼앗는가** (계약 1-1-e). 위 검사는 별칭이
+    #    **자기** 학명과 같은 경우만 본다. 남의 것과 같으면 그 종을 정확히 맞혀도
+    #    가로채는데, **그건 지금 맞던 답이 틀리게 되는 쪽**이라 더 나쁘다.
+    #    실제로 2건이 그랬다: `Lythrum salicaria`(= 털부처꽃 1909의 학명) ·
+    #    `Phedimus aizoon`(= 가는기린초 206). `take(2)`가 아종·품종 표기를 지운다.
+    #    ⚠️ 화면에는 증상이 없다 — 다른 꽃 이름이 예쁘게 나온다.
+    own_names = {}
+    for f in flowers:
+        own_names.setdefault(" ".join(f["scientific_name"].lower().split()[:2]), []).append(f)
+    for f in flowers:
+        for alias in f["scientific_aliases"]:
+            key = " ".join(alias.lower().split()[:2])
+            for other in own_names.get(key, []):
+                if other["id"] != f["id"]:
+                    problems.append(
+                        "%d %s 별칭 %r이 **%d %s의 학명**과 같다 — 그 종을 정확히 "
+                        "맞혀도 가로챈다(scientific_aliases.DO_NOT_ALIAS_AMBIGUOUS로 옮긴다)"
+                        % (f["id"], f["name"], alias, other["id"], other["name"]))
+
+    # 🔴 **별칭은 id ≤ 200에만 붙는다** (계약 1-1-e). 확장 CSV(id>200)는 이미 새
+    #    이름이라 필요가 없다 — 붙었다면 근거를 착각한 것이다(내가 한 번 그랬다:
+    #    확장 CSV의 새 이름을 도감 학명으로 착각해 25건을 넣었고 5건이 자기 학명과
+    #    같아서 걸렸다).
+    outside = [f for f in flowers if f["id"] > 200 and f["scientific_aliases"]]
+    if outside:
+        problems.append("확장분(id>200)에 별칭이 붙었다: %s — 확장 CSV는 이미 새 이름이다"
+                        % [(f["id"], f["name"]) for f in outside[:5]])
 
     if problems:
         raise ValueError("마스터 무결성 위반 %d건:\n  - %s"

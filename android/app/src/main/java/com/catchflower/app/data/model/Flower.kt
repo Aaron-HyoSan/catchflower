@@ -23,6 +23,23 @@ data class Flower(
     val id: Int,
     val name: String,
     val scientificName: String,
+    /**
+     * PlantNet이 이 종에 대해 **줄 수 있는 다른 학명** (공유계약 1-1-e). 16종만 비어 있지 않다.
+     *
+     * 🔴 **왜 필요한가.** 우리 도감의 id 1~200은 사람이 정한 `꽃목록_200종.csv`가
+     *    이기는데(계약 1-1-a), 그 파일의 학명 일부가 지금 학계가 쓰는 이름보다 옛
+     *    것이다. PlantNet은 새 이름을 준다 — `Erigeron bonariensis`를 주는데 우리는
+     *    `Conyza bonariensis`를 들고 있어서 **속조차 안 맞고**, 속 fallback이
+     *    엉뚱한 종(개망초·민망초)으로 보낸다. 실측 200장 중 **20장**이 이 경로였다.
+     *
+     * ⚠️ **`scientificName`을 고치는 것이 아니다.** 실측으로 3건은 PlantNet이 **옛
+     *    이름을** 주고 있어서(원추천인국은 새 이름이 200장에 한 번도 안 나온다)
+     *    덮으면 지금 맞던 것이 사라진다. 그래서 **양쪽 다 받는다.**
+     *
+     * ⚠️ 이 필드가 틀려도 **화면에는 다른 꽃 이름이 예쁘게 나온다** — 증상이 없다.
+     *    그래서 검증은 화면이 아니라 `ScientificNameIndexTest`가 한다.
+     */
+    val scientificAliases: List<String>,
     val family: String,
     /** 개화월. 개화월 하드 필터(A-1 필수 구현)의 입력이다. */
     val bloomMonths: List<Int>,

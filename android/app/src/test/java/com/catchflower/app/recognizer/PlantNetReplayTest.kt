@@ -52,6 +52,12 @@ class PlantNetReplayTest {
                 id = o.getInt("id"),
                 name = o.getString("name"),
                 scientificName = o.getString("scientific_name"),
+                // 계약 1-1-e. 🔴 **`optJSONArray`로 눙치지 않는다** — 픽스처에 칸이
+                //    없으면 여기서 죽어야 한다. 빈 목록으로 넘어가면 별칭 없는
+                //    색인으로 재면서 **지표는 그대로 나온다**(속 단위라 안 보인다).
+                scientificAliases = o.getJSONArray("scientific_aliases").let { a ->
+                    (0 until a.length()).map { a.getString(it) }
+                },
                 family = "",
                 bloomMonths = (0 until months.length()).map { months.getInt(it) },
                 bloomLabel = "",

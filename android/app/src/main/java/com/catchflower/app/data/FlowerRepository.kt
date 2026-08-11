@@ -99,6 +99,13 @@ class FlowerRepository private constructor(val flowers: List<Flower>) {
                     id = o.getInt("id"),
                     name = o.getString("name"),
                     scientificName = o.getString("scientific_name"),
+                    // 계약 1-1-e. 🔴 **`optJSONArray`를 쓰지 않는다** — 칸이 없으면
+                    //    조용히 빈 목록이 되고, 그러면 별칭 16건이 **하나도 안 실린
+                    //    상태로 앱이 정상 동작한다**(증상이 없다: 꽃 이름은 예쁘게
+                    //    나오고 다만 틀린 종이다). 없으면 여기서 죽는 게 맞다.
+                    scientificAliases = o.getJSONArray("scientific_aliases").let { arr ->
+                        List(arr.length()) { arr.getString(it) }
+                    },
                     family = o.getString("family"),
                     bloomMonths = o.getJSONArray("bloom_months").let { arr ->
                         List(arr.length()) { arr.getInt(it) }
@@ -139,6 +146,15 @@ class FlowerRepository private constructor(val flowers: List<Flower>) {
             check(ids.size == flowers.size) { "도감번호가 중복이다 (고유 ${ids.size} / ${flowers.size}종)" }
             val missing = (1..GamePolicy.TOTAL_FLOWER_COUNT).firstOrNull { it !in ids }
             check(missing == null) { "도감번호 ${missing}번이 없다 — 1~${GamePolicy.TOTAL_FLOWER_COUNT} 연속이어야 한다" }
+            // 🔴 **별칭 총수를 센다** (계약 1-1-e). 위 `getJSONArray`는 칸이 있는지만
+            //    보므로, 적재가 **전부 빈 배열**을 내려도 통과한다 — 그러면 실측 200장
+            //    중 20장이 걸린 `Erigeron bonariensis` 경로가 조용히 되살아난다.
+            //    자산이 갈아 끼워질 수 있으니 적재 쪽 검사에 의존하지 않고 여기서도 센다.
+            val aliasCount = flowers.sumOf { it.scientificAliases.size }
+            check(aliasCount == GamePolicy.SCIENTIFIC_ALIAS_COUNT) {
+                "학명 별칭이 ${GamePolicy.SCIENTIFIC_ALIAS_COUNT}개여야 한다. 실제 ${aliasCount}개" +
+                    " — `공용_적재/scientific_aliases.py`와 자산이 어긋났다"
+            }
             return FlowerRepository(flowers)
         }
     }
