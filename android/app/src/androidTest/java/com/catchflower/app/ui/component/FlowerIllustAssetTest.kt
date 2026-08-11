@@ -98,7 +98,15 @@ class FlowerIllustAssetTest {
     @Test
     fun 일러스트가_512픽셀_투명배경이다() {
         val names = assetNames()
-        assertTrue("검사할 일러스트가 0장이다", names.size >= DELIVERED)
+        // 🔴 메시지가 "0장이다"였는데 조건은 `>= DELIVERED`다 — **199장에서도 "0장"이라고
+        //    말했다**(돌연변이로 확인: 1장을 빼니 이 문구가 그대로 나왔다). 읽는 사람은
+        //    자산이 통째로 안 들어간 줄 알고 `SyncSharedAssets`를 뒤지게 된다.
+        //    실패 문구는 **실제 수를 말해야** 원인으로 바로 간다.
+        assertTrue(
+            "검사할 일러스트가 ${names.size}장이다 — ${DELIVERED}장 이상이어야 한다 " +
+                "(0장이면 자산 자체가 안 들어간 것 · ${DELIVERED}장 미만이면 복사에서 빠진 것)",
+            names.size >= DELIVERED,
+        )
 
         val wrong = mutableListOf<String>()
         names.forEach { name ->
