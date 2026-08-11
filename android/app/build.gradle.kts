@@ -187,6 +187,15 @@ tasks.withType<Test>().configureEach {
     // A 문서 = 모든 버튼 문구의 원본. `문구를 새로 쓰지 않는다`를 지키는 검사가 이걸 읽는다.
     inputs.file(root.file("../디자이너_업무/A_문구·버튼_스펙.md"))
         .withPropertyName("cfTestReadsCopySpec").withPathSensitivity(PathSensitivity.NONE)
+    // 마이그레이션 SQL = 서버 계약의 원본. `ReactionContractTest`가 RPC 인자 이름·
+    // 컬럼명·댓글 길이 상한을 **SQL 원문에서 읽어** 코드와 대조한다.
+    //
+    // ⚠️ **선언하지 않으면 위 표와 똑같이 조용히 통과한다.** 실측(2026-08-11):
+    //    0007의 시그니처를 `d_id` → `discovery_id`로 훼손해도 캐시 상태에서는
+    //    **BUILD SUCCESSFUL**, `--rerun-tasks`에서만 1 failed였다.
+    //    SQL만 고치는 커밋(오너가 스키마를 손보는 날이 그렇다)에서 정확히 새어 나간다.
+    inputs.dir(root.dir("../supabase/migrations"))
+        .withPropertyName("cfTestReadsMigrations").withPathSensitivity(PathSensitivity.RELATIVE)
 }
 
 dependencies {

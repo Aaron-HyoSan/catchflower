@@ -1,0 +1,244 @@
+package com.catchflower.app.data
+
+import java.io.File
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/**
+ * [ReactionService]가 쓰는 이름이 **실제 마이그레이션 SQL과 같은가.**
+ *
+ * ## 왜 이 테스트가 있나
+ *
+ * 🔴 **이 층은 지금 실서버에 대고 확인할 수가 없다.** `0007_likes_comments.sql`이
+ *    아직 적용되지 않아서 무엇을 물어도 `PGRST202`(함수 없음)·`PGRST205`(테이블 없음)가
+ *    온다. 즉 **인자 이름을 틀리게 써도, 컬럼 이름을 틀리게 써도, 응답이 똑같다.**
+ *    적용된 뒤에도 그 두 코드는 여전히 겹친다 — "아직 배포 안 됨"과 "이름을 틀림"이
+ *    같은 응답이라 **로그를 봐도 원인을 모른다.**
+ *
+ * 🔴 그리고 [ReactionServiceTest]는 이걸 못 잡는다. 그쪽 응답은 **내가 만든 것**이라
+ *    내가 `discovery_id`로 쓰면 픽스처도 `discovery_id`가 되어 **함께 틀리고 함께 초록**이다
+ *    ((22)에서 실제로 그랬다: 상상한 형식으로 쓴 테스트가 통과하고 앱이 안 됐다).
+ *    그래서 픽스처가 아니라 **SQL 원문**을 읽어서 대조한다.
+ *
+ * ⚠️ **이 파일이 빨개지면 SQL이 아니라 코드를 고친다.** SQL은 오너가 그대로 붙여넣는
+ *    원본이고 서버가 그걸로 만들어진다. 다만 SQL을 의도적으로 바꿨다면
+ *    `공유계약_iOS_AOS.md`를 먼저 고치는 것이 순서다(혼자 바꾸지 않는다).
+ */
+class ReactionContractTest {
+
+    private val projectRoot: File by lazy {
+        var dir: File? = File("").absoluteFile
+        while (dir != null && !File(dir, "supabase").isDirectory) dir = dir.parentFile
+        dir ?: throw AssertionError(
+            "프로젝트 루트를 못 찾았다. 경로가 바뀌었으면 이 테스트를 고친다 — " +
+                "건너뛰게 만들면 계약 검증이 조용히 사라진다",
+        )
+    }
+
+    private fun sql(name: String): String {
+        val f = File(projectRoot, "supabase/migrations/$name")
+        assertTrue("$name 이 없다 — 파일이 옮겨졌으면 이 테스트를 고친다", f.isFile)
+        return f.readText()
+    }
+
+    private val source: String by lazy {
+        val f = File("src/main/java/com/catchflower/app/data/ReactionService.kt")
+        assertTrue("ReactionService.kt를 못 찾았다", f.isFile)
+        f.readText()
+    }
+
+    /**
+     * 빨개지는 경우: 0007의 시그니처가 `d_id`가 아닌 다른 이름으로 바뀌었거나,
+     * 코드가 `discovery_id`로 보내게 됐을 때. 실서버 증상은 **`PGRST202`뿐이고
+     * 그건 "아직 배포 안 됨"과 같은 코드**라 원인을 못 가린다.
+     */
+    @Test
+    fun RPC_인자_이름이_서버_시그니처와_같다() {
+        val migration = sql("0007_likes_comments.sql")
+        val sig = Regex("""create or replace function public\.discovery_reactions\(\s*(\w+)\s+uuid\s*\)""")
+            .find(migration)
+        assertTrue("0007에 discovery_reactions 정의가 없다", sig != null)
+        val argName = sig!!.groupValues[1]
+
+        val inCode = Regex("""ARG_DISCOVERY = "([^"]+)"""").find(source)
+        assertTrue("ARG_DISCOVERY 상수를 못 찾았다", inCode != null)
+        assertEquals(
+            "RPC 인자 이름이 서버와 다르다 — 실서버에서는 PGRST202로만 보인다",
+            argName,
+            inCode!!.groupValues[1],
+        )
+    }
+
+    /**
+     * 빨개지는 경우: `returns table`의 칸 이름이 바뀌었을 때. 코드가 못 읽으면
+     * `PARSE` 실패가 되고, **한 칸만 바뀌면 그 칸만 0이 된다.**
+     */
+    @Test
+    fun 반응_함수의_칸_이름_세_개를_그대로_읽는다() {
+        val migration = sql("0007_likes_comments.sql")
+        val returns = Regex(
+            """create or replace function public\.discovery_reactions\([^)]*\)\s*returns table \(([^)]*)\)""",
+        ).find(migration)
+        assertTrue("discovery_reactions의 returns table을 못 찾았다", returns != null)
+        val columns = returns!!.groupValues[1]
+            .split(',')
+            .map { it.trim().substringBefore(' ') }
+            .filter { it.isNotEmpty() }
+
+        assertEquals(3, columns.size)
+        for (c in columns) {
+            assertTrue("서버가 주는 칸 `$c`을 코드가 읽지 않는다", source.contains("\"$c\""))
+        }
+    }
+
+    /**
+     * 빨개지는 경우: `likes`·`comments`의 컬럼명이 바뀌었을 때.
+     *
+     * ⚠️ **`user_id`를 통째로 찾지 않고 `likes` 정의 안에서 찾는다.** 이 저장소에는
+     *    `user_id`가 여러 테이블에 있어서 "어딘가에 있다"는 검사는 아무것도 안 잰다.
+     */
+    @Test
+    fun 좋아요_테이블의_키_두_칸을_그대로_쓴다() {
+        val body = tableBody(sql("0007_likes_comments.sql"), "likes")
+        val cols = columnsOf(body)
+        // PK가 (discovery_id, user_id)라는 것이 0007의 핵심이다 —
+        // id 컬럼이 생기면 **같은 사람이 두 번 좋아요**를 넣을 수 있다.
+        assertTrue("likes에 id 컬럼이 생겼다 — 중복 좋아요가 가능해진다", "id" !in cols)
+        assertTrue("discovery_id" in cols)
+        assertTrue("user_id" in cols)
+        assertTrue(source.contains("""COL_DISCOVERY_ID = "discovery_id""""))
+        assertTrue(source.contains("""COL_USER_ID = "user_id""""))
+    }
+
+    /**
+     * 빨개지는 경우: 서버 `comments_body_len`의 상한이 바뀌었는데
+     * [com.catchflower.app.core.GamePolicy.COMMENT_MAX_LENGTH]는 그대로일 때.
+     *
+     * 🔴 **두 값이 갈리면 증상이 방향에 따라 다르다.** 서버가 더 짧으면 사용자가 쓴
+     *    댓글이 `23514`로 거부되는데 화면은 `연결이 불안정해요`를 띄운다(자기 입력이
+     *    원인인데 네트워크 탓으로 보인다). 서버가 더 길면 클라이언트가 **서버가
+     *    받아 줄 댓글을 거절한다.** C-9는 아직 오너 미답이라 바뀔 수 있는 값이다.
+     */
+    @Test
+    fun 댓글_길이_상한이_서버_check와_같다() {
+        val migration = sql("0007_likes_comments.sql")
+        val check = Regex("""char_length\(body\) between (\d+) and (\d+)""").find(migration)
+        assertTrue("comments_body_len check를 못 찾았다", check != null)
+        assertEquals("서버가 빈 댓글을 허용하게 바뀌었다", 1, check!!.groupValues[1].toInt())
+        assertEquals(
+            "서버 상한과 GamePolicy.COMMENT_MAX_LENGTH가 다르다",
+            check.groupValues[2].toInt(),
+            com.catchflower.app.core.GamePolicy.COMMENT_MAX_LENGTH,
+        )
+    }
+
+    /**
+     * 빨개지는 경우: C-9 "수정 불가"를 뒤집는 `update` 정책이 생겼을 때, 혹은
+     * `deleted_at is not null` 조건이 빠졌을 때. 그러면 클라이언트의 PATCH가
+     * **본문 수정 경로**가 된다.
+     */
+    @Test
+    fun 댓글은_soft_delete만_허용된다() {
+        val migration = sql("0007_likes_comments.sql")
+        val policies = Regex("""create policy (\w+) on public\.comments\s+for (\w+)""")
+            .findAll(migration).map { it.groupValues[1] to it.groupValues[2] }.toList()
+        val updates = policies.filter { it.second == "update" }
+        assertEquals("comments의 update 정책은 하나뿐이어야 한다", 1, updates.size)
+        assertEquals("comments_soft_delete", updates[0].first)
+        assertTrue(
+            "soft delete 정책에 `deleted_at is not null`이 없다 — 본문 수정이 열린다",
+            migration.contains("deleted_at is not null"),
+        )
+        // 코드도 `deleted_at`만 보낸다. body를 실으면 위 정책이 못 막는다.
+        val patch = Regex("""JSONObject\(\)\.put\("deleted_at",[^\n]*""").find(source)
+        assertTrue("deleted_at PATCH 본문을 못 찾았다", patch != null)
+        assertTrue(
+            "삭제 PATCH에 body가 실려 있다 — C-9 수정 불가가 우회된다",
+            !patch!!.value.contains("\"body\""),
+        )
+    }
+
+    /**
+     * 빨개지는 경우: 남의 닉네임을 `users`에서 받게 코드가 바뀌었을 때.
+     * `users`의 RLS는 본인 행만 주므로 **남의 이름이 조용히 빈다** — 화면 16의
+     * 댓글은 대부분 남의 것이라 거의 전부가 이름 없이 뜬다.
+     */
+    @Test
+    fun 남의_닉네임은_공개뷰에서만_받는다() {
+        val init = sql("0001_init.sql")
+        assertTrue(
+            "public_profiles 뷰가 없어졌다",
+            init.contains("create or replace view public.public_profiles"),
+        )
+        // `users_read_self`가 살아 있다는 것이 이 규칙의 근거다.
+        assertTrue("users_read_self 정책이 없다", init.contains("users_read_self"))
+        assertTrue("코드가 public_profiles를 안 쓴다", source.contains("rest/v1/public_profiles"))
+        assertTrue(
+            "코드가 users를 직접 조회한다 — 남의 이름이 빈다",
+            !source.contains("rest/v1/users"),
+        )
+    }
+
+    /**
+     * 빨개지는 경우: `reports`의 신고자 컬럼명이 바뀌었을 때. 지금은 `reporter_id`이고
+     * 다른 테이블들과 달라서 **`user_id`로 쓰기 쉽다** — 그러면 `PGRST204`로 전부 실패하고,
+     * 신고는 결과를 화면에서 확인할 방법이 없어서(정책상 못 읽는다) 아무도 모른다.
+     */
+    @Test
+    fun 신고_컬럼_이름을_그대로_쓴다() {
+        val cols = columnsOf(tableBody(sql("0001_init.sql"), "reports"))
+        assertTrue("reporter_id" in cols)
+        assertTrue("reason" in cols)
+        assertTrue(source.contains("""put("reporter_id""""))
+    }
+
+    /**
+     * 🔴 빨개지는 경우: **이 층을 화면에 붙였는데 이 테스트를 안 고쳤을 때.**
+     *
+     * 지금 [ReactionService]를 부르는 화면이 하나도 없다 — 그게 의도다(0007 미적용 ·
+     * 남의 기록을 주는 서버 함수 없음). 그런데 **부르는 곳이 없는 코드는 "됐다"고
+     * 착각하게 만드는 대표적인 자리**다(`읽는 사람이 0명인 데이터`).
+     * 그래서 이 사실 자체를 검사로 고정한다: 화면이 붙는 날 이 테스트가 빨개지고,
+     * 그때 `구현현황_AOS.md`와 이 주석을 함께 고치게 된다.
+     */
+    @Test
+    fun 아직_어느_화면도_이_층을_부르지_않는다() {
+        val ui = File("src/main/java/com/catchflower/app/ui")
+        assertTrue(ui.isDirectory)
+        val callers = ui.walkTopDown()
+            .filter { it.isFile && it.extension == "kt" }
+            .filter { f ->
+                val t = f.readText()
+                t.contains("ReactionService") || t.contains("ReactionSource")
+            }
+            .map { it.name }
+            .toList()
+        assertEquals(
+            "화면이 반응 층을 부르기 시작했다. 좋은 일이다 — 이 테스트와 " +
+                "구현현황_AOS.md·ReactionService의 '아직 안 부른다' 주석을 같이 고친다: $callers",
+            emptyList<String>(),
+            callers,
+        )
+    }
+
+    // ── 도우미 ──────────────────────────────────────────────────────
+
+    private fun tableBody(sql: String, table: String): String {
+        val m = Regex(
+            """create table if not exists public\.$table \((.*?)\n\);""",
+            RegexOption.DOT_MATCHES_ALL,
+        ).find(sql)
+        assertTrue("$table 정의를 못 찾았다", m != null)
+        return m!!.groupValues[1]
+    }
+
+    /** 컬럼 이름만. `constraint`·`primary key` 줄은 컬럼이 아니다. */
+    private fun columnsOf(body: String): Set<String> =
+        body.lines()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() && !it.startsWith("--") }
+            .map { it.substringBefore(' ') }
+            .filter { it !in setOf("constraint", "primary", "unique", "check", "foreign") }
+            .toSet()
+}

@@ -258,14 +258,19 @@ class DiscoveryStore(private val file: File) {
 }
 
 /**
- * 로그인 전까지 쓰는 기기 로컬 사용자 id.
+ * **익명 로그인이 실패했을 때만** 쓰는 기기 로컬 사용자 id.
  *
- * ⚠️ **이건 임시다.** 오너가 익명 로그인으로 결정했으므로, Supabase Anonymous provider가
- *    켜지면 그 계정의 uuid로 **교체된다**(콘솔 토글 대기 — `anonymous_provider_disabled`).
- *    그때 이 id로 저장된 기록을 새 id로 옮기는 이관이 필요하다.
+ * 익명 로그인은 이미 붙어서 돈다(구현현황 2-4) — 평소에는 이 값이 안 쓰인다.
+ * 여기로 내려오는 경우는 **비행기 모드로 앱을 처음 켠 것**이거나
+ * `local.properties`에 Supabase 값이 없는 빌드다. 다음 실행에서 다시 로그인하고
+ * [AuthService.migrate]가 이 id로 쌓인 기록을 계정 uuid로 옮긴다.
+ *
+ * ⚠️ **그래서 이 값으로 서버를 부르면 조용히 실패한다.** 없는 uuid로 PATCH하면
+ *    PostgREST가 **200 + `[]`** 를 주고 화면은 완료로 넘어간다 —
+ *    랭킹만 영원히 빈다(`RegionUpdateServiceTest`가 고정한다).
  *
  * **계약이 uuid를 요구하므로 uuid로 만든다.** `"local-user"` 같은 문자열을 넣으면
- * 서버가 붙는 날 uuid 컬럼에 들어가지 못해 **그동안 쌓인 기록이 전부 못 올라간다.**
+ * uuid 컬럼에 들어가지 못해 **그동안 쌓인 기록이 전부 못 올라간다.**
  */
 object LocalUser {
     private const val PREFS = "catchflower"
