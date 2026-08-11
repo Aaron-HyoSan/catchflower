@@ -211,6 +211,122 @@ def check_function_defined_before_use(files, problems):
     return len(used)
 
 
+def check_owner_docs_not_stale(files, problems) -> int:
+    """오너가 실제로 붙여넣는 파일이 **마이그레이션과 어긋났는가.**
+
+    🔴 **이 저장소가 같은 실수를 두 번 했다.** 마이그레이션을 새로 쓰고 커밋했는데
+       `오너_실행/01_스키마_전체.sql`(합본)을 다시 만들지 않았다. 오너는 합본만
+       붙여넣으니 **새 파일이 조용히 빠진다** — 그리고 앱은 그 표가 있다고 믿는다.
+
+       두 번째는 더 나빴다: `오너_실행/README.md`가 기대값 표(`함수 13개`)를 **베껴
+       들고 있었고**, 0007이 들어오면서 실제는 16개가 됐다. 그러면 오너는 **정상인
+       서버를 ❌로 읽는다.** 그래서 README에서 그 표를 없애고 이 검사를 넣었다.
+
+    ⚠️ 이 검사는 **파일 목록과 개수만** 본다. 내용이 맞는지는 못 본다.
+    """
+    combined = ROOT / "오너_실행" / "01_스키마_전체.sql"
+    verify = ROOT / "오너_실행" / "02_적용확인.sql"
+    readme = ROOT / "오너_실행" / "README.md"
+    checked = 0
+
+    if combined.is_file():
+        text = combined.read_text(encoding="utf-8")
+        listed = re.findall(r"^-- ▼ (\S+\.sql)$", text, flags=re.M)
+        checked += 1
+        # 🔴 0개면 PASS가 아니라 **정규식이 안 맞은 것**이다. 합본 머리말 형식이
+        #    바뀌면 이 검사는 조용히 아무것도 안 본다.
+        if not listed:
+            problems.append(
+                "01_스키마_전체.sql: `-- ▼ 파일명` 줄을 하나도 못 찾았다 —"
+                " 합본 형식이 바뀌었다면 이 검사를 고친다(그냥 두면 검사가 안 본다)")
+        else:
+            missing = [f.name for f in files if f.name not in listed]
+            extra = [n for n in listed if n not in {f.name for f in files}]
+            if missing:
+                problems.append(
+                    f"01_스키마_전체.sql에 {missing}가 **빠져 있다** — 오너는 합본만"
+                    " 붙여넣으므로 그 마이그레이션은 서버에 영원히 안 간다."
+                    " `python3 오너_실행/build_합본.py`로 다시 만든다")
+            if extra:
+                problems.append(
+                    f"01_스키마_전체.sql에 {extra}가 있는데 마이그레이션에는 없다 —"
+                    " 파일을 지웠다면 합본도 다시 만든다")
+    else:
+        problems.append("01_스키마_전체.sql이 없다 — 오너가 붙여넣을 파일이다")
+
+    # README가 기대값을 **베껴 들고 있지 않은가.** 원본은 02_적용확인.sql 한 곳이다.
+    if readme.is_file() and verify.is_file():
+        checked += 1
+        rtext = readme.read_text(encoding="utf-8")
+        # `02_적용확인.sql`이 스스로 들고 있는 항목 문구를 그대로 README에서 찾는다.
+        labels = re.findall(
+            r"select\s+\d+(?:\s+as\s+순서)?\s*,\s*'([^']+)'(?:\s+as\s+항목)?\s*,",
+            verify.read_text(encoding="utf-8"))
+        if not labels:
+            problems.append(
+                "02_적용확인.sql에서 항목 문구를 못 뽑았다 — 이 검사가 아무것도 안 본다")
+        else:
+            # 🔵 **처음엔 문구 전체를 README에서 찾았다. 그건 거의 아무것도 못 잡는다.**
+            #    그렇게 해서 걸린 것은 `꽃 도감 2,057종` 하나였고 **그 숫자는 맞았다.**
+            #    정작 낡아 있던 `표 6개`(실제 8) · `접근정책 17개`(실제 23)는
+            #    문구가 `표(table) 8개` · `접근정책(policy) 23개`라서 **안 걸렸다.**
+            #    즉 red가 떴지만 **틀린 이유로** 떴다.
+            #
+            # → 그래서 문구가 아니라 **`명사 + 개수`** 꼴을 README에서 직접 찾아,
+            #   같은 명사에 대해 02 파일이 말하는 수와 **다르면** 잡는다.
+            #   ⚠️ 이래야 "베껴 뒀는데 값이 낡은" 상태를 잡는다. 문구 일치는
+            #      베낀 사실만 보고 **낡았는지는 안 본다.**
+            expected = {}   # 명사 → 기대 개수
+            for label in labels:
+                m = re.match(r"([가-힣]+)(?:\([a-z]+\))?\s*(\d[\d,]*)개$", label)
+                if m:
+                    expected[m.group(1)] = int(m.group(2).replace(",", ""))
+            if not expected:
+                problems.append(
+                    "02_적용확인.sql에서 `명사 N개` 꼴을 하나도 못 뽑았다 —"
+                    " 항목 문구 형식이 바뀌었으면 이 검사를 고친다")
+            # 🔵 **두 번째 red도 틀린 이유로 떴다.** 위 정규식은 낡은 수를 잘 찾았지만,
+            #    찾은 6곳 중 **4곳이 "예전엔 이랬다"는 서술**이었다 — 이 문서가 스스로
+            #    낡았던 일을 기록한 문장과, 내가 방금 쓴 경고문이다. 그걸 고치라고 하면
+            #    **역사를 지우게 된다.**
+            #
+            #    가르는 기준: 이 문서에서 **백틱 안의 값은 인용**이고(`표 6개`처럼 남의
+            #    말·옛 값을 옮긴 것), **백틱 밖의 값은 주장**이다(표 칸·불릿의 `표 6개:`).
+            #    실제로 낡아서 오너를 속였던 4곳은 **전부 백틱 밖**이었다(표 칸과 불릿).
+            #
+            # ⚠️ 그래서 백틱 span을 **길이를 유지한 채** 지운다 — 행 번호가 밀리면
+            #    보고가 엉뚱한 줄을 가리킨다.
+            # ⚠️ **줄바꿈을 넘는 인용을 놓쳤다.** 처음 `[^`\n]*`로 썼는데, 마크다운
+            #    인라인 코드는 **줄바꿈을 넘을 수 있다** — 긴 인용이 줄 끝에서 접히면
+            #    면제가 안 되고 red가 뜬다(그 red를 문서 탓으로 읽고 문장을 고치려
+            #    했다). 그래서 줄바꿈을 허용하되 **비탐욕 + 길이 상한**을 둔다:
+            #    짝이 안 맞는 백틱 하나가 문서 절반을 삼켜 **면제가 너무 넓어지는**
+            #    것을 막는다(그러면 진짜 낡은 수도 같이 면제된다).
+            span = re.compile(r"`[^`]{0,200}?`", re.S)
+            scan = span.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), rtext)
+            quoted = len(span.findall(rtext))
+            stale = []
+            for noun, want in expected.items():
+                for m in re.finditer(
+                        rf"{re.escape(noun)}(?:\([a-z]+\))?\s*(\d[\d,]*)개", scan):
+                    got = int(m.group(1).replace(",", ""))
+                    if got != want:
+                        line = scan[:m.start()].count("\n") + 1
+                        stale.append(f"{line}행 `{noun} {m.group(1)}개`(실제 {want})")
+            # 🔴 백틱 span이 0개면 위 면제가 **아무 일도 안 한 것**이다. 그때는 면제가
+            #    있다고 착각하지 않도록 찍어 둔다(0이면 형식이 바뀐 것이다).
+            if quoted == 0:
+                problems.append(
+                    "README.md에서 백틱 인용을 하나도 못 찾았다 — 인용/주장을 가르는"
+                    " 면제가 안 돌고 있다. 형식이 바뀌었으면 이 검사를 고친다")
+            if stale:
+                problems.append(
+                    f"README.md의 개수가 낡았다: {', '.join(stale)} —"
+                    " 오너는 이걸 보고 **정상인 서버를 ❌로 읽는다**(두 번 있었던 일이다)."
+                    " 개수를 지우고 `02_적용확인.sql`이 말하게 둔다")
+    return checked
+
+
 def main():
     files = sorted(MIGRATIONS.glob("[0-9][0-9][0-9][0-9]_*.sql"))
     if not files:
@@ -253,6 +369,10 @@ def main():
     # 파일을 가로질러 본다 — 합본은 번호순으로 한 번에 도므로 앞뒤가 파일 경계를 넘는다.
     policy_calls = check_function_defined_before_use(files, problems)
 
+    # 🔴 오너가 **실제로 붙여넣는 파일**이 이 폴더와 어긋났는가. 문법이 다 맞아도
+    #    합본에서 빠지면 서버에 안 간다 — 그건 문법 검사로 원리상 못 잡는다.
+    doc_checks = check_owner_docs_not_stale(files, problems)
+
     if problems:
         print(f"\n🔴 문제 {len(problems)}건")
         for p in problems:
@@ -261,7 +381,8 @@ def main():
     # 🔴 **센 개수를 찍는다.** 정책 안 함수 호출이 0개면 그건 PASS가 아니라
     #    정규식이 안 맞아서 **아무것도 안 본 것**이다(이 저장소가 반복해 당한 실패).
     print(f"\n판정: PASS — {len(files)}개 파일 · plpgsql {total_blocks}블록 ·"
-          f" 정책이 부르는 함수 {policy_calls}곳(전부 앞에서 정의됨)")
+          f" 정책이 부르는 함수 {policy_calls}곳(전부 앞에서 정의됨) ·"
+          f" 오너 문서 {doc_checks}개 대조됨")
     return 0
 
 

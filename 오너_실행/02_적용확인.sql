@@ -53,7 +53,7 @@ with 검사 as (
   union all
   -- 0005에서 하나 늘었다(`bloom_months_sane`). 0004에서 둘
   -- (`enforce_region_change` · `dong_member_count`). 0007에서 셋.
-  select 5, '함수(function) 16개', '16',
+  select 5, '함수(function) 17개', '17',
          (select count(*) from pg_proc p
             join pg_namespace n on n.oid = p.pronamespace
            where n.nspname = 'public'
@@ -64,7 +64,11 @@ with 검사 as (
                                'enforce_region_change','dong_member_count',
                                'bloom_months_sane',
                                -- 0007
-                               'can_see_discovery','is_discovery_owner','discovery_reactions')
+                               'can_see_discovery','is_discovery_owner','discovery_reactions',
+                               -- 0008. ⚠️ **0008을 붙여넣기 전에 이 파일을 돌리면 이 줄이
+                               --    ❌ 16/17로 나온다 — 그건 정상이고, 0008이 아직
+                               --    안 돌았다는 뜻이다.** 다른 줄이 다 ✅면 0008만 돌린다.
+                               'comments_only_soft_delete')
          )::text
 
   union all
@@ -176,6 +180,30 @@ with 검사 as (
          (select case when (select count(*) from
                      public.discovery_reactions('00000000-0000-0000-0000-000000000000')) = 1
                       then 'ok' else '결과 없음' end)
+
+  -- ── 여기부터 0008(댓글 삭제 고침) ──
+  -- ⚠️ 18·19번이 ❌면 **0008을 아직 안 돌린 것**이다. 다른 줄이 다 ✅면 그것만 돌린다.
+
+  union all
+  -- 🔴 트리거가 **붙었는가.** 이게 없으면 댓글 삭제 요청으로 **본문까지 바꿀 수 있다**
+  --    (정책의 `with check`는 바뀐 뒤의 행만 보므로 이전 값과 비교할 수 없다 — 0008 1절).
+  select 18, '댓글 수정 금지 트리거가 붙었다', '1',
+         (select count(*) from pg_trigger
+           where tgrelid = 'public.comments'::regclass
+             and tgname = 'comments_only_soft_delete'
+             and not tgisinternal)::text
+
+  union all
+  -- 🔴 **"붙었다"와 "무엇을 막는가"는 다르다.** 트리거는 붙어 있으면서 아무것도
+  --    안 막을 수 있다(본문이 비면 그냥 통과시킨다). 그래서 본문에서 네 칸 이름을
+  --    **직접 센다** — 하나라도 빠지면 그 칸은 삭제 요청에 얹어서 바꿀 수 있다.
+  --    ⚠️ 로컬에 postgres가 없어서 이 트리거를 태워 보지 못했다. 이 줄이 그 대신이다.
+  select 19, '그 트리거가 막는 칸 4개(body·user_id·discovery_id·created_at)', '4',
+         (select count(*) from unnest(array['body','user_id','discovery_id','created_at']) c
+           where (select prosrc from pg_proc p
+                    join pg_namespace n on n.oid = p.pronamespace
+                   where n.nspname = 'public'
+                     and p.proname = 'comments_only_soft_delete') like '%' || c || '%')::text
 
 )
 select
