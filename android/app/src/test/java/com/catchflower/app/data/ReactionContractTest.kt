@@ -268,6 +268,129 @@ class ReactionContractTest {
         )
     }
 
+    /**
+     * 🔴 **댓글 삭제가 서버에서 막혀 있다는 사실을 못 박는다** (2026-08-12).
+     *
+     * ## 무엇이 확정됐나
+     *
+     * `deleteComment`는 실기기에서 `Failed(403, 42501)`다. 0008 머리말은 원인을
+     * "서버에 붙은 식이 파일과 다르다"로 **추측**했는데 그게 틀렸다 — 오너가 0008을
+     * 적용하고 진단 8행이 **전부 기대와 일치**했는데도 403이 그대로였다.
+     *
+     * 로컬 Postgres 16.2에 0001~0008을 그대로 올려 `set role authenticated`로 재현했고,
+     * 원인은 **Postgres 규칙**이었다: `update`의 새 행에도 `select` 정책이 적용된다.
+     * `comments_read`가 `deleted_at is null`을 요구하므로(0007 3절) soft delete는
+     * **자기 행을 자기 SELECT 정책에서 사라지게** 만든다.
+     *
+     * 표 하나로 규칙을 못 박았다 — 갈림선은 **행을 읽어야 하나**다:
+     * ```
+     * update t set gone = true where id = 2       → 42501
+     * update t set gone = true                     → 통과 (WHERE·RETURNING이 없다)
+     * update t set gone = true returning id        → 42501
+     * ```
+     * PostgREST의 PATCH는 항상 `?id=eq.…`를 WHERE로 만든다 — **클라이언트가 우회할
+     * 방법이 없다.** 즉 이건 앱에서 고칠 수 있는 결함이 아니다.
+     *
+     * ## 이 검사가 빨개지는 경우
+     *
+     * ① 누군가 `deleteComment`를 "고쳤다" — 클라이언트 쪽 우회는 존재하지 않으므로
+     *    무엇을 했든 원인을 안 고친 것이다(제안 파일 적용이 순서다).
+     * ② 화면에 댓글 삭제 버튼을 붙였다 — **지금 붙이면 무조건 실패하는 버튼**이 된다.
+     *    `죽은 버튼`은 이 저장소가 이미 세 번 만든 것이다(`증상 없는 UI 결함` 4종).
+     * ③ 제안 파일이 사라졌다 — 원인 기록이 사라지면 다음 세션이 **또 추측한다**.
+     *
+     * ⚠️ **`migrations/`에 0009를 만들지 않았다.** 계약 6절이 "DB 스키마·마이그레이션은
+     *    한쪽만 만든다 · 고칠 필요가 생기면 진행.md에 먼저 쓰고 알린다"이고, 이 세션은
+     *    오너 승인 전이다. 그래서 제안은 `프로젝트 맥락/제안/`에 두고 **합본 빌더가
+     *    집어가지 못하게** 했다(`build_합본.py`는 `migrations/`만 훑는다).
+     */
+    @Test
+    fun 댓글_삭제는_서버_고침_전까지_막혀_있다() {
+        // ① 원인과 제안이 저장소에 남아 있다.
+        val proposal = File(projectRoot, "프로젝트 맥락/제안/0009_제안_댓글삭제_RPC.sql")
+        assertTrue(
+            "댓글 삭제 원인·고침 제안 파일이 없어졌다 — 없으면 다음 세션이 0008을 다시 " +
+                "적용하며 원인을 추측한다(이미 한 번 그렇게 틀렸다): ${proposal.path}",
+            proposal.isFile,
+        )
+        val sql = proposal.readText()
+        assertTrue(
+            "제안 파일에 `delete_comment` RPC가 없다 — 다른 파일로 바뀌었으면 이 검사를 고친다",
+            sql.contains("function public.delete_comment(c_id uuid)"),
+        )
+        assertTrue(
+            "제안 파일이 `security definer`가 아니다 — invoker면 같은 42501에 다시 걸린다",
+            sql.contains("security definer"),
+        )
+
+        // 🔴 **함수 본문만 본다.** 파일 전체에서 찾으면 안 된다 — 이 파일의 진단 절이
+        //    `prosrc like '%auth.uid() is null%'` 로 **그 글자를 그대로 들고 있고**,
+        //    주석에도 설명이 적혀 있다. 그래서 처음에 파일 전체를 `contains`로 봤더니
+        //    **가드를 `if false then`으로 바꿨는데도 초록이었다**(돌연변이 M3 실측).
+        //    ⚠️ 이 저장소에서 **네 번째** 같은 사고다: 내가 남긴 설명·진단·취소선 기록이
+        //       검사의 입력으로 세어졌다(`ButtonLabelSourceTest` 산문 · `PhotoLoaderTest`
+        //       KDoc · `CopySourceTest` 취소선 · 그리고 여기).
+        //    → **`$$ … $$` 안쪽으로 좁히고 `--` 주석을 떼어 낸다.**
+        val bodyStart = sql.indexOf("as $$")
+        val bodyEnd = sql.indexOf("$$;", bodyStart + 1)
+        assertTrue(
+            "함수 본문(`as $$ … $$;`)을 못 찾았다 — 제안 파일 구조가 바뀌었으면 이 검사를 고친다",
+            bodyStart in 0 until bodyEnd,
+        )
+        val fnBody = sql.substring(bodyStart, bodyEnd)
+            .lineSequence()
+            .map { it.substringBefore("--") }   // SQL 주석 제거
+            .joinToString("\n")
+
+        // anon 가드 두 겹. 첫 판이 여기서 뚫려 **anon이 남의 댓글을 지웠다**
+        // (`= null`이 false가 아니라 null이라 `if not null`이 분기를 건너뛴다).
+        assertTrue(
+            "제안 파일 **함수 본문**에 anon 가드가 두 겹으로 없다 — `auth.uid() is null` + " +
+                "`coalesce`. 첫 판은 이게 없어서 로컬 실측에서 anon이 남의 댓글을 지웠다. " +
+                "⚠️ 진단 절이나 주석에 그 글자가 있는 것은 승인이 아니다",
+            fnBody.contains("auth.uid() is null") && fnBody.contains("coalesce("),
+        )
+        // 권한 판정 두 갈래도 본문에 있어야 한다(진단 3번이 서버에서 세는 것과 같은 것을
+        // 여기서는 파일로 센다 — 서버에 가기 전에 잡는 게 목적이다).
+        assertTrue(
+            "함수 본문이 권한을 세지 않는다 — `security definer`는 RLS를 지나가므로 " +
+                "이게 빠지면 **아무나 남의 댓글을 지운다**",
+            fnBody.contains("c_user_id = auth.uid()") &&
+                fnBody.contains("is_discovery_owner(c_discovery_id)"),
+        )
+
+        // ② 아직 마이그레이션이 아니다 — 오너 승인 전에 서버로 갈 수 없다.
+        val migrations = File(projectRoot, "supabase/migrations")
+        val leaked = migrations.listFiles()?.filter { it.name.startsWith("0009") }.orEmpty()
+        assertEquals(
+            "0009가 `migrations/`에 들어갔다 — 합본 빌더가 집어가면 오너 승인 없이 서버에 " +
+                "적용된다. 계약 6절은 스키마를 **한쪽만** 만들고 진행.md에 먼저 쓰라고 한다. " +
+                "오너가 승인했다면 이 검사를 고치는 것이 그 기록이다: " + leaked.map { it.name },
+            emptyList<String>(),
+            leaked.map { it.name },
+        )
+
+        // ③ 화면이 삭제를 부르지 않는다 — 지금 붙이면 무조건 실패하는 버튼이 된다.
+        val ui = File("src/main/java/com/catchflower/app/ui")
+        val callers = ui.walkTopDown()
+            .filter { it.isFile && it.extension == "kt" }
+            .filter { f ->
+                val body = f.readText()
+                    .replace(Regex("""/\*[\s\S]*?\*/"""), " ")
+                    .lineSequence().map { it.substringBefore("//") }.joinToString("\n")
+                body.contains("deleteComment")
+            }
+            .map { it.name }
+            .toList()
+        assertEquals(
+            "화면이 `deleteComment`를 부른다 — 서버 고침(제안 0009)이 적용되기 전에는 " +
+                "**누르면 무조건 실패하는 버튼**이다. 적용됐다면 실기기로 재고 이 검사를 " +
+                "뒤집는다(`ReactionLiveTest.댓글을_달고_읽고_지운다`가 초록이 된다): $callers",
+            emptyList<String>(),
+            callers,
+        )
+    }
+
     // ── 도우미 ──────────────────────────────────────────────────────
 
     private fun tableBody(sql: String, table: String): String {
