@@ -21,26 +21,58 @@ import org.junit.Test
 class KakaoLoginTest {
 
     /**
-     * 🔴 빨개지는 경우: 누군가 [KakaoLogin.canLinkToExistingAccount]를 `true`로
-     *    바꿨는데 **서버는 아직 꺼져 있을** 때. 그러면 카카오 버튼이 눌리고,
-     *    누른 사람의 익명 계정 기록이 주인 없는 데이터가 된다.
+     * ✅ **2026-08-12에 뒤집힌 검사다.** 전에는 `false`를 단정했다(서버가 꺼져 있었다).
+     * 오너가 Manual Linking을 켜고 **실측으로 302를 확인한 뒤** true로 바꿨고,
+     * 이 검사도 같이 뒤집었다.
      *
-     * ⚠️ **이 검사는 "false여야 옳다"고 말하는 것이 아니다.** 서버가 켜지면 이 값을
-     *    true로 바꾸는 것이 맞고, 그때 이 테스트가 빨개진다 — 그게 의도다.
-     *    빨개지면 **실서버로 다시 재고**(`/auth/v1/user/identities/authorize`가
-     *    `manual_linking_disabled`를 더 안 주는지) 이 테스트와 A 문서 3절
-     *    `화면 01에서 로그인 버튼을 누를 수 없을 때`를 같이 고친다.
+     * 🔴 **이 검사는 "true여야 옳다"고 말하는 것이 아니다.** 서버가 다시 꺼지면
+     *    false로 되돌리는 것이 맞고, 그때 이 테스트가 빨개진다 — 그게 의도다.
+     *    이 값은 **서버 상태의 사본**이고, 검사는 사본이 조용히 바뀌는 것을 막는다.
+     *
+     * ⚠️ 빨개지면 **값을 고치기 전에 실서버로 다시 잰다:**
+     *    `/auth/v1/user/identities/authorize?provider=kakao`가
+     *    ① `302 → kauth.kakao.com` 이면 켜진 것 ② `404 manual_linking_disabled` 면
+     *    꺼진 것. 🔴 **대조군(`nonexistent_prov_xyz`)을 같이 태운다** — 켜기 전에는
+     *    셋 다 같은 404였다. 그것이 "provider를 보기도 전에 막혔다"는 증거였고,
+     *    대조군 없이는 "카카오 설정 문제"와 구분되지 않는다.
+     *
+     * 🔴 **오너의 말을 근거로 쓰지 않는다.** 실제로 오너가 "열었다"고 알린 뒤 쟀을 때
+     *    서버는 **아직 꺼져 있었다**(`Save` 미클릭). 그때 이 값을 바꿨으면 버튼이
+     *    열린 채로 기록을 잃었다. 근거는 302 응답이지 대화가 아니다.
      */
     @Test
-    fun 계정_연결이_불가한_동안_카카오_버튼은_눌리지_않는다() {
-        assertFalse(
-            "Manual Linking이 서버에서 켜졌다면 실측으로 확인하고 이 테스트와 " +
-                "A 문서 3절 화면 01 표를 같이 고친다 — 값만 바꾸면 도감이 사라지는 경로가 열린다",
+    fun 계정_연결이_켜졌다는_실측과_상수가_일치한다() {
+        assertTrue(
+            "서버 Manual Linking이 꺼졌다면(실측: 404 manual_linking_disabled) " +
+                "이 상수를 false로 되돌리고 이 테스트도 같이 뒤집는다 — " +
+                "켜진 줄 알고 두면 누른 사람의 익명 기록이 주인 없는 데이터가 된다",
             KakaoLogin.canLinkToExistingAccount,
         )
+        // 🔴 대조군 — 상수가 true여도 **서버 키가 없으면** 눌리지 않아야 한다.
+        //    이게 없으면 위 검사는 "항상 true를 돌려주는 값"이어도 통과한다.
         assertFalse(
-            "서버 설정이 꺼져 있는데 버튼이 눌린다",
+            "키 없는 빌드에서 버튼이 눌린다",
+            KakaoLogin.buttonEnabled(serverConfigured = false),
+        )
+        assertTrue(
+            "서버가 켜지고 키도 있는데 버튼이 안 눌린다",
             KakaoLogin.buttonEnabled(serverConfigured = true),
+        )
+    }
+
+    /**
+     * 🔴 빨개지는 경우: 서버가 **꺼진 상태로 되돌아갔는데** 버튼이 계속 눌릴 때.
+     *
+     * ⚠️ 위 검사가 상수를 단정하기 때문에, `linkingAllowed = false`인 경로가
+     *    **아무도 안 지나가는 코드**가 될 수 있다. 그러면 서버가 꺼진 날
+     *    [KakaoLogin.buttonEnabled]가 그 값을 무시하도록 바뀌어도 아무 검사도 안 죽는다.
+     *    그래서 그 경로를 **명시적으로** 잰다.
+     */
+    @Test
+    fun 서버가_다시_꺼지면_키가_있어도_눌리지_않는다() {
+        assertFalse(
+            "linkingAllowed = false가 무시된다 — 서버가 꺼진 날 기록을 잃는 경로다",
+            KakaoLogin.buttonEnabled(serverConfigured = true, linkingAllowed = false),
         )
     }
 
@@ -52,6 +84,7 @@ class KakaoLoginTest {
     @Test
     fun 서버_키가_없으면_연결이_허용돼도_눌리지_않는다() {
         assertFalse(
+            "키가 없는데 눌린다 — 브라우저가 `https:///auth/v1/authorize`를 연다",
             KakaoLogin.buttonEnabled(serverConfigured = false, linkingAllowed = true),
         )
         // 대조군 — 둘 다 갖춰지면 켜진다. 이게 없으면 위 검사는

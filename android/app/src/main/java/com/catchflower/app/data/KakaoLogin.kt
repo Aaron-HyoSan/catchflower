@@ -42,45 +42,90 @@ import android.net.Uri
  *    네이티브로 갈아탈 날에는 [SupabaseAuthUrls.idTokenGrant]가 이미 있다 —
  *    위 실측을 근거로 남겨 둔 자리다.
  *
- * ## 🔴 이 층이 **아직 로그인을 완성시키지 못한다** (서버가 막고 있다)
+ * ## ✅ 서버가 열렸다 (2026-08-12 실측) — 그래서 [canLinkToExistingAccount]가 true다
  *
- * 실측(2026-08-12 · 익명 계정으로 `/auth/v1/user/identities/authorize` 호출):
+ * 오너가 Manual Linking을 켜고 저장한 뒤 익명 계정으로 다시 태웠다:
  *
  * ```
- * kakao                → 404 manual_linking_disabled · Manual linking is disabled
- * google               → 404 manual_linking_disabled
- * nonexistent_prov_xyz → 404 manual_linking_disabled   ← 대조군도 같다
+ * kakao                → 302  https://kauth.kakao.com/oauth/authorize?client_id=…
+ * google               → 400  validation_failed · Unsupported provider: provider is not enabled
+ * nonexistent_prov_xyz → 400  validation_failed · Provider … could not be found
  * ```
  *
- * 대조군까지 같은 응답이라는 건 **provider와 무관하게 기능 자체가 꺼져 있다**는 뜻이다.
- * 이게 왜 치명적인가: 지금 모든 사용자는 **익명 계정**이고 도감·업로드가 그 uuid에
- * 묶여 있다. 연결(linking) 없이 카카오로 로그인하면 **다른 uuid의 새 계정**이 생기고,
- * 그 순간 그동안의 기록은 [AuthService.reset] 주석이 말한 **주인 없는 데이터**가 된다 —
- * RLS(`auth.uid() = user_id`) 때문에 새 계정으로는 보이지도, 지우지도 못한다.
- * 그리고 **화면에는 도감이 그대로 보인다**(로컬 파일이므로). 증상이 없다.
+ * 🔵 **대조군이 갈렸다는 것이 이 측정의 핵심이다.** 켜기 전에는 셋 다 똑같이
+ *    `404 manual_linking_disabled`였다 — 그때는 provider를 보기도 전에 막혔다는 뜻이고,
+ *    지금은 provider마다 답이 다르다. 즉 요청이 **provider 판정까지 도달한다.**
+ *    셋이 여전히 같았다면 "켰다"는 말과 무관하게 안 켜진 것이다.
  *
- * ⚠️ 그래서 [canLinkToExistingAccount]가 false인 동안 **카카오 버튼을 누를 수 없게**
- *    둔다. 눌리게 해 두고 "나중에 고치자"로 두면, 누른 사람의 기록이 사라진다.
- *    A 문서 1절의 `Disabled` 규칙대로 **왜 못 누르는지를 문구로** 말한다.
+ * ⚠️ **`kakao = true`는 `/auth/v1/settings`로도 확인된다** — provider 토글은 조회로
+ *    알 수 있다(전에 "settings는 아무것도 안 알려준다"고 적었던 것은 과했다).
+ *    다만 **manual linking 항목은 그 응답에 여전히 없다.** 그래서 이 상수는
+ *    조회가 아니라 **실제 호출**로만 검증된다.
+ *
+ * ## 카카오 콘솔 ①②도 같이 확인됐다 (밖에서 잴 수 있었다)
+ *
+ * 위 302의 `Location`을 **한 번** 따라가니 `accounts.kakao.com/login`이 200으로 떴고
+ * **`KOE###`가 하나도 없었다.** 카카오는 설정이 틀리면 거기서 오류코드를 준다:
+ * `KOE006`(Redirect URI 미등록 = ②) · `KOE101`(로그인 활성화 OFF·앱키 불일치 = ①).
+ * 즉 ①②가 둘 다 맞다. Supabase가 만든 요청은 이랬다:
+ *
+ * ```
+ * redirect_uri  https://ngfkkazyvbbhrcznqkar.supabase.co/auth/v1/callback
+ * scope         account_email profile_image profile_nickname
+ * ```
+ *
+ * ✅ `profile_nickname`이 scope에 있다 — 랭킹에 쓸 이름이 온다(콘솔 ① 요구사항).
+ *
+ * ⚠️ **`client_id`가 네이티브 앱키와 다르다**(REST `52c37dc…` / 네이티브 `3bf6d46…`).
+ *    **정상이다** — 같은 카카오 앱의 다른 키다(REST API 키 vs 네이티브 앱키).
+ *    🔴 앞자리가 다른 것을 보고 "다른 앱을 등록했다"로 읽지 않는다. 지도 SDK는
+ *    네이티브 앱키를, 로그인은 REST 키를 쓴다.
+ *
+ * ## 🔴 그래도 아직 **눌릴 화면이 없다** — 그리고 이게 지금 유일한 구멍이다
+ *
+ * 화면 01이 없다. 이 층은 **아무도 부르지 않는다**([KakaoLoginTest]가 그 사실을
+ * 고정한다). 즉 상수를 true로 바꾼 것은 **버튼을 연 것이 아니라 자물쇠를 푼 것**이다.
+ *
+ * ⚠️ **화면을 붙이는 날 반드시 같이 해야 하는 것:**
+ *    1. `AndroidManifest.xml`에 `catchflower://auth-callback` **intent-filter**.
+ *       없으면 카카오 인증이 성공하고 브라우저가 그 주소를 열지만 **받는 앱이 없다** —
+ *       사용자는 로그인이 끝났는데 앱은 그대로다(증상: "눌러도 안 돼요").
+ *    2. `redirect_to`가 Supabase 콘솔 **Redirect URLs 허용목록**에 있어야 한다.
+ *       🔴 **없으면 서버가 오류 대신 Site URL로 조용히 보낸다.**
+ *       ⚠️ 이건 **아직 못 쟀다.** 재려고 `state`를 열어 봤는데 GoTrue의 `state`는
+ *       JWT가 아니라 **불투명한 uuid**여서, 우리 값과 대조군(`bogusscheme://nope`)이
+ *       **똑같은 답을 줬다** — 즉 그 계측은 아무것도 안 쟀다. 실제 콜백을 한 번
+ *       완주해야 알 수 있다. **"확인했다"로 적지 않는다.**
+ *
+ * ## 왜 이 상수를 계속 남겨 두나 (지금은 true인데)
+ *
+ * 서버 설정은 **다시 꺼질 수 있다**(프로젝트 복제·무료플랜 초기화·오너의 다른 조작).
+ * 그때 [linkFailureReason]이 `manual_linking_disabled`를 다시 받으면
+ * [LinkFailure.SERVER_FEATURE_OFF]로 갈라 문구를 말한다 — 상수만 지우면 그 경로가
+ * "모르는 실패"로 뭉개진다.
  */
 object KakaoLogin {
 
     /**
      * Supabase가 **수동 계정 연결(manual linking)** 을 허용하는가.
      *
+     * ✅ **2026-08-12: 오너가 켰고, 실측으로 확인한 뒤 `true`로 바꿨다.**
+     *    `/auth/v1/user/identities/authorize?provider=kakao` → **302 → kauth.kakao.com**
+     *    (그전에는 `404 manual_linking_disabled`였다.)
+     *
      * 🔴 **서버 설정이다. 앱이 켤 수 없다.** 오너가 Supabase 콘솔에서
-     *    `Authentication → Sign In / Providers → Manual Linking`을 켜야 한다.
+     *    `Authentication → Sign In / Providers → Manual Linking`을 켠 것이다.
      *
-     * ⚠️ **기본값을 true로 두지 않는다.** true로 두고 서버가 꺼져 있으면 사용자가
-     *    버튼을 누르고 → 404를 받고 → 그 사이에 새 계정이 생기는 경로가 열린다.
-     *    모르면 **막는 쪽**이 안전하다.
+     * 🔴 **"켰다"는 말만 듣고 이 값을 바꾸지 않는다.** 실제로 그런 일이 있었다 —
+     *    오너가 "열었다"고 알린 뒤 쟀을 때 서버는 **아직 꺼져 있었다**(`Save` 미클릭).
+     *    말과 서버가 갈렸고, 그때 값을 바꿨으면 버튼이 열린 채로 기록을 잃었다.
+     *    **두 번째 측정에서 302가 나온 뒤에** 바꿨다.
      *
-     * ⚠️ 이 값을 상수로 박아 두는 것은 **임시**다. 켜진 뒤에는
-     *    `GET /auth/v1/settings`가 알려주지 **않으므로**(그 응답에 linking 항목이
-     *    없다 — 실측) 실제 호출의 `manual_linking_disabled` 유무로만 알 수 있다.
-     *    그래서 [linkFailureReason]이 그 코드를 문구로 번역한다.
+     * ⚠️ **끌 때도 같다.** 서버가 다시 꺼지면 이 값을 false로 돌려야 하고, 그
+     *    판단 근거는 실제 호출뿐이다 — `GET /auth/v1/settings`에는 **linking 항목이
+     *    없다**(provider 토글은 있다). [linkFailureReason]이 런타임에 그 코드를 잡는다.
      */
-    const val canLinkToExistingAccount: Boolean = false
+    const val canLinkToExistingAccount: Boolean = true
 
     /**
      * 서버가 준 오류 코드를 **원인별로** 가른다.
