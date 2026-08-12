@@ -105,7 +105,10 @@ interface ReactionSource {
     suspend fun postComment(discoveryId: String, body: String): ReactionResult<Unit>
 
     /**
-     * 댓글 삭제. C-9 **수정 불가 · 본인과 사진 소유자가 삭제**라서 `deleted_at`만 채운다.
+     * 댓글 삭제. C-9 **수정 불가 · 본인과 사진 소유자가 삭제**.
+     *
+     * 🔴 **`0009`의 RPC를 부른다. 직접 PATCH는 원리상 불가능하다** — 자세한 것은
+     *    [ReactionService.deleteComment]. 서버가 `boolean`을 주고 **실패도 HTTP 200**이다.
      */
     suspend fun deleteComment(commentId: String): ReactionResult<Unit>
 
@@ -204,16 +207,12 @@ class ReactionService(
     private val transport: Transport = HttpTransport,
     /** ⚠️ 주입한다 — `android.util.Log`는 JVM에서 던지고 **실패 경로가 전부 로그를 지난다.** */
     private val log: (String) -> Unit = { android.util.Log.w("CatchFlower", it) },
-    /**
-     * `deleted_at`에 넣을 시각.
-     *
-     * 🔴 **서버 `now()`를 쓸 수가 없다.** PostgREST에 보내는 것은 JSON 값이라 SQL 함수를
-     *    넣을 수 없고, 정책 `comments_soft_delete`는 `deleted_at is not null`만 본다.
-     *    그래서 **기기 시계**가 들어간다 — 기기 시계가 틀리면 삭제 시각도 틀린다.
-     *    화면에 안 보이는 값이라 증상이 없다. 정렬·통계에 쓰려면 그때 서버 함수로 옮긴다.
-     *    (테스트가 시각을 고정할 수 있게 주입한다.)
-     */
-    private val now: () -> Long = { System.currentTimeMillis() },
+    // 🔵 **`now: () -> Long`을 지웠다 (2026-08-12).** PATCH 시절 `deleted_at`에 넣을
+    //    **기기 시계**가 필요했다(PostgREST에 SQL 함수를 보낼 수 없었다). 0009의 RPC는
+    //    서버 `now()`가 채우므로 이 층이 시각을 만들지 않는다 — 기기 시계가 틀린 기기의
+    //    삭제 시각이 틀리는 문제도 같이 사라졌다.
+    //    ⚠️ 안 쓰는 주입 인자를 남기지 않는다. `읽는 사람이 0명인 데이터`는 다음 사람이
+    //       "여기는 시각을 주입해서 쓴다"고 읽게 만들고, 테스트는 그것을 고정하며 초록이 된다.
 ) : ReactionSource {
 
     interface Transport {
@@ -380,14 +379,69 @@ class ReactionService(
     }
 
     /**
-     * C-9 soft delete. **본문을 함께 보내지 않는다** — 정책 `comments_soft_delete`의
-     * `with check (deleted_at is not null)`은 본문 변경을 막지 않고, `body`를 같이
-     * PATCH하면 **"수정 불가"가 우회된다.**
+     * C-9 soft delete. **`0009`의 `delete_comment` RPC를 부른다.**
+     *
+     * ## 🔴 왜 PATCH가 아닌가 — 클라이언트에서 고칠 수 없는 결함이었다
+     *
+     * 원래 이 함수는 `PATCH /rest/v1/comments?id=eq.…`에 `deleted_at`만 실었다.
+     * 실기기에서 **`Failed(403, 42501)`** 였다. 원인은 우리 정책이 아니라 Postgres
+     * 규칙이다 — **`update`의 새 행에도 `select` 정책이 적용된다.** `comments_read`가
+     * `deleted_at is null`을 요구하므로(0007 3절) soft delete는 **자기 행을 자기 SELECT
+     * 정책에서 사라지게** 만들고, Postgres가 그것을 42501로 거부한다.
+     *
+     * PostgREST의 PATCH는 항상 `?id=eq.…`를 WHERE로 만들고, **WHERE(또는 RETURNING)가
+     * 있으면 행을 읽어야 하므로 SELECT 정책을 탄다.** 즉 요청을 어떻게 바꿔도 안 된다
+     * (0009 머리말의 최소 재현 표가 그 갈림선을 못 박았다).
+     *
+     * ## 🔴 실패가 **HTTP 200**으로 온다 — 본문을 반드시 읽는다
+     *
+     * `security definer` 함수라 권한 판정이 함수 안에서 일어나고, 못 지운 것도
+     * `200 OK` + 본문 `false`다. [sendUnit]을 쓰면 **본문을 안 보므로 전부 성공**이 되고,
+     * 그러면 낙관적 갱신이 **안 지워진 댓글을 화면에서 지운다** — 다음에 열면 되돌아
+     * 있다. 0008 머리말의 `남의 댓글 삭제도 204 + 0행`과 정확히 같은 함정이다.
+     *
+     * ⚠️ **`false`는 이유를 말해 주지 않는다**(권한 없음 · 없는 id · 로그인 안 됨).
+     *    남의 댓글이 존재하는지를 알려 주지 않으려는 의도다(공유계약 `0009 승격`).
+     *    그래서 화면은 `연결이 불안정해요`가 아니라 **삭제 실패**로 다뤄야 한다.
+     * ⚠️ **`true`는 멱등이다** — 이미 지운 댓글도 `true`다. 다만 **권한이 없으면
+     *    이미 지워졌어도 `false`** 다.
+     * ⚠️ [now]를 쓰지 않는다. 삭제 시각은 서버 `now()`가 채운다(기기 시계가 안 들어간다) —
+     *    PATCH 시절 이 층이 기기 시계를 넣던 것이 이 변경으로 사라졌다.
      */
     override suspend fun deleteComment(commentId: String): ReactionResult<Unit> {
-        val url = "$baseUrl/rest/v1/comments?id=eq.$commentId"
-        val payload = JSONObject().put("deleted_at", DiscoveryStore.encodeTime(now()))
-        return sendUnit(url, "PATCH", payload.toString())
+        val args = JSONObject().put(ARG_COMMENT, commentId)
+        // 🔴 **`Boolean`으로 먼저 받고 그 뒤에 판정한다.** `parse`에서 바로 null을
+        //    돌려주면 [request]가 [PARSE_FAILED]로 표시하는데, 그러면 **"서버가 거절했다"와
+        //    "서버가 형식을 바꿨다"가 같은 값이 된다** — 앞은 정상 동작이고 뒤는 사고다.
+        //    두 개를 [DENIED]/[PARSE_FAILED]로 갈라 둔다.
+        val res = request<Boolean>(
+            "$baseUrl/rest/v1/rpc/$FN_DELETE_COMMENT",
+            "POST",
+            args.toString(),
+        ) { body ->
+            // `returns boolean` 스칼라라 PostgREST가 JSON 리터럴만 준다 — 배열도 객체도 아니다.
+            // ⚠️ `toBoolean()`을 쓰지 않는다: 그 함수는 **아는 값이 아닌 것을 전부 false로**
+            //    바꿔서 형식 변경을 거절로 만든다.
+            when (body.trim()) {
+                "true" -> true
+                "false" -> false
+                else -> null
+            }
+        }
+        return when (res) {
+            is ReactionResult.Loaded ->
+                if (res.value) {
+                    ReactionResult.Loaded(Unit)
+                } else {
+                    // 지우지 못했다. **성공으로 접지 않는다** — 위 주석의 그 사고다.
+                    log("댓글 삭제가 거절됐다 · HTTP 200 · 본문 false (권한·없는 id·미로그인)")
+                    ReactionResult.Failed(200, DENIED)
+                }
+
+            is ReactionResult.Failed -> res
+            is ReactionResult.Rejected -> res
+            ReactionResult.NotConfigured -> ReactionResult.NotConfigured
+        }
     }
 
     /**
@@ -526,6 +580,16 @@ class ReactionService(
         /** 응답을 읽을 수 없을 때의 표시. HTTP 코드로는 구분할 수 없다. */
         const val PARSE_FAILED = "PARSE"
 
+        /**
+         * `delete_comment`가 **HTTP 200에 `false`** 를 준 경우 — 지우지 못했다.
+         *
+         * 🔴 **[PARSE_FAILED]와 반드시 갈라 둔다.** 이건 서버가 정상 동작한 것이고
+         *    (권한 없음 · 없는 id · 미로그인 셋을 일부러 구분해 주지 않는다),
+         *    저건 **응답 형식이 바뀐 사고**다. 같은 값으로 두면 서버가 바뀐 날
+         *    화면이 그것을 "권한이 없다"로 말하고 아무도 원인을 모른다.
+         */
+        const val DENIED = "DENIED"
+
         /** Postgres 유일성 위반. PostgREST가 HTTP 409로 감싼다. */
         const val DUP_KEY = "23505"
         const val CONFLICT = 409
@@ -540,6 +604,14 @@ class ReactionService(
          */
         private const val ARG_DISCOVERY = "d_id"
         private const val FN_REACTIONS = "discovery_reactions"
+
+        /**
+         * 🔴 `0009`의 시그니처가 `delete_comment(c_id uuid)`다. `comment_id`로 보내면
+         *    **`PGRST202`** 이고, 그건 "0009가 아직 적용 안 됐다"와 **같은 코드**다.
+         *    `ReactionContractTest`가 이 두 상수를 마이그레이션 원문과 대조한다.
+         */
+        private const val ARG_COMMENT = "c_id"
+        private const val FN_DELETE_COMMENT = "delete_comment"
 
         // ── 0007·0001의 컬럼명. 혼자 바꾸지 않는다. ──
         private const val COL_DISCOVERY_ID = "discovery_id"

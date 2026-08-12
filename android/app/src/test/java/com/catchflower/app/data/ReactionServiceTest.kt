@@ -82,7 +82,9 @@ class ReactionServiceTest {
         transport: FakeTransport,
         auth: TokenSource = StubAuth(),
         userId: String? = meId,
-        now: Long = 1_786_000_000_000L,
+        // 🔵 **`now: Long`을 지웠다 (2026-08-12).** PATCH 시절 `deleted_at`에 넣을
+        //    기기 시계였고, 0009의 RPC는 서버 `now()`가 채운다. 안 쓰는 인자를 남기면
+        //    다음 사람이 "이 층은 시각을 주입한다"고 읽는다(`읽는 사람이 0명인 데이터`).
     ) = ReactionService(
         auth = auth,
         myUserId = { userId },
@@ -90,7 +92,6 @@ class ReactionServiceTest {
         anonKey = ANON,
         transport = transport,
         log = { logs += it },
-        now = { now },
     )
 
     private fun ok(body: String) = ReactionService.Transport.Response(200, body)
@@ -429,23 +430,92 @@ class ReactionServiceTest {
     }
 
     /**
-     * 🔴 빨개지는 경우: soft delete를 하드 DELETE로 바꾸거나, PATCH에 `body`를 실었을 때.
-     *    본문을 같이 보내면 정책 `comments_soft_delete`의 `with check`가 못 막아서
-     *    **C-9 "수정 불가"가 우회된다.**
+     * 🔵 **PATCH가 아니라 RPC를 부른다** (2026-08-12에 뒤집었다).
+     *
+     * 원래 이 테스트는 `댓글_삭제는_deleted_at만_채운다`였고 `PATCH
+     * /rest/v1/comments?id=eq.c1` + 본문 `deleted_at`을 단정했다. **그 경로는 원리상
+     * 불가능하다** — `update`의 새 행에도 `select` 정책이 적용되고 `comments_read`가
+     * `deleted_at is null`을 요구하므로 soft delete가 **자기 SELECT 정책에서 사라져**
+     * 42501이 된다(0009 머리말 · 로컬 Postgres 16.2 실측). PostgREST는 `?id=eq.…`를
+     * 항상 WHERE로 만들어서 클라이언트가 우회할 방법이 없다.
+     *
+     * 🔴 **옛 테스트는 그 사실을 못 잡았다** — 픽스처가 204를 주도록 내가 짜 놨으니
+     *    **초록이었고 실기기에서는 403이었다.** 여기서 잴 수 있는 것은 "무엇을 어떻게
+     *    부르는가"뿐이고, 그것을 0009의 시그니처와 대조하는 것은
+     *    [ReactionContractTest]다.
+     *
+     * 🔴 빨개지는 경우: 다시 PATCH로 되돌리거나, 인자 이름을 `comment_id`로 쓰거나
+     *    (→ 실서버에서 `PGRST202`, 그건 "0009 미적용"과 **같은 코드**다), 함수명을 바꿨을 때.
      */
     @Test
-    fun 댓글_삭제는_deleted_at만_채운다() = runBlocking {
-        val t = FakeTransport(mutableListOf(ReactionService.Transport.Response(204, "")))
-        val res = service(t, now = 1_786_000_000_000L).deleteComment("c1")
+    fun 댓글_삭제는_0009_RPC를_부른다() = runBlocking {
+        val t = FakeTransport(mutableListOf(ok("true")))
+        val res = service(t).deleteComment("c1")
 
-        assertTrue(res is ReactionResult.Loaded)
-        assertEquals("PATCH", t.methods[0])
-        assertEquals("$BASE/rest/v1/comments?id=eq.c1", t.urls[0])
+        assertTrue("본문 `true`는 성공이다: $res", res is ReactionResult.Loaded)
+        assertEquals("POST", t.methods[0])
+        assertEquals("$BASE/rest/v1/rpc/delete_comment", t.urls[0])
         val body = t.bodies[0]!!
-        assertTrue(body.contains("deleted_at"))
-        assertFalse(body.contains("body"))
-        // 계약 1-3은 timestamptz다 — epoch millis를 그대로 넣으면 조용히 어긋난다.
-        assertTrue(body.contains(DiscoveryStore.encodeTime(1_786_000_000_000L)))
+        assertTrue("RPC 인자가 `c_id`가 아니다: $body", body.contains(""""c_id":"c1""""))
+        // 🔴 본문에 `body`·`deleted_at`을 실으면 안 된다 — 삭제 시각은 서버 `now()`가
+        //    채우고(기기 시계가 안 들어간다), 본문 수정은 C-9가 금지한다.
+        assertFalse("삭제 요청에 body가 실려 있다 — C-9 수정 불가가 우회된다", body.contains("\"body\""))
+        assertFalse("기기 시계로 deleted_at을 만들고 있다", body.contains("deleted_at"))
+    }
+
+    /**
+     * 🔴 **`false`를 성공으로 접지 않는다.**
+     *
+     * `delete_comment`는 `security definer` 함수이고 **실패도 HTTP 200**으로 온다 —
+     * 본문 `false`만이 "안 지웠다"를 말한다(0009 1절). [ReactionService.sendUnit]처럼
+     * 본문을 안 읽는 경로로 부르면 **모든 거절이 성공**이 되고, 화면은 서버에 그대로
+     * 남아 있는 댓글을 지워 버린다(0008 머리말 `남의 댓글 삭제도 204 + 0행`과 같은 함정).
+     *
+     * 🔴 빨개지는 경우: `sendUnit`으로 되돌리거나, `body.toBoolean()`으로 읽게 됐을 때
+     *    (그 함수는 **아는 값이 아닌 것을 전부 false로** 만들어 형식 변경을 거절로 바꾼다).
+     */
+    @Test
+    fun 삭제_거절은_HTTP_200인데도_실패다() = runBlocking {
+        val t = FakeTransport(mutableListOf(ok("false")))
+        val res = service(t).deleteComment("c1")
+
+        assertTrue("HTTP 200 + 본문 false가 성공으로 읽혔다: $res", res is ReactionResult.Failed)
+        assertEquals(200, (res as ReactionResult.Failed).code)
+        assertEquals(
+            "거절을 다른 실패와 같은 값으로 뭉갰다 — 화면 문구가 갈라지지 않는다",
+            ReactionService.DENIED,
+            res.pgCode,
+        )
+        // 조용히 실패하지 않는다 — 이 경로는 화면에 오류 문구가 하나뿐이라
+        // 로그가 없으면 원인을 나중에 못 찾는다.
+        assertTrue("거절이 로그를 안 지났다: $logs", logs.any { it.contains("거절") })
+    }
+
+    /**
+     * 🔴 **"서버가 거절했다"와 "서버가 형식을 바꿨다"를 갈라 둔다.**
+     *
+     * 처음 이 층을 RPC로 바꿀 때 `parse`에서 `false`에 곧바로 `null`을 돌려줬다.
+     * 그러면 [ReactionService.request]가 [ReactionService.PARSE_FAILED]로 표시하는데,
+     * **정상 동작(거절)과 사고(형식 변경)가 같은 값이 된다** — API가 바뀐 날 화면은
+     * `댓글을 지우지 못했어요`를 띄우고 아무도 원인을 모른다.
+     *
+     * 🔴 빨개지는 경우: 그 구현으로 되돌아가거나, 두 상수를 하나로 합쳤을 때.
+     */
+    @Test
+    fun 형식이_바뀐_응답은_거절과_다른_값이다() = runBlocking {
+        val t = FakeTransport(mutableListOf(ok("""{"ok":true}""")))
+        val res = service(t).deleteComment("c1")
+
+        assertTrue(res is ReactionResult.Failed)
+        assertEquals(
+            "형식 변경이 거절(DENIED)로 읽혔다 — 정상 동작과 사고가 같은 값이 된다",
+            ReactionService.PARSE_FAILED,
+            (res as ReactionResult.Failed).pgCode,
+        )
+        assertTrue(
+            "두 상수가 같은 값이다 — 갈라 두는 의미가 사라졌다",
+            ReactionService.PARSE_FAILED != ReactionService.DENIED,
+        )
     }
 
     // ── 신고 ────────────────────────────────────────────────────────

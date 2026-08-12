@@ -57,6 +57,16 @@ class RecordViewModel @JvmOverloads constructor(
 
     private val flowers = FlowerRepository.get(app)
 
+    /**
+     * 내 uuid의 출처. **[PlaceViewModel.myUserId]와 같은 곳을 읽는다.**
+     *
+     * ⚠️ **`val`로 붙잡아 두지 않는다** — 익명 로그인이 늦게 끝나면 `userId`가 기기 로컬
+     *    uuid에서 서버 uuid로 **갈아탄다**(`DiscoveryRepository.userId` 주석).
+     *    한 번 읽어 저장하면 그 뒤 로그인이 끝나도 내 댓글이 남의 것으로 보인다 —
+     *    증상은 `삭제` 버튼이 안 뜨는 것뿐이라 아무 오류도 안 난다.
+     */
+    private val discoveries = DiscoveryRepository.get(app)
+
     /** 보고 있는 기록. null이면 화면이 열려 있지 않다. */
     var record by mutableStateOf<Discovery?>(null)
         private set
@@ -232,6 +242,61 @@ class RecordViewModel @JvmOverloads constructor(
             // "빈 사유를 썼다"가 구분되지 않는다(`ShareRules.toStored`와 같은 판단).
             onDone(src.report(discovery.id, reason = null) is ReactionResult.Loaded)
         }
+    }
+
+    /**
+     * 댓글 `삭제` (C-9 · A 문서 3절 화면 16 댓글 삭제).
+     *
+     * 🔴 **낙관적으로 지우지 않는다.** 서버 `delete_comment`는 **실패도 HTTP 200**에
+     *    본문 `false`로 오고([com.catchflower.app.data.ReactionService.deleteComment]),
+     *    그 `false`는 권한 없음·없는 id·미로그인을 일부러 구분해 주지 않는다. 목록에서
+     *    줄을 먼저 없애면 **안 지워진 댓글이 화면에서 사라지고** 다음에 열면 되돌아 있다.
+     *    → 응답을 받은 뒤 [loadAll]로 다시 읽는다. `댓글 3`도 같이 줄어야 하므로
+     *      목록만 다시 읽지 않는다([submitComment]와 같은 이유).
+     *
+     * ⚠️ **결과를 콜백으로 올린다** — [report]와 같은 모양이다. 실패했는데 조용하면
+     *    사용자는 눌린 것인지 모르고 다시 누른다(그리고 다시 실패한다).
+     *
+     * @param onDone `pgCode`는 실패 원인을 가리키는 값이다. `null`이면 성공 —
+     *   화면은 [com.catchflower.app.ui.component.CfToast.COMMENT_DELETED]를 띄운다.
+     *   실패면 [RecordRules.deleteToastIsNetwork]가 문구를 고른다
+     *   (`잠시 후 다시 시도해 주세요`는 다시 시도해도 같은 경우에 **틀린 안내**다).
+     */
+    fun deleteComment(commentId: String, onDone: (String?) -> Unit) {
+        val discovery = record ?: return onDone("")
+        val src = reactions ?: return onDone("")
+        viewModelScope.launch {
+            when (val res = src.deleteComment(commentId)) {
+                is ReactionResult.Loaded -> {
+                    // 🔴 다시 읽고 나서 알린다 — 먼저 알리면 토스트가 뜬 화면에 지운
+                    //    댓글이 그대로 남아 있는 프레임이 생긴다.
+                    loadAll(discovery)
+                    onDone(null)
+                }
+
+                // 🔴 `Failed(200, DENIED)`가 여기로 온다 — 서버가 거절한 것이다.
+                //    `Rejected`·`NotConfigured`는 이 경로에 오지 않지만(입력 검사도
+                //    키 검사도 삭제에는 없다) 빈 문자열로 접어 **네트워크 문구**로 보낸다:
+                //    원인을 모르는 실패에 "다시 시도해도 안 된다"고 말할 근거가 없다.
+                is ReactionResult.Failed -> onDone(res.pgCode)
+                else -> onDone("")
+            }
+        }
+    }
+
+    /**
+     * 이 댓글에 `삭제` 버튼을 그리는가. 판정은 [RecordRules.canDeleteComment]다.
+     *
+     * ⚠️ **내 uuid를 화면에 노출하지 않는다** — 화면이 `vm.myUserId`를 읽어 직접
+     *    비교하면 그 비교가 Composable 안에 남아 어느 층에서도 검증되지 않는다.
+     */
+    fun canDelete(comment: com.catchflower.app.data.CommentRow): Boolean {
+        val owner = record?.userId ?: return false
+        return RecordRules.canDeleteComment(
+            commentUserId = comment.userId,
+            recordOwnerId = owner,
+            myUserId = discoveries.userId,
+        )
     }
 
     /** 도감 정보(`금계국` · `국화과 · 6~8월`). 못 찾으면 null — 그 칸을 그리지 않는다. */

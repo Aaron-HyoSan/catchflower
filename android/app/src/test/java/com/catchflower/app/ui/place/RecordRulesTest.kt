@@ -4,6 +4,7 @@ import com.catchflower.app.core.GamePolicy
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -16,6 +17,9 @@ import org.junit.Test
  *    **아무 층에서도 검증되지 않는다** — 화면은 `좋아요 0 · 댓글 0`을 완벽히 정상으로 그린다.
  */
 class RecordRulesTest {
+
+    private val me = "5bf714f9-b172-4636-a878-bf8efbc26fb7"
+    private val other = "3070caaa-0d53-4b2b-a71f-e5e230c6cda7"
 
     // ── 반응 줄 ────────────────────────────────────────────────────────
 
@@ -222,5 +226,81 @@ class RecordRulesTest {
         assertNull(RecordRules.commentTime("2026-08-12 04:00:00+00", now))
         assertNull(RecordRules.commentTime("", now))
         assertNull(RecordRules.commentTime("null", now))
+    }
+
+    // ── 댓글 삭제 (C-9 · A 문서 3절 화면 16 댓글 삭제) ──────────────────
+
+    /** C-9의 두 갈래. 서버 `delete_comment` 본문이 세는 것과 같은 둘이다. */
+    @Test
+    fun 내_댓글과_내_사진의_댓글만_지울_수_있다() {
+        // 내가 쓴 댓글 (남의 기록에 달았다)
+        assertTrue(
+            RecordRules.canDeleteComment(
+                commentUserId = me, recordOwnerId = other, myUserId = me,
+            ),
+        )
+        // 내 사진의 기록에 남이 쓴 댓글
+        assertTrue(
+            RecordRules.canDeleteComment(
+                commentUserId = other, recordOwnerId = me, myUserId = me,
+            ),
+        )
+    }
+
+    /**
+     * 🔴 **남의 기록에 달린 남의 댓글에는 그리지 않는다.**
+     *
+     * 그려 두고 누를 때 막으면 `댓글을 지우지 못했어요`가 뜨는 **누를 수 있는데 실패하는
+     * 버튼**이 된다 — 이 저장소가 이미 세 번 만든 `죽은 버튼`이다. 화면 16은 대부분
+     * 남의 기록이므로 그 상태면 **거의 모든 댓글에 죽은 삭제 버튼이 붙는다.**
+     */
+    @Test
+    fun 남의_기록의_남의_댓글에는_안_그린다() {
+        assertFalse(
+            RecordRules.canDeleteComment(
+                commentUserId = other, recordOwnerId = other, myUserId = me,
+            ),
+        )
+    }
+
+    /**
+     * 🔴 **내 uuid가 없을 때 아무것도 지울 수 없다.**
+     *
+     * 익명 로그인은 네트워크라서 첫 프레임에 uuid가 없을 수 있다
+     * (`DiscoveryRepository.userId` 주석 — 기기 로컬 uuid로 시작해 갈아탄다).
+     * 이 비교는 **양쪽이 다 비면 참이 되는 모양**이라서, 빈 값을 안 끊으면
+     * `userId`를 못 받은 댓글 전부에 삭제 버튼이 붙는다.
+     *
+     * ⚠️ 빈 문자열만이 아니라 공백도 끊는다 — `isBlank`로 세는 이유다.
+     */
+    @Test
+    fun 내_uuid가_없으면_아무것도_못_지운다() {
+        assertFalse(RecordRules.canDeleteComment("", "", ""))
+        assertFalse(RecordRules.canDeleteComment(" ", " ", " "))
+        assertFalse(RecordRules.canDeleteComment(commentUserId = "", recordOwnerId = "", myUserId = me))
+    }
+
+    /**
+     * 🔴 **삭제 실패 두 갈래가 다른 문구를 쓴다.**
+     *
+     * 서버가 거절한 것(HTTP 200 + 본문 `false` = `DENIED`)은 권한 없음·없는 id·미로그인이
+     * **일부러 한 값으로 묶여** 있고, 그중 몇은 **다시 시도해도 결과가 같다.** 거기에
+     * `잠시 후 다시 시도해 주세요`를 쓰면 **틀린 안내**가 된다(화면 01
+     * `manual_linking_disabled`에서 같은 판단을 했다). 네트워크 실패는 반대다.
+     *
+     * ⚠️ 이 판정을 화면에서 `if (code == 200)`으로 쓰면 **어느 층에서도 검증되지 않고**,
+     *    틀렸을 때 증상은 문구 하나가 바뀌는 것뿐이라 아무도 못 본다.
+     */
+    @Test
+    fun 거절과_네트워크_실패의_문구가_다르다() {
+        assertFalse(
+            "서버 거절에 `잠시 후 다시 시도해 주세요`를 쓰면 틀린 안내다",
+            RecordRules.deleteToastIsNetwork(com.catchflower.app.data.ReactionService.DENIED),
+        )
+        // 전송 실패(HTTP 0) · 401 · 5xx는 pgCode가 없다 — 정말 다시 시도하면 된다.
+        assertTrue(RecordRules.deleteToastIsNetwork(""))
+        // 형식이 바뀐 사고도 네트워크 문구다 — **거절이 아니다.** 다시 시도하면 될 수도
+        // 있고, 무엇보다 "지울 수 없는 댓글"이라고 단정할 근거가 없다.
+        assertTrue(RecordRules.deleteToastIsNetwork(com.catchflower.app.data.ReactionService.PARSE_FAILED))
     }
 }

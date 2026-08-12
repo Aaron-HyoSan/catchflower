@@ -15,10 +15,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,6 +72,15 @@ fun RecordDetailScreen(
     val record = vm.record ?: return
     val toast = rememberToaster()
     val notReady: () -> Unit = { toast(CfToast.NOT_READY) }
+
+    // 삭제를 확인 중인 댓글. null이면 다이얼로그가 없다.
+    //
+    // 🔴 **다이얼로그를 [CommentItem] 안에 두지 않는다.** 그 자리는 `LazyColumn`의
+    //    항목이라 **화면 밖으로 스크롤되면 컴포지션에서 사라진다** — 다이얼로그가 열린
+    //    채로 목록을 밀면 사라지고, 사용자는 확인을 누른 기억만 남는다. 그래서 상태를
+    //    화면 층에 두고, 항목은 콜백만 올린다.
+    var pendingDelete by remember { mutableStateOf<CommentRow?>(null) }
+    val onDeleteRequest: (CommentRow) -> Unit = { pendingDelete = it }
 
     Column(modifier.fillMaxSize()) {
         CfHeader(
@@ -155,7 +169,14 @@ fun RecordDetailScreen(
                 CommentsUi.NotConfigured -> Unit
 
                 is CommentsUi.Loaded -> items(state.rows, key = { it.id }) { row ->
-                    CommentItem(row = row, namesLoaded = state.namesLoaded)
+                    CommentItem(
+                        row = row,
+                        namesLoaded = state.namesLoaded,
+                        // C-9의 두 갈래(내 댓글 · 내 사진의 기록)만 그린다 —
+                        // 전부 그려 두고 누를 때 막으면 `죽은 버튼`이다.
+                        canDelete = vm.canDelete(row),
+                        onDelete = { onDeleteRequest(row) },
+                    )
                 }
             }
 
@@ -168,6 +189,63 @@ fun RecordDetailScreen(
             }
         }
     }
+
+    // A 문서 3절 `화면 16 댓글 삭제` 확인 다이얼로그.
+    //
+    // 🔴 **확인을 한 번 받는다.** 되돌릴 수 없는 삭제이고(서버 soft delete는 목록에서
+    //    영구히 빠진다), 버튼은 댓글 한 줄 옆의 좁은 자리라 잘못 눌리기 쉽다.
+    pendingDelete?.let { target ->
+        DeleteCommentDialog(
+            onConfirm = {
+                pendingDelete = null
+                vm.deleteComment(target.id) { pgCode ->
+                    toast(
+                        when {
+                            pgCode == null -> CfToast.COMMENT_DELETED
+                            // 🔴 판정을 여기서 `if`로 쓰지 않는다 — [RecordRules]가 잰다.
+                            //    서버가 거절한 것과 연결이 끊긴 것은 **사용자가 할 수 있는
+                            //    일이 다르다**(다시 시도해도 같은 경우가 섞여 있다).
+                            RecordRules.deleteToastIsNetwork(pgCode) -> CfToast.NETWORK_ERROR
+                            else -> CfToast.COMMENT_DELETE_FAILED
+                        },
+                    )
+                }
+            },
+            onDismiss = { pendingDelete = null },
+        )
+    }
+}
+
+/**
+ * `이 댓글을 지울까요?` (A 문서 3절 화면 16 댓글 삭제).
+ *
+ * ⚠️ **이 저장소의 첫 다이얼로그다.** `ui/component/`에 다이얼로그 컴포넌트가 없어서
+ *    material3 [AlertDialog]를 직접 쓴다. 두 번째가 생기면 그때 컴포넌트로 뺀다 —
+ *    지금 빼면 쓰는 곳이 하나인 추상이 되고, 그건 다음 사람이 규칙으로 읽는다.
+ *
+ * 🔴 **`지우기`가 오른쪽(confirmButton)이다.** 안드로이드 관례이고, 좌우를 바꾸면
+ *    `취소`를 누르려던 손가락이 삭제를 누른다.
+ */
+@Composable
+private fun DeleteCommentDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("이 댓글을 지울까요?", style = CfText.BodyBold, color = CfColor.TextPrimary)
+        },
+        text = {
+            Text("지우면 되돌릴 수 없어요", style = CfText.Body, color = CfColor.TextSecondary)
+        },
+        // ⚠️ `TextButton`을 직접 쓰지 않고 [CfTextButton]을 쓴다 — 최소 터치 44dp와
+        //    글자 스타일이 그 안에 있다(A 문서 1절).
+        confirmButton = {
+            CfTextButton(text = "지우기", onClick = onConfirm, color = CfColor.Error)
+        },
+        dismissButton = {
+            CfTextButton(text = "취소", onClick = onDismiss)
+        },
+        containerColor = CfColor.Background,
+    )
 }
 
 /**
@@ -270,9 +348,19 @@ private fun ReactionRow(vm: RecordViewModel) {
     }
 }
 
-/** 댓글 한 줄. 이름·시각은 각각 없을 수 있고, **본문은 항상 그린다.** */
+/**
+ * 댓글 한 줄. 이름·시각은 각각 없을 수 있고, **본문은 항상 그린다.**
+ *
+ * @param canDelete C-9 판정([RecordRules.canDeleteComment]). false면 `삭제`를
+ *   **그리지 않는다** — 그려 두고 누를 때 막으면 `죽은 버튼`이다.
+ */
 @Composable
-private fun CommentItem(row: CommentRow, namesLoaded: Boolean) {
+private fun CommentItem(
+    row: CommentRow,
+    namesLoaded: Boolean,
+    canDelete: Boolean,
+    onDelete: () -> Unit,
+) {
     val name = RecordRules.authorName(row.nickname, namesLoaded)
     // ⚠️ `now`를 파라미터로 받지 않는다 — 목록을 다시 그릴 때마다 같은 시계를 쓰면
     //    한 화면 안에서 `1시간 전`과 `59분 전`이 섞인다. 여기서는 그릴 때마다 잰다.
@@ -281,8 +369,12 @@ private fun CommentItem(row: CommentRow, namesLoaded: Boolean) {
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(CfDimen.GapTiny),
     ) {
-        if (name != null || time != null) {
+        // ⚠️ `canDelete`도 조건에 넣는다 — 이름·시각이 **둘 다 없는 댓글**(이름 조회
+        //    실패 + 시각 파싱 실패)에서도 삭제할 수 있어야 한다. 처음엔 이름·시각만
+        //    봤는데, 그러면 그 상태에서 **내 댓글을 지울 수 없다**(버튼이 그려지지 않는다).
+        if (name != null || time != null || canDelete) {
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(CfDimen.GapSmall),
             ) {
@@ -296,6 +388,13 @@ private fun CommentItem(row: CommentRow, namesLoaded: Boolean) {
                 }
                 if (time != null) {
                     Text(text = time, style = CfText.Tiny, color = CfColor.TextTertiary)
+                }
+                if (canDelete) {
+                    // 🔴 **텍스트다. 휴지통 아이콘으로 바꾸지 않는다**(A 문서 1절 44번 ·
+                    //    3절 화면 16 댓글 삭제). 자리가 좁아서 아이콘으로 만들기 쉬운
+                    //    자리인데, 그 규칙에 예외를 두지 않는다.
+                    Spacer(Modifier.weight(1f))
+                    CfTextButton(text = "삭제", onClick = onDelete)
                 }
             }
         }

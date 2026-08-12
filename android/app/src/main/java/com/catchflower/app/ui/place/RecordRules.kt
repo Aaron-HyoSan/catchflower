@@ -128,4 +128,60 @@ object RecordRules {
      */
     fun canSubmit(body: String): Boolean =
         body.isNotBlank() && commentLength(body) <= COMMENT_MAX
+
+    /**
+     * 이 댓글에 **`삭제` 버튼을 그리는가.**
+     *
+     * C-9의 두 갈래다 — **내가 쓴 댓글** 또는 **내 사진의 기록에 달린 댓글**.
+     * 서버 `delete_comment` 본문이 같은 두 갈래를 센다(`c_user_id = auth.uid()` ·
+     * `is_discovery_owner(c_discovery_id)`).
+     *
+     * 🔴 **전부 그려 두고 누를 때 막지 않는다.** 그러면 남의 댓글마다 `삭제`가 있고
+     *    누르면 `댓글을 지우지 못했어요`가 뜨는 **누를 수 있는데 실패하는 버튼**이 된다 —
+     *    이 저장소가 이미 세 번 만든 `죽은 버튼`이다(A 문서 3절 화면 16 댓글 삭제).
+     *
+     * ⚠️ **이 판정이 자물쇠가 아니다.** 자물쇠는 `delete_comment` **본문**이고
+     *    (`security definer`라 RLS를 지나가므로 그 안에만 있다), 여기가 틀려도 남의
+     *    댓글은 안 지워진다. 반대로 **여기만 믿어서도 안 된다** — 화면 판정을 우회한
+     *    호출은 서버가 막고, 서버 판정을 우회한 화면은 사용자에게 죽은 버튼을 준다.
+     *
+     * 🔴 **`myUserId`가 빈 문자열이면 아무 댓글에도 그리지 않는다.** 익명 로그인은
+     *    네트워크라서 첫 프레임에 uuid가 없을 수 있는데(`DiscoveryRepository.userId`
+     *    주석), 빈 문자열끼리 비교하면 **`userId`를 못 받은 댓글 전부가 내 것이 된다.**
+     *    `discoveries`의 `user_id`는 `not null`이라 그쪽이 빌 일은 없지만,
+     *    이 비교는 **양쪽이 다 비었을 때 참이 되는 모양**이라 미리 끊는다.
+     *
+     * @param commentUserId 댓글 작성자 uuid([com.catchflower.app.data.CommentRow.userId]).
+     * @param recordOwnerId 이 기록(사진) 주인 uuid([com.catchflower.app.data.model.Discovery.userId]).
+     * @param myUserId 내 uuid. 로그인 전이면 빈 문자열일 수 있다.
+     */
+    fun canDeleteComment(
+        commentUserId: String,
+        recordOwnerId: String,
+        myUserId: String,
+    ): Boolean {
+        if (myUserId.isBlank()) return false
+        return commentUserId == myUserId || recordOwnerId == myUserId
+    }
+
+    /**
+     * 삭제 실패에 **어느 문구를 쓰는가.**
+     *
+     * 🔴 **두 실패가 같은 문구를 쓰면 안 된다**(A 문서 3절 화면 16 댓글 삭제):
+     *    ① 서버가 **거절**했다 — HTTP 200 + 본문 `false`
+     *       ([com.catchflower.app.data.ReactionService.DENIED]). 권한 없음·없는 id·
+     *       미로그인이 **일부러 한 값으로 묶여** 있고, 그중 몇은 **다시 시도해도 결과가
+     *       같다.** 그래서 `잠시 후 다시 시도해 주세요`는 **틀린 안내**다.
+     *    ② 네트워크가 끊겼다 — HTTP 0(전송 실패)·5xx·401. 이건 정말 다시 시도하면 된다.
+     *
+     * ⚠️ **화면에서 `if (code == 200)`으로 나누지 않는다.** 그러면 이 판정이 어느 층에서도
+     *    검증되지 않는데, 틀렸을 때의 증상은 **문구 하나가 바뀌는 것뿐**이라 아무도 못 본다
+     *    (`증상 없는 UI 결함`의 `같은 얼굴의 다른 원인`).
+     *
+     * @param pgCode [com.catchflower.app.data.ReactionResult.Failed.pgCode].
+     * @return true면 [com.catchflower.app.ui.component.CfToast.NETWORK_ERROR],
+     *   false면 [com.catchflower.app.ui.component.CfToast.COMMENT_DELETE_FAILED].
+     */
+    fun deleteToastIsNetwork(pgCode: String): Boolean =
+        pgCode != com.catchflower.app.data.ReactionService.DENIED
 }
