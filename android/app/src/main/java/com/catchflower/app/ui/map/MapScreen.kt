@@ -32,6 +32,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.catchflower.app.core.AppSecrets
 import com.catchflower.app.ui.component.CfPrimaryButton
 import com.catchflower.app.ui.component.CfSecondaryButton
+import com.catchflower.app.ui.component.CfSmallButton
 import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
 import com.catchflower.app.ui.theme.CfText
@@ -76,6 +77,14 @@ import com.kakao.vectormap.label.LabelStyles
 fun MapScreen(
     vm: MapViewModel,
     onCapture: () -> Unit,
+    /**
+     * 프리뷰 카드의 `자세히 보기` — 화면 15로 간다.
+     *
+     * 🔴 **좌표를 넘긴다.** 핀 id를 넘기면 화면 15가 그 id로 서버를 다시 물어야 하는데,
+     *    이 핀은 **내 로컬 기록**이라 서버에 없을 수도 있다(비공개거나 업로드 실패).
+     *    화면 15가 필요한 것은 "이 자리 주변"이므로 좌표가 정확한 입력이다.
+     */
+    onOpenPlace: (lat: Double, lng: Double, placeName: String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // 키 없는 빌드에서는 SDK를 초기화조차 하지 않는다. `KakaoMapSdk.init`에 빈 키를
@@ -135,6 +144,7 @@ fun MapScreen(
                 PinPreviewCard(
                     pin = pin,
                     flowerSummary = vm.flowerSummary(pin),
+                    onOpenPlace = { onOpenPlace(pin.lat, pin.lng, pin.placeName) },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         // 하단 내비(약 72dp)와 촬영 FAB을 피한다.
@@ -330,6 +340,7 @@ private fun pinBitmap(): Bitmap {
 private fun PinPreviewCard(
     pin: MapPin,
     flowerSummary: String,
+    onOpenPlace: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -355,6 +366,11 @@ private fun PinPreviewCard(
             Spacer(Modifier.height(CfDimen.GapSmall))
             Text(flowerSummary, style = CfText.Body, color = CfColor.TextTertiary)
         }
+        Spacer(Modifier.height(CfDimen.GapMedium))
+        // A 문서 14번 `| 버튼 | 길찾기 / 자세히 보기 |`의 뒤쪽. `길찾기`는 카카오맵 앱으로
+        // 넘기는 기능이라 예선 범위 밖이고, 화면 15에 같은 버튼이 있으므로 여기서는
+        // **한 개만** 둔다 — 눌러도 토스트만 뜨는 버튼을 두 화면에 겹쳐 두지 않는다.
+        CfSmallButton(text = "자세히 보기", onClick = onOpenPlace)
     }
 }
 

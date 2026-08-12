@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.catchflower.app.R
+import com.catchflower.app.core.RelativeTime
 import com.catchflower.app.data.model.Discovery
 import com.catchflower.app.data.model.Flower
 import com.catchflower.app.ui.component.CfChip
@@ -45,7 +46,6 @@ import com.catchflower.app.ui.component.FlowerSilhouette
 import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
 import com.catchflower.app.ui.theme.CfText
-import java.util.concurrent.TimeUnit
 
 /**
  * 화면 04 도감 홈 / 화면 22 빈 상태.
@@ -485,31 +485,14 @@ private fun EmptyStateBlock(
 /**
  * 상대 날짜. 와이어프레임 04는 `오늘 / 어제 / 3일 전`이다.
  *
- * ⚠️ 밀리초 차이를 24로 나누면 안 된다 — 어제 23시에 찍은 걸 오늘 1시에 보면
- *    2시간 차이라 `오늘`이 된다. **날짜 경계로 센다.**
+ * 🔴 **계산이 여기 있었다.** 화면 15·16이 같은 표기를 필요로 하면서
+ *    [com.catchflower.app.core.RelativeTime]으로 옮겼다 — `private`이라 다른 화면이
+ *    못 썼고, 그대로 두면 **같은 규칙이 세 화면에 세 벌** 생긴다. 날짜 경계 계산은
+ *    틀려도 화면에 예쁘게 나오는 종류라(`어제`라고 쓰여 있으면 의심하지 않는다)
+ *    한 곳에 두고 JVM 테스트로 잰다.
+ *
+ * ⚠️ 화면 15·16은 [com.catchflower.app.core.RelativeTime.detailed]다(`2시간 전`).
+ *    두 모양을 한 함수로 합치지 않은 이유는 그쪽 주석에 있다.
  */
-private fun relativeDay(timestamp: Long, now: Long = System.currentTimeMillis()): String {
-    val days = daysBetween(timestamp, now)
-    return when {
-        days <= 0L -> "오늘"
-        days == 1L -> "어제"
-        days < 7L -> "${days}일 전"
-        else -> {
-            val cal = java.util.Calendar.getInstance().apply { timeInMillis = timestamp }
-            "${cal.get(java.util.Calendar.MONTH) + 1}월 ${cal.get(java.util.Calendar.DAY_OF_MONTH)}일"
-        }
-    }
-}
-
-private fun daysBetween(from: Long, to: Long): Long {
-    val startOfDay = { millis: Long ->
-        java.util.Calendar.getInstance().apply {
-            timeInMillis = millis
-            set(java.util.Calendar.HOUR_OF_DAY, 0)
-            set(java.util.Calendar.MINUTE, 0)
-            set(java.util.Calendar.SECOND, 0)
-            set(java.util.Calendar.MILLISECOND, 0)
-        }.timeInMillis
-    }
-    return TimeUnit.MILLISECONDS.toDays(startOfDay(to) - startOfDay(from))
-}
+private fun relativeDay(timestamp: Long, now: Long = System.currentTimeMillis()): String =
+    RelativeTime.day(timestamp, now)

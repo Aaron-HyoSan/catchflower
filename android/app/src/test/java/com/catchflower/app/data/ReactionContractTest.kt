@@ -194,16 +194,21 @@ class ReactionContractTest {
     }
 
     /**
-     * 🔴 빨개지는 경우: **이 층을 화면에 붙였는데 이 테스트를 안 고쳤을 때.**
+     * ✅ **화면이 이 층을 부른다** (2026-08-12에 뒤집었다).
      *
-     * 지금 [ReactionService]를 부르는 화면이 하나도 없다 — 그게 의도다(0007 미적용 ·
-     * 남의 기록을 주는 서버 함수 없음). 그런데 **부르는 곳이 없는 코드는 "됐다"고
-     * 착각하게 만드는 대표적인 자리**다(`읽는 사람이 0명인 데이터`).
-     * 그래서 이 사실 자체를 검사로 고정한다: 화면이 붙는 날 이 테스트가 빨개지고,
-     * 그때 `구현현황_AOS.md`와 이 주석을 함께 고치게 된다.
+     * ## 이 검사가 어떻게 바뀌었나
+     *
+     * 원래는 `아직_어느_화면도_이_층을_부르지_않는다`였다 — 0007이 미적용이고 남의 기록을
+     * 주는 경로가 없어서 **부르는 곳이 0개**였고, 그 사실을 검사로 못 박아 뒀다
+     * (`읽는 사람이 0명인 데이터`는 "됐다"고 착각하게 만드는 자리다).
+     * 화면 15·16이 붙으면서 **의도대로 빨개졌고**, 그래서 방향을 뒤집었다.
+     *
+     * 🔴 이제 빨개지는 경우: **화면 16을 지우거나 반응 층 호출을 되돌렸을 때.**
+     *    그러면 `ReactionService`는 다시 아무도 안 부르는 코드가 되는데,
+     *    `구현현황_AOS.md`에는 ✅가 남는다 — 그 어긋남을 여기서 잡는다.
      */
     @Test
-    fun 아직_어느_화면도_이_층을_부르지_않는다() {
+    fun 화면이_반응_층을_부른다() {
         val ui = File("src/main/java/com/catchflower/app/ui")
         assertTrue(ui.isDirectory)
         val callers = ui.walkTopDown()
@@ -214,11 +219,52 @@ class ReactionContractTest {
             }
             .map { it.name }
             .toList()
+        assertTrue(
+            "반응 층을 부르는 화면이 없어졌다 — 화면 16을 지웠으면 구현현황_AOS.md의 " +
+                "✅와 ReactionService의 '화면이 부른다' 주석을 같이 되돌린다",
+            callers.isNotEmpty(),
+        )
+        assertTrue(
+            "RecordViewModel.kt가 이 층을 안 부른다 — 화면 16의 반응·댓글 조립이 " +
+                "다른 곳으로 옮겨졌으면 이 검사를 고친다: $callers",
+            "RecordViewModel.kt" in callers,
+        )
+    }
+
+    /**
+     * 🔴 **Composable이 [ReactionService]를 직접 만들지 않는다.**
+     *
+     * 위 검사는 "부르는 곳이 있다"만 본다. 그런데 **어디서 부르는지가 더 중요하다** —
+     * `@Composable` 안에서 `ReactionService(...)`를 만들면 recomposition마다 새 인스턴스가
+     * 생기고, 그때마다 **토큰 갱신 상태가 초기화된다.** 증상은 며칠 뒤에 나온다:
+     * refresh 토큰이 회전한 기기에서 좋아요만 조용히 실패한다(화면은 낙관적 갱신 때문에
+     * **성공한 것처럼 보이고** 다음에 열면 숫자가 되돌아 있다).
+     *
+     * 그래서 생성은 ViewModel의 기본 인자에서만 한다 — `DiscoveryRepository`와
+     * **같은 `AuthService`**를 쓰는 것도 그 자리에서만 보장된다.
+     *
+     * 빨개지는 경우: 화면(`*Screen.kt`)에서 `ReactionService(`를 만들 때.
+     */
+    @Test
+    fun 화면_파일이_반응_층을_직접_만들지_않는다() {
+        val ui = File("src/main/java/com/catchflower/app/ui")
+        val offenders = ui.walkTopDown()
+            .filter { it.isFile && it.name.endsWith("Screen.kt") }
+            .filter { f ->
+                // 주석은 뺀다 — 이 판단을 주석으로 적어 두는 관행이 있어서
+                // 안 빼면 **설명이 위반으로 걸린다**(ButtonLabelSourceTest와 같은 함정).
+                val body = f.readText()
+                    .replace(Regex("""/\*[\s\S]*?\*/"""), " ")
+                    .lineSequence().map { it.substringBefore("//") }.joinToString("\n")
+                Regex("""ReactionService\s*\(""").containsMatchIn(body)
+            }
+            .map { it.name }
+            .toList()
         assertEquals(
-            "화면이 반응 층을 부르기 시작했다. 좋은 일이다 — 이 테스트와 " +
-                "구현현황_AOS.md·ReactionService의 '아직 안 부른다' 주석을 같이 고친다: $callers",
+            "Composable이 ReactionService를 직접 만든다 — recomposition마다 토큰 상태가 " +
+                "초기화되고, 증상은 며칠 뒤 좋아요 실패로만 나온다: $offenders",
             emptyList<String>(),
-            callers,
+            offenders,
         )
     }
 

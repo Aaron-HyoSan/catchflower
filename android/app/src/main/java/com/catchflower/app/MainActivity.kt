@@ -37,6 +37,10 @@ import com.catchflower.app.ui.dex.DexViewModel
 import com.catchflower.app.ui.map.MapScreen
 import com.catchflower.app.ui.map.MapViewModel
 import com.catchflower.app.ui.my.MyScreen
+import com.catchflower.app.ui.place.PlaceScreen
+import com.catchflower.app.ui.place.PlaceViewModel
+import com.catchflower.app.ui.place.RecordDetailScreen
+import com.catchflower.app.ui.place.RecordViewModel
 import com.catchflower.app.ui.my.SeasonResultScreen
 import com.catchflower.app.ui.ranking.FriendsScreen
 import com.catchflower.app.ui.ranking.RankingScreen
@@ -143,6 +147,20 @@ private fun CatchFlowerRoot() {
     //    매번 다시 시작하고, 그때마다 네이티브 렌더러가 붙었다 떨어진다.
     val mapViewModel: MapViewModel = viewModel()
 
+    // 화면 15·16. 지도 탭 **안에서** 겹쳐 여는 하위 화면이라 `NavTab`에 넣지 않는다.
+    //
+    // ⚠️ **여기서 만든다.** 화면 15 안에서 `viewModel()`을 부르면 그 화면이 사라질 때
+    //    ViewModel도 사라지고, 다시 열 때마다 서버를 다시 묻는다 — 그건 지도 핀을
+    //    번갈아 누르는 흐름에서 **같은 조회를 몇 번씩** 하게 만든다.
+    //    (화면 15가 `open()`으로 좌표를 받아 스스로 다시 읽으므로 캐시 문제는 없다.)
+    val placeViewModel: PlaceViewModel = viewModel()
+    val recordViewModel: RecordViewModel = viewModel()
+
+    // 지도 → 화면 15 → 화면 16. **두 단을 각각 플래그로 둔다** — 한 개로 합치면
+    // 화면 16의 `뒤로`가 지도까지 돌아가고, 그러면 사용자가 방금 본 장소를 잃는다.
+    var placeOpen by remember { mutableStateOf(false) }
+    var recordOpen by remember { mutableStateOf(false) }
+
     // 랭킹·마이 탭에서 **위로 겹쳐 여는** 화면들. 탭 자체가 아니라서 NavTab에 넣지 않는다.
     // 두 탭이 같은 화면(친구 관리·지난 시즌)을 공유하므로 상태도 여기서 공유한다.
     var friendsOpen by remember { mutableStateOf(false) }
@@ -238,10 +256,51 @@ private fun CatchFlowerRoot() {
 
                     // 위에서 return하므로 여기 오지 않는다. when을 완전하게 두기 위해 명시한다.
                     NavTab.CAPTURE -> Unit
-                    NavTab.MAP -> MapScreen(
-                        vm = mapViewModel,
-                        onCapture = { tab = NavTab.CAPTURE },
-                    )
+                    NavTab.MAP -> when {
+                        // 화면 16이 화면 15 **위에** 있다. 순서를 뒤집으면 화면 15가
+                        // 화면 16을 덮어서 기록 상세를 열 수 없다.
+                        recordOpen -> RecordDetailScreen(
+                            vm = recordViewModel,
+                            // 뒤로 = 화면 15로. `placeOpen`은 그대로 둔다.
+                            onBack = { recordOpen = false },
+                            // `도감에서 보기`는 도감 탭 상세로 건너간다.
+                            //
+                            // ⚠️ **지도 탭의 하위 화면들을 닫는다.** 안 닫으면 나중에
+                            //    지도 탭으로 돌아왔을 때 그때 보던 기록 상세가 그대로
+                            //    떠 있다 — 지도를 눌렀는데 남의 댓글창이 나온다.
+                            onOpenDex = { flowerId ->
+                                recordOpen = false
+                                placeOpen = false
+                                detailFlowerId = flowerId
+                                tab = NavTab.DEX
+                            },
+                        )
+
+                        placeOpen -> PlaceScreen(
+                            vm = placeViewModel,
+                            // 🔴 **도감 ViewModel의 값을 그대로 쓴다.** 화면 15가
+                            //    따로 도감을 읽으면 `!` 배지 기준이 두 개가 되고,
+                            //    도감 탭과 이 화면이 **다른 미보유 목록**을 말한다.
+                            collectedIds = dexViewModel.collectedIds,
+                            // 🔴 읽는 중에는 배지를 붙이지 않는다 — 전부 `!`가 되고
+                            //    그건 200종을 모은 사용자에게 거짓이다.
+                            dexLoaded = !dexViewModel.loading,
+                            onBack = { placeOpen = false },
+                            onOpenRecord = { discovery ->
+                                recordViewModel.open(discovery)
+                                recordOpen = true
+                            },
+                        )
+
+                        else -> MapScreen(
+                            vm = mapViewModel,
+                            onCapture = { tab = NavTab.CAPTURE },
+                            onOpenPlace = { lat, lng, placeName ->
+                                placeViewModel.open(lat, lng, placeName)
+                                placeOpen = true
+                            },
+                        )
+                    }
                     NavTab.RANKING -> when {
                         // 화면 19는 헤더에 `뒤로`가 있는 하위 화면이라 탭 안에서 대체한다.
                         friendsOpen -> FriendsScreen(
@@ -319,6 +378,10 @@ private fun CatchFlowerRoot() {
                 friendsOpen = false
                 seasonResultOpen = false
                 regionPickerOpen = false
+                // 화면 15·16도 같이 닫는다. 안 닫으면 지도 탭을 눌렀을 때 지도가 아니라
+                // 아까 보던 **남의 기록 상세**가 나온다(친구 관리에서 겪은 그 모양).
+                placeOpen = false
+                recordOpen = false
                 tab = selected
             },
             modifier = Modifier.align(Alignment.BottomCenter),
