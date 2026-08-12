@@ -1,6 +1,7 @@
 package com.catchflower.app.ui.component
 
 import android.graphics.BitmapFactory
+import android.os.Debug
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -22,12 +23,19 @@ import org.junit.runner.RunWith
  *    껍데기다. 실제 APK에 패키징된 것을 확인해야 의미가 있으므로 계측 테스트다.
  *
  * 🔴 **"일러스트 개수 == 종 수"는 더 이상 단정할 수 없다** (계약 1-5).
- *    도감은 2,057종이고 납품된 그림은 200장이다 — 없는 것이 정상 상태다.
  *    그래서 검사 축을 뒤집었다: **assets에 실제로 들어간 파일 목록**을 기준으로
  *    (a) 목록이 비거나 줄지 않았는가 (b) 파일과 [Flower.illustAssetName]의 규칙이
  *    같은가 (c) 있는 파일이 규격대로인가 를 본다.
- *    (b)가 이 파일의 새 핵심이다 — 파일명 자릿수를 한쪽만 고치면 200장이 **전부**
+ *    (b)가 이 파일의 새 핵심이다 — 파일명 규칙을 한쪽만 고치면 전량이
  *    안 나오는데, 화면에서는 "아직 안 온 그림"과 **완전히 같아 보인다.**
+ *
+ * 🔴 **2026-08-12: 전수 2,057장이 들어왔고 확장자가 `.webp`가 됐다.**
+ *    PNG로는 130MB라 Play 업로드 상한(AAB 150MB · APK 직접 100MB)을 넘어
+ *    **빌드 성공 후 업로드에서 막힌다**
+ *    (`꽃도감/_tools/pack_illust_webp.py` 주석의 실측표). 그래서 이 파일이 재는 것이
+ *    하나 늘었다: **WebP가 기기에서 실제로 디코딩되고 알파가 살아 있는가.**
+ *    ⚠️ 투명 WebP는 API 18+다. `minSdk 26`이라 안전하지만, 알파가 죽으면
+ *    도감 셀의 원형 배경 위에 **흰 사각형**이 얹히고 그건 규격 위반이다.
  */
 @RunWith(AndroidJUnit4::class)
 class FlowerIllustAssetTest {
@@ -42,16 +50,31 @@ class FlowerIllustAssetTest {
         /**
          * 지금까지 납품된 장수. **리터럴이다.**
          *
-         * ⚠️ [GamePolicy.TOTAL_FLOWER_COUNT]를 쓰면 안 된다 — 종수를 2,057로 올리는
-         *    순간 이 단정이 **따라 움직여서** 아무것도 빨개지지 않는다(이미 한 번
+         * ⚠️ [GamePolicy.TOTAL_FLOWER_COUNT]를 쓰면 안 된다 — 종수가 바뀌는 순간
+         *    이 단정이 **따라 움직여서** 아무것도 빨개지지 않는다(이미 한 번
          *    당했다: `PlantNetReplayTest`의 대조군 크기).
          *    그림이 더 오면 이 숫자를 **손으로** 올린다.
+         *
+         * 🔴 200 → 2057 (2026-08-12, 전수 납품). 이 숫자가 리터럴이라서
+         *    **1,857장이 복사에서 빠지면 빨개진다** — 그게 이 값의 존재 이유다.
+         *    ⚠️ 그리고 이 숫자를 올렸으므로 아래
+         *    [그림_없는_종은_null을_돌려주고_죽지_않는다]는 **잴 대상이 0종**이 됐다.
+         *    "0종을 다 통과했다"는 성공이 아니므로 그 테스트를 고쳤다(그 주석 참고).
          */
-        const val DELIVERED = 200
+        const val DELIVERED = 2057
+
+        /**
+         * 실제 디코딩·알파 검사 표본 수.
+         *
+         * ⚠️ 전량을 디코딩하면 계측 테스트가 수 GB를 만들어 죽는다(한 장이
+         *    512×512×4 = 1MB). 헤더 검사(`inJustDecodeBounds`)는 전량을 돌고,
+         *    본문까지 만드는 것은 표본만 돈다.
+         */
+        const val ALPHA_SAMPLE = 60
     }
 
     /**
-     * 납품된 200장이 APK 안에 있고, **파일명 규칙이 코드와 같은가.**
+     * 납품된 전량(2,057장)이 APK 안에 있고, **파일명 규칙이 코드와 같은가.**
      *
      * ⚠️ 여기서 "있는 것만 다 열렸다"로 쓰면 목록이 비어도 통과한다 —
      *    0개 중 0개 성공은 성공이 아니다. 그래서 [DELIVERED] 하한을 둔다.
@@ -89,11 +112,11 @@ class FlowerIllustAssetTest {
      * 원본이 발주 규격(512×512 · 투명)대로 왔는가.
      *
      * ⚠️ **알파 채널이 핵심이다.** 배경이 불투명하면 도감 셀의 원형 배경 위에
-     *    **흰 사각형이 얹혀 보인다.** 발주서는 투명을 요구했고 실측으로 확인했지만,
-     *    남은 1,857종이 배치로 들어오므로 그때 규격이 어긋나는 것을 여기서 잡는다.
+     *    **흰 사각형이 얹혀 보인다.** WebP는 `-alpha_q 100`으로 변환했지만, 변환
+     *    설정이 바뀌거나 알파 없는 산출물이 섞이는 것을 여기서 잡는다.
      *
      * ⚠️ **종을 도는 게 아니라 파일을 돈다.** 종을 돌면 없는 파일에서 `open`이 던져
-     *    1,857종 앞에서 첫 칸부터 실패한다 — 그건 규격 위반이 아니라 미납품이다.
+     *    첫 칸부터 실패한다 — 그건 규격 위반이 아니라 미납품이고, 다른 테스트의 일이다.
      */
     @Test
     fun 일러스트가_512픽셀_투명배경이다() {
@@ -120,28 +143,81 @@ class FlowerIllustAssetTest {
         }
 
         assertTrue("512x512가 아닌 일러스트 ${wrong.size}장: ${wrong.take(10)}", wrong.isEmpty())
+
+        // 🔴 **`inJustDecodeBounds`는 디코딩을 안 한다.** 위 반복문은 헤더만 읽으므로
+        //    WebP 본문이 깨져 있어도 512×512라고 말한다. 그래서 실제로 픽셀까지 만든다.
+        //    ⚠️ 전량을 원본 크기로 만들면 2,057 × 1MB = 2GB라 OOM이다. 표본만 돈다.
+        val step = maxOf(1, names.size / ALPHA_SAMPLE)
+        val opaque = mutableListOf<String>()
+        val undecodable = mutableListOf<String>()
+        names.filterIndexed { i, _ -> i % step == 0 }.forEach { name ->
+            val opts = BitmapFactory.Options().apply { inSampleSize = 4 }
+            val bmp = context.assets.open("flower_illust/$name").use {
+                BitmapFactory.decodeStream(it, null, opts)
+            }
+            if (bmp == null) {
+                // WebP를 못 읽는 기기라면 여기서 전부 걸린다(구형 기기 방어).
+                undecodable += name
+                return@forEach
+            }
+            // 알파가 없으면 셀의 원형 배경 위에 **흰 사각형**이 얹혀 보인다.
+            if (!bmp.hasAlpha()) opaque += name
+            bmp.recycle()
+        }
+        assertTrue(
+            "디코딩이 안 되는 일러스트 ${undecodable.size}장: ${undecodable.take(10)} — " +
+                "WebP 본문이 깨졌거나 이 기기가 투명 WebP를 못 읽는다(API 18+ 필요)",
+            undecodable.isEmpty(),
+        )
+        assertTrue(
+            "알파가 없는 일러스트 ${opaque.size}장: ${opaque.take(10)} — " +
+                "셀의 원형 배경 위에 흰 사각형이 얹혀 보인다(alpha_q 100으로 다시 변환한다)",
+            opaque.isEmpty(),
+        )
     }
 
     /**
      * **그림 없는 종이 앱을 세우지 않는가.**
      *
-     * 2,057종 중 1,857종은 파일이 없다. [FlowerIllustLoader]는 null을 돌려주고
-     * 호출부가 플레이스홀더로 되돌려야 한다 — 여기서 예외가 나면 도감 스크롤이
-     * 200번째 칸에서 죽는다.
+     * [FlowerIllustLoader]는 null을 돌려주고 호출부가 플레이스홀더로 되돌려야 한다 —
+     * 여기서 예외가 나면 도감 스크롤이 그 칸에서 죽는다.
+     *
+     * 🔴 **2026-08-12: 이 테스트는 잴 대상이 0종이 됐다.** 전수 2,057장이 들어와서
+     *    "파일이 없는 종"이 사라졌다. 그런데 반복문이 0바퀴를 돌면 **그대로 초록이다** —
+     *    이 저장소가 세는 거짓 초록의 전형(`catchflower-green-tests-are-not-evidence`)이고,
+     *    로그로 남기는 것은 **고친 기분만 준다**(아무도 안 읽는다).
+     *
+     *    그래서 축을 바꿨다: 도감에 **없는 번호**를 합성해서 넣는다. 그 경로는
+     *    납품과 무관하게 항상 살아 있어야 한다 — 그림이 한 장 빠지거나, 앞으로 종이
+     *    추가되어 다시 미납품 상태가 될 때 앱이 죽지 않는 것이 이 단정의 목적이다.
      */
     @Test
     fun 그림_없는_종은_null을_돌려주고_죽지_않는다() {
         val names = assetNames().toSet()
-        val withoutFile = FlowerRepository.get(context).flowers
-            .filter { it.illustAssetName.substringAfterLast('/') !in names }
+        val flowers = FlowerRepository.get(context).flowers
 
-        // 없는 종이 하나도 없다면 이 테스트는 아무것도 재지 않는다. 그 상태를 드러낸다.
-        Log.i("FlowerIllustAsset", "그림 없는 종 ${withoutFile.size}종 / 파일 ${names.size}장")
-
+        // ① 실제로 파일이 없는 종이 있으면 그것을 먼저 잰다(과거 상태 · 앞으로 다시 올 상태).
+        val withoutFile = flowers.filter { it.illustAssetName.substringAfterLast('/') !in names }
         withoutFile.take(50).forEach { flower ->
-            assertEquals("${flower.id} ${flower.name}: 파일이 없는데 비트맵이 나왔다",
-                null, FlowerIllustLoader.load(context, flower, 200))
+            assertEquals(
+                "${flower.id} ${flower.name}: 파일이 없는데 비트맵이 나왔다",
+                null, FlowerIllustLoader.load(context, flower, 200),
+            )
         }
+
+        // ② 🔴 **없는 종을 합성한다.** ①이 0종이어도 이 단정은 반드시 돈다.
+        //    번호를 도감 밖(9999)으로 두면 자산이 있을 수 없다.
+        val ghost = flowers.first().copy(id = 9999)
+        assertTrue(
+            "9999번 자산이 실제로 존재한다 — 대조군이 무효다: ${ghost.illustAssetName}",
+            ghost.illustAssetName.substringAfterLast('/') !in names,
+        )
+        assertEquals(
+            "없는 자산인데 비트맵이 나왔다 — 로더가 어딘가에서 대체 그림을 만들고 있다",
+            null, FlowerIllustLoader.load(context, ghost, 200),
+        )
+
+        Log.i("FlowerIllustAsset", "그림 없는 종 ${withoutFile.size}종 / 파일 ${names.size}장")
     }
 
     /**
@@ -180,6 +256,89 @@ class FlowerIllustAssetTest {
             assertEquals("$req → $bucket 은 512를 나누지 못한다", 0, 512 % bucket)
             assertTrue("$req → $bucket 이 요청보다 작다", bucket >= minOf(req, 512))
         }
+    }
+
+    /**
+     * **전 종을 읽어도 힙이 버티는가** (전수 납품 2026-08-12로 새로 생긴 위험).
+     *
+     * 실측 (에뮬레이터 API 36 · 힙 상한 192MB):
+     *
+     * | 캐시 상한 | 2,057장 순차 로딩 후 붙들고 있는 네이티브 |
+     * |---|---|
+     * | 힙의 1/8 (현행) | **48MB** — 3회 반복 전부 48 |
+     * | `Int.MAX_VALUE` (돌연변이) | **521MB** → FAIL |
+     *
+     * ⚠️ 이 검사를 만들면서 **두 번 틀렸다.** 둘 다 초록이었다:
+     *   1. 자바 힙(`Runtime.totalMemory`)으로 쟀다 → API 26+ 비트맵 픽셀은
+     *      **네이티브**에 있어서 무제한 캐시도 18MB로 보였다(**못 재는 층**).
+     *   2. GC 없이 네이티브를 쟀다 → evict된 픽셀이 아직 안 풀려서 정상인데도
+     *      161·177·193MB로 **실행마다 흔들렸다**(회귀가 아니라 GC 타이밍을 재고 있었다).
+     */
+    @Test
+    fun 전_종을_읽어도_힙이_터지지_않는다() {
+        // 🔴 **전수 2,057장이 들어오면서 이 위험이 10배가 됐다.** 디스크에서는 46MB지만
+        //    512×512 ARGB_8888로 **디코딩하면 한 장이 1MB** — 전 종을 캐시에 담으면 2GB다.
+        //    캐시 상한(힙의 1/8)이 실제로 evict하는지 여기서 잰다.
+        //
+        // ⚠️ **`OutOfMemoryError`를 기다리는 방식으로 재지 않는다.** 그러면 통과할 때
+        //    아무것도 재지 않고(그냥 안 죽었다), 실패할 때는 테스트 런너가 같이 죽어서
+        //    **원인이 안 남는다.** 그래서 캐시가 **버렸는지**를 직접 본다.
+        val flowers = FlowerRepository.get(context).flowers
+        assertTrue("도감이 200종 이하다 — 전수 데이터가 아니다(${flowers.size}종)", flowers.size > 1000)
+
+        // 🔴🔴 **`Runtime.totalMemory()`로 재면 이 검사는 아무것도 안 잰다.**
+        //
+        // 처음에 자바 힙으로 쟀고, **돌연변이(캐시 상한을 `Int.MAX_VALUE`로)가 초록이었다.**
+        // 원인: **API 26부터 비트맵 픽셀은 네이티브 힙에 있다**(그 전에는 자바 힙).
+        // 이 앱은 `minSdk 26`이므로 **전 기기에서** 자바 힙에는 비트맵이 안 보인다 —
+        // 2,057장을 무제한으로 쌓아도 자바 힙은 18MB에서 안 움직였다(실측).
+        //
+        // ⚠️ 이게 이 저장소가 세는 **"못 재는 층"** 이다: 검사가 도는 것처럼 보이고
+        //    숫자까지 로그에 남지만, 그 숫자가 **감시 대상과 다른 층**의 값이다.
+        //    그래서 `Debug.getNativeHeapAllocatedSize()`로 잰다.
+        // 🔴 **회수 전 픽셀까지 세면 상한을 지켜도 193MB가 나온다**(실측 161·177·193).
+        //    API 26+에서 evict는 참조만 끊고, 네이티브 픽셀은 **GC가 돌 때** 풀린다
+        //    (`NativeAllocationRegistry`). 즉 그 숫자는 "새는 양"이 아니라
+        //    "아직 안 치운 양"이라 **실행마다 32MB씩 흔들린다** — 그런 값을 상한에 걸면
+        //    검사가 진짜 회귀가 아닌 GC 타이밍으로 빨개진다.
+        //
+        //    그래서 **주기적으로 GC를 돌린 뒤의 값**을 본다 = 캐시가 붙들고 있는 양.
+        //    ⚠️ `System.gc()`는 권고지만, 여기서는 대조군이 그것을 증명한다:
+        //       캐시 상한을 `Int.MAX_VALUE`로 바꾸면 이 값이 521MB로 뛴다(실측).
+        FlowerIllustLoader.clear()
+        Runtime.getRuntime().gc()
+        val baseNative = Debug.getNativeHeapAllocatedSize()
+        var peakMb = 0L
+        flowers.forEachIndexed { i, flower ->
+            FlowerIllustLoader.load(context, flower, 200)
+            if (i % 100 == 99) {
+                Runtime.getRuntime().gc()
+                val mb = (Debug.getNativeHeapAllocatedSize() - baseNative) / 1048576
+                if (mb > peakMb) peakMb = mb
+            }
+        }
+        Runtime.getRuntime().gc()
+        ((Debug.getNativeHeapAllocatedSize() - baseNative) / 1048576).let {
+            if (it > peakMb) peakMb = it
+        }
+        val limitMb = Runtime.getRuntime().maxMemory() / 1048576
+
+        Log.i(
+            "FlowerIllustPerf",
+            "전 종 ${flowers.size}장 순차 로딩: 네이티브 증가 최대 ${peakMb}MB / 힙 상한 ${limitMb}MB",
+        )
+
+        // 🔴 캐시가 안 버리면 여기가 상한에 붙는다(또는 그 전에 OOM으로 죽는다).
+        //    2,057장 × 256×256×4 = 약 526MB가 무제한일 때의 값이다.
+        assertTrue(
+            "전 종을 읽는 동안 네이티브 힙이 ${peakMb}MB 늘었다 — 상한 ${limitMb}MB의 80%가 넘는다. " +
+                "LruCache가 evict하지 않으면 저가형 기기(힙 48MB)에서 죽는다",
+            peakMb < limitMb * 8 / 10,
+        )
+
+        // ⚠️ **대조군.** 위 단정은 로더가 아무것도 안 해도 통과한다(안 쓰면 안 늘어난다).
+        //    실제로 디코딩이 일어났다는 것을 여기서 고정한다.
+        assertTrue("전 종을 읽고도 네이티브 힙이 안 늘었다 — 로더가 아무것도 디코딩하지 않았다", peakMb > 0)
     }
 
     /**

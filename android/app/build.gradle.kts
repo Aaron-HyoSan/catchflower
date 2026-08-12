@@ -75,8 +75,10 @@ android {
 
 }
 
-// 도감 200종 데이터는 `꽃도감/flowers.json`이 원본이다 (공유 자산 — iOS도 같은 파일을 쓴다).
-// 꽃 일러스트 200장(`꽃도감/꽃도감_일러스트/*.png`)도 같은 규칙으로 원본이다.
+// 도감 2,057종 데이터는 `꽃도감/flowers.json`이 원본이다 (공유 자산 — iOS도 같은 파일을 쓴다).
+// 꽃 일러스트 2,057장도 같은 규칙이지만 원본이 **한 단계 더 있다**:
+// `꽃도감_일러스트_전수/*.png`(생성물) → `pack_illust_webp.py` → `꽃도감_일러스트_전수_webp/*.webp`.
+// 빌드가 읽는 것은 마지막 것이다 (PNG는 130MB라 스토어 상한을 넘는다).
 // assets로 손으로 복사하면 조용히 낡는다. 빌드마다 원본에서 가져온다.
 //
 // ⚠️ AGP 9는 sourceSets에 Provider를 못 넣는다("You cannot add Provider instances to the
@@ -90,13 +92,13 @@ android {
 //
 // ⚠️ **파일명은 도감번호로만 찾는다.** macOS 파일명은 한글이 **NFD(자모 분리)** 로
 //    저장되는데 `flowers.json`의 이름은 NFC다 — `"001_개나리.png"`를 이름으로 조립해
-//    비교하면 **200종 전부 불일치**한다(실제로 겪었다). 그래서 복사 단계에서
-//    **`001.png`처럼 번호만 남기고 이름을 버린다.** 이름을 자산 키로 쓰지 않는다.
+//    비교하면 **전 종 불일치**한다(실제로 겪었다). 그래서 원본 파일명이
+//    **번호만** 남아 있다(`0001.webp`). 이름을 자산 키로 쓰지 않는다.
 abstract class SyncSharedAssets : DefaultTask() {
     @get:InputFile
     abstract val source: RegularFileProperty
 
-    /** `꽃도감/꽃도감_일러스트` 원본 디렉터리. */
+    /** `꽃도감/꽃도감_일러스트_전수_webp` 원본 디렉터리. */
     @get:InputDirectory
     abstract val illustSource: DirectoryProperty
 
@@ -109,30 +111,33 @@ abstract class SyncSharedAssets : DefaultTask() {
         target.mkdirs()
         source.get().asFile.copyTo(target.resolve("flowers.json"), overwrite = true)
 
-        // 일러스트: `0001_개나리 1.png` → `flower_illust/0001.png`
+        // 일러스트: `0001.webp` → `flower_illust/0001.webp`
         val illustDir = target.resolve("flower_illust")
         illustDir.deleteRecursively()
         illustDir.mkdirs()
 
-        // 🔴 **3자리는 999번까지만 받는다.** 도감이 2,057종이 됐으므로 4자리로 간다.
-        //    ⚠️ 이 정규식과 `Flower.illustAssetName`의 `%04d`는 **같아야 한다.**
+        // 🔴 **확장자와 `Flower.illustAssetName`은 같이 움직여야 한다.** 지금은 `.webp`다.
         //    한쪽만 고치면 빌드가 그 파일을 **조용히 건너뛰고**(정규식 불일치) 또는
-        //    엉뚱한 이름으로 복사해서, 앱에서는 **그 칸만 빈다** — 예외도 안 나고
-        //    빌드 로그의 장수만 줄어든다.
-        //    3자리도 계속 받는다: 오너가 옛 이름(`001_`)으로 다시 납품해도
-        //    조용히 사라지는 대신 4자리로 정규화되어 들어간다.
-        val numbered = "^(\\d{3,4})_.*\\.png$".toRegex()
+        //    앱이 없는 이름을 찾아서, 화면에서는 **그 칸만 빈다** — 예외도 안 나고
+        //    빌드 로그의 장수만 줄어든다. 그리고 그 증상은 "아트가 아직 안 온 종"과
+        //    구별되지 않는다. `FlowerIllustAssetTest`가 APK 안의 실제 이름으로 잰다.
+        //    ⚠️ PNG는 받지 않는다. 전수 2,057장 PNG는 130MB라 Play 업로드 상한을 넘긴다
+        //    (AAB 150MB · APK 직접 100MB) —
+        //    받아 주면 **빌드는 성공하고 스토어에서 막힌다**(`pack_illust_webp.py` 주석).
+        //    3자리도 계속 받는다: 옛 이름(`001.webp`)이 와도 4자리로 정규화된다.
+        val numbered = "^(\\d{3,4})\\.webp$".toRegex()
         var copied = 0
         val seen = mutableSetOf<Int>()
         illustSource.get().asFile.listFiles().orEmpty().sorted().forEach { f ->
             val id = numbered.find(f.name)?.groupValues?.get(1)?.toInt() ?: return@forEach
-            // 같은 번호가 두 개면(`0001_개나리.png`와 `001_개나리 2.png`) 조용히
-            // 하나가 이기고 어느 쪽이 들어갔는지 알 수 없다. 빌드를 세운다.
+            // 같은 번호가 두 개면(`0001.webp`와 `001.webp`) 조용히 하나가 이기고
+            // 어느 쪽이 들어갔는지 알 수 없다. 빌드를 세운다.
             check(seen.add(id)) { "일러스트 도감번호 $id 가 중복이다: ${f.name}" }
-            f.copyTo(illustDir.resolve("%04d.png".format(id)), overwrite = true)
+            f.copyTo(illustDir.resolve("%04d.webp".format(id)), overwrite = true)
             copied++
         }
-        // 200장 중 몇 장이 빠져도 앱은 잘 돈다 — 그 칸만 빈다. 그래서 여기서 센다.
+        // 🔴 **장수를 센다.** 몇 장이 빠져도 앱은 잘 돈다 — 그 칸만 빈다.
+        //    변환 폴더가 낡아서 200장만 들어가도 빌드는 성공한다. 그래서 로그로 남긴다.
         logger.lifecycle("꽃 일러스트 $copied 장을 assets/flower_illust 로 복사했다")
     }
 }
@@ -143,9 +148,12 @@ androidComponents {
         check(sharedJson.asFile.exists()) {
             "꽃도감/flowers.json이 없다. `python3 꽃도감/_tools/build_app_data.py`를 먼저 돌린다."
         }
-        val illustDir = rootProject.layout.projectDirectory.dir("../꽃도감/꽃도감_일러스트")
+        // 🔴 **생성물을 가리킨다.** `pack_illust_webp.py`가 만든다 —
+        //    `꽃도감_일러스트_전수/`(PNG 130MB)를 직접 가리키면 APK가 스토어 상한을 넘는다.
+        val illustDir = rootProject.layout.projectDirectory.dir("../꽃도감/꽃도감_일러스트_전수_webp")
         check(illustDir.asFile.isDirectory) {
-            "꽃도감/꽃도감_일러스트 폴더가 없다. 일러스트 원본을 그 자리에 둔다."
+            "꽃도감/꽃도감_일러스트_전수_webp 폴더가 없다. " +
+                "→ python3 꽃도감/_tools/pack_illust_webp.py 를 먼저 돌린다."
         }
         val task = tasks.register<SyncSharedAssets>("sync${variant.name.replaceFirstChar(Char::uppercase)}SharedAssets") {
             source.set(sharedJson)
