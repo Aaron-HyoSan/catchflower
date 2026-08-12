@@ -299,28 +299,59 @@ class ReactionContractTest {
      *    `죽은 버튼`은 이 저장소가 이미 세 번 만든 것이다(`증상 없는 UI 결함` 4종).
      * ③ 제안 파일이 사라졌다 — 원인 기록이 사라지면 다음 세션이 **또 추측한다**.
      *
-     * ⚠️ **`migrations/`에 0009를 만들지 않았다.** 계약 6절이 "DB 스키마·마이그레이션은
-     *    한쪽만 만든다 · 고칠 필요가 생기면 진행.md에 먼저 쓰고 알린다"이고, 이 세션은
-     *    오너 승인 전이다. 그래서 제안은 `프로젝트 맥락/제안/`에 두고 **합본 빌더가
-     *    집어가지 못하게** 했다(`build_합본.py`는 `migrations/`만 훑는다).
+     * ## ✅ 승격됐다 (2026-08-12) — 그래서 이 검사는 **뒤집혔다**
+     *
+     * 오너가 0009를 서버에 적용했고(진단 6행 ✅) `0009 승격해라`로 승인했다. 그래서
+     * `supabase/migrations/0009_comment_delete_rpc.sql`이 **있어야 한다** — 없으면
+     * 합본(`01_스키마_전체.sql`)에서 이 고침이 빠지고, 새 환경에서 댓글 삭제가 다시
+     * 403이 되는데 **진단 19행은 전부 ✅라서 원인을 처음부터 다시 찾게 된다**(그게 (65)다).
+     *
+     * ⚠️ **뒤집힌 것은 ②뿐이다.** 가드 검사(①)는 그대로 두고 **승격된 파일**을 본다 —
+     *    그 함수는 `security definer`라 RLS를 지나가므로 자물쇠가 본문 안에만 있고,
+     *    실제로 첫 판이 뚫려 **anon이 남의 댓글을 지웠다.** ③(화면이 안 부른다)도
+     *    아직 유효하다 — 버튼은 A 문서에 문구를 넣은 뒤에 붙인다.
      */
     @Test
-    fun 댓글_삭제는_서버_고침_전까지_막혀_있다() {
-        // ① 원인과 제안이 저장소에 남아 있다.
-        val proposal = File(projectRoot, "프로젝트 맥락/제안/0009_제안_댓글삭제_RPC.sql")
+    fun 댓글_삭제_고침이_마이그레이션에_있고_가드가_살아_있다() {
+        // ① 승격된 마이그레이션이 있다. 🔴 **`제안/`이 아니라 여기를 본다** —
+        //    합본 빌더가 훑는 곳이 `migrations/`이고, 서버에 실제로 가는 것은 이 파일이다.
+        val promoted = File(projectRoot, "supabase/migrations/0009_comment_delete_rpc.sql")
         assertTrue(
-            "댓글 삭제 원인·고침 제안 파일이 없어졌다 — 없으면 다음 세션이 0008을 다시 " +
-                "적용하며 원인을 추측한다(이미 한 번 그렇게 틀렸다): ${proposal.path}",
-            proposal.isFile,
+            "0009가 `migrations/`에 없다 — 서버에는 적용됐는데(진단 6행 ✅) 저장소에 " +
+                "없으면 **합본에서 이 고침만 조용히 빠진다.** 그 환경에서 댓글 삭제는 " +
+                "다시 403이고 진단 19행은 전부 ✅다: ${promoted.path}",
+            promoted.isFile,
         )
-        val sql = proposal.readText()
+        val sql = promoted.readText()
         assertTrue(
-            "제안 파일에 `delete_comment` RPC가 없다 — 다른 파일로 바뀌었으면 이 검사를 고친다",
+            "승격된 파일에 `delete_comment` RPC가 없다 — 다른 파일로 바뀌었으면 이 검사를 고친다",
             sql.contains("function public.delete_comment(c_id uuid)"),
         )
         assertTrue(
-            "제안 파일이 `security definer`가 아니다 — invoker면 같은 42501에 다시 걸린다",
+            "승격된 파일이 `security definer`가 아니다 — invoker면 같은 42501에 다시 걸린다",
             sql.contains("security definer"),
+        )
+        // 🔴 **서버에 간 것과 저장소가 같은가.** 오너가 적용한 것은 `제안/`의 원본이므로,
+        //    승격판의 **실행 SQL**이 그것과 달라지면 저장소가 서버와 갈린다 — 그런데
+        //    합본은 승격판을 쓰므로 다음 환경만 조용히 달라진다(증상은 며칠 뒤).
+        //    ⚠️ 머리말 주석은 다르다(승격 사실을 적었다). 그래서 **주석을 뗀 뒤** 비교한다.
+        val proposal = File(projectRoot, "프로젝트 맥락/제안/0009_제안_댓글삭제_RPC.sql")
+        assertTrue(
+            "제안 원본이 없어졌다 — 오너가 적용한 것이 그 파일이라 대조할 기준이 사라진다: " +
+                proposal.path,
+            proposal.isFile,
+        )
+        val codeOnly = { s: String ->
+            s.lineSequence()
+                .map { it.substringBefore("--") }
+                .filter { it.isNotBlank() }
+                .joinToString("\n") { it.trimEnd() }
+        }
+        assertEquals(
+            "승격판의 실행 SQL이 오너가 적용한 제안 원본과 다르다 — 합본은 승격판을 쓰므로 " +
+                "**서버와 저장소가 갈린다.** 고칠 것이 있으면 새 마이그레이션을 더한다",
+            codeOnly(proposal.readText()),
+            codeOnly(sql),
         )
 
         // 🔴 **함수 본문만 본다.** 파일 전체에서 찾으면 안 된다 — 이 파일의 진단 절이
@@ -359,15 +390,32 @@ class ReactionContractTest {
                 fnBody.contains("is_discovery_owner(c_discovery_id)"),
         )
 
-        // ② 아직 마이그레이션이 아니다 — 오너 승인 전에 서버로 갈 수 없다.
-        val migrations = File(projectRoot, "supabase/migrations")
-        val leaked = migrations.listFiles()?.filter { it.name.startsWith("0009") }.orEmpty()
-        assertEquals(
-            "0009가 `migrations/`에 들어갔다 — 합본 빌더가 집어가면 오너 승인 없이 서버에 " +
-                "적용된다. 계약 6절은 스키마를 **한쪽만** 만들고 진행.md에 먼저 쓰라고 한다. " +
-                "오너가 승인했다면 이 검사를 고치는 것이 그 기록이다: " + leaked.map { it.name },
-            emptyList<String>(),
-            leaked.map { it.name },
+        // ② 🔴 **합본에 실제로 들어갔는가.** 파일이 `migrations/`에 있는 것과 오너가
+        //    붙여넣는 파일에 들어간 것은 **다르다** — `build_합본.py`를 다시 돌리지
+        //    않으면 합본은 옛 내용 그대로다. 이 저장소가 그 사고를 이미 한 번 냈다
+        //    (커밋 `785a3d6` "합본에 0008이 없었다" — **문법 검사는 PASS였다**).
+        //    🔴 **이 검사는 `./gradlew test`만으로는 안 돈다.** Gradle은 `오너_실행/`이나
+        //    `supabase/`를 이 태스크의 입력으로 모르므로, 합본을 옛 판으로 되돌려도
+        //    **UP-TO-DATE로 건너뛰고 초록이 나온다**(돌연변이 M2에서 실제로 그랬다 —
+        //    검사가 아니라 검사를 안 돌린 것이었다). `--rerun-tasks`를 주면 잡힌다.
+        //    ⚠️ 그래서 스키마·문서를 고친 뒤에는 **`--rerun-tasks`로 한 번 돌린다.**
+        val combined = File(projectRoot, "오너_실행/01_스키마_전체.sql")
+        assertTrue("합본 파일이 없다: ${combined.path}", combined.isFile)
+        val combinedText = combined.readText()
+        assertTrue(
+            "합본(`01_스키마_전체.sql`)에 `delete_comment`가 없다 — `migrations/`에는 " +
+                "파일이 있는데 합본을 다시 빌드하지 않은 것이다. **새 환경에 붙여넣으면 " +
+                "이 고침만 빠진다.** `python3 오너_실행/build_합본.py`를 돌린다",
+            combinedText.contains("function public.delete_comment(c_id uuid)"),
+        )
+        assertTrue(
+            "합본에 0009 파일 표시가 없다 — 빌더가 이 파일을 목록에 안 넣었다",
+            combinedText.contains("0009_comment_delete_rpc.sql"),
+        )
+        // 🔴 합본이 **가드까지** 담고 있는가. 함수 이름만 확인하면 본문이 옛 판이어도 통과한다.
+        assertTrue(
+            "합본의 delete_comment에 anon 가드가 없다 — 이름만 같고 본문이 옛 판이다",
+            combinedText.contains("if auth.uid() is null then"),
         )
 
         // ③ 화면이 삭제를 부르지 않는다 — 지금 붙이면 무조건 실패하는 버튼이 된다.

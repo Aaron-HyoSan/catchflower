@@ -205,6 +205,50 @@ with 검사 as (
                    where n.nspname = 'public'
                      and p.proname = 'comments_only_soft_delete') like '%' || c || '%')::text
 
+  -- ── 여기부터 0009(댓글 삭제 RPC) ──
+  -- ⚠️ 20·21번이 ❌면 **0009를 아직 안 돌린 것**이다. 다른 줄이 다 ✅면 그것만 돌린다.
+  --
+  -- 🔴 **19줄이 전부 ✅였을 때도 댓글 삭제는 안 됐다**((65)). 0007·0008의 정책은
+  --    각각 옳았고, 틀린 것은 **둘의 상호작용**(`update`의 새 행에도 `select` 정책이
+  --    걸린다)이라 `pg_policies`에 안 적혀 있었다. 그래서 아래 두 줄을 더한다 —
+  --    **이 표가 0009를 안 재면 새 환경에서 그 원인 추적을 처음부터 다시 하게 된다.**
+
+  union all
+  -- `delete_comment`가 **있고 `security definer`인가.** 둘을 한 줄에서 같이 센다:
+  -- 🔴 `security definer`가 아니면 함수는 존재하면서 **호출자 권한으로 돌아** 같은
+  --    42501에 막힌다 — 즉 "함수가 있다"만 보면 ✅인데 삭제는 그대로 실패한다.
+  select 20, 'delete_comment가 security definer로 붙었다', 'true',
+         (select p.prosecdef from pg_proc p
+            join pg_namespace n on n.oid = p.pronamespace
+           where n.nspname = 'public' and p.proname = 'delete_comment' limit 1)::text
+
+  union all
+  -- 🔴 **이 줄이 이 파일에서 가장 중요하다.** `security definer`는 RLS를 우회하므로
+  --    자물쇠가 **함수 본문 안에만** 있다. 그 본문이 실제로 뚫린 적이 있다 —
+  --    첫 판에서 **anon이 남의 댓글을 지웠다**(0009 실측 [6]).
+  --    원인: `c_user_id = auth.uid()`는 `auth.uid()`가 null이면 false가 아니라
+  --    **null**이고, plpgsql의 `if not null then`은 그 분기를 **건너뛴다.**
+  --    → 그래서 가드 3개를 **글자로 센다.** 하나라도 빠지면 로그인 안 한 사람이
+  --      남의 댓글을 지울 수 있는데, 화면에는 아무 증상이 없다.
+  --    🔴 **`--` 주석을 먼저 걷어내고 센다.** 안 걷으면 이 검사는 아무것도 안 잰다 —
+  --       실제로 그랬다(로컬 실측). 이 함수 본문에 `⚠️ \`coalesce\`로 감싼다`라는
+  --       **내 주석**이 있어서, 코드의 `coalesce(`를 지워도 주석의 그 글자가 대신
+  --       세어져 21행이 ✅로 남았다. **막으려던 결함을 내 설명문이 승인한 것**이고,
+  --       이 저장소에서 같은 사고가 이번이 **다섯 번째**다(`ButtonLabelSourceTest` 산문 ·
+  --       `PhotoLoaderTest` 주석 · `CopySourceTest` 취소선 셀 · `ReactionContractTest`가
+  --       같은 함수를 파일에서 볼 때 — 그때도 **이 함수의 주석**이 가드를 승인했다).
+  --       🔴 **같은 함수에서 두 번 났다.** 한 층을 고쳐도 다른 층이 같은 글자를 본다.
+  --       → `regexp_replace`로 `--`부터 줄 끝까지 지운 **코드만** 본다.
+  select 21, 'delete_comment의 권한 가드 3개(auth.uid null · coalesce · is_discovery_owner)', '3',
+         (select count(*) from unnest(array['auth.uid() is null',
+                                            'coalesce',
+                                            'is_discovery_owner']) g
+           where (select regexp_replace(prosrc, '--[^' || chr(10) || ']*', '', 'g')
+                    from pg_proc p
+                    join pg_namespace n on n.oid = p.pronamespace
+                   where n.nspname = 'public'
+                     and p.proname = 'delete_comment') like '%' || g || '%')::text
+
 )
 select
   항목,
