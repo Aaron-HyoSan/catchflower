@@ -159,6 +159,16 @@ class DexViewModel(app: Application) : AndroidViewModel(app) {
         DiscoveryRules.forFlower(records, flowerId)
 
     /**
+     * 화면 23 목록(2026-08-13).
+     *
+     * ⚠️ **화면이 [records]를 직접 못 읽게 여기서 준다.** 화면 20 지표 3칸과 **같은
+     *    ViewModel·같은 목록**이어야 한다 — 화면 23이 저장소를 따로 열면 등록 직후에
+     *    `공유 26개` 아래에 25줄이 뜬다([profileStats] 주석과 같은 이유).
+     */
+    fun discoveryList(sharedOnly: Boolean): List<Discovery> =
+        DiscoveryRules.discoveryList(records, sharedOnly)
+
+    /**
      * 화면 05 썸네일. 파일명 → 실제 파일. 없으면 null이고,
      * [com.catchflower.app.ui.component.DiscoveryPhoto]가 **도감 일러스트**로 되돌린다
      * (실루엣이 아니다 — 실루엣은 미발견 종의 표현이고, 이 기록은 이미 발견한 것이다).

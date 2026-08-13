@@ -67,6 +67,23 @@ class PlaceViewModel @JvmOverloads constructor(
     private var lng: Double? = null
 
     /**
+     * `길찾기`가 목적지로 쓰는 좌표. 화면이 열려 있지 않으면 null이다.
+     *
+     * 🔴 **화면이 좌표를 따로 붙들지 않게 한다.** 화면이 인자로 받아 두면 다른 핀을
+     *    누른 뒤에도 **먼저 본 자리로 길을 안내**한다 — [open]이 좌표를 바꿔도 화면의
+     *    복사본은 그대로이기 때문이다(위 `다시 시도`가 좌표를 다시 안 받는 것과 같은 이유).
+     *
+     * ⚠️ [lat]·[lng]를 각각 열지 않고 **쌍으로** 준다. 하나만 null인 상태가 없어서
+     *    부르는 쪽이 `!!`를 쓰게 되는 자리를 없앤다.
+     */
+    val coords: Pair<Double, Double>?
+        get() {
+            val la = lat ?: return null
+            val ln = lng ?: return null
+            return la to ln
+        }
+
+    /**
      * 핀을 눌러 들어왔다. [com.catchflower.app.ui.map.MapPin]의 좌표·장소명을 받는다.
      *
      * ⚠️ **같은 자리를 다시 열면 다시 조회한다.** 캐시하면 남이 방금 올린 기록이

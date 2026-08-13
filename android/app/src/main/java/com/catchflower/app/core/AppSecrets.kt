@@ -31,6 +31,16 @@ object AppSecrets {
     val kakaoNativeAppKey: String get() = BuildConfig.KAKAO_NATIVE_APP_KEY.trim()
 
     /**
+     * 화면 20-2 `고객문의`가 열 메일 주소. **비어 있으면 그 행을 그리지 않는다**
+     * ([SettingsRules.rows]).
+     *
+     * 🔴 **[missingKeys]에 넣지 않는다.** 키가 아니라 창구 주소이고, 지금 빌드에는
+     *    없는 것이 정상이다(A 문서 4절 17번 — 오너 미확정). 여기 넣으면 디버그
+     *    화면이 매번 "키가 빠졌다"고 말해서 **진짜 빠진 키가 묻힌다.**
+     */
+    val contactEmail: String get() = BuildConfig.CONTACT_EMAIL.trim()
+
+    /**
      * 서버 기능(계정·랭킹·친구)을 켤 수 있는가.
      * **키만으로는 부족하다** — 프로젝트 URL이 있어야 접속된다.
      */

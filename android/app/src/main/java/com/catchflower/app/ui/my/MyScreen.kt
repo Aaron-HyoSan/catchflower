@@ -26,7 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.catchflower.app.core.AppSecrets
 import com.catchflower.app.core.KoreanText
+import com.catchflower.app.core.SettingsRules
+import com.catchflower.app.core.ShareText
 import com.catchflower.app.data.DiscoveryRules
 import com.catchflower.app.data.model.SeasonResult
 import com.catchflower.app.ui.ranking.RankingUiMapper
@@ -34,6 +37,7 @@ import com.catchflower.app.ui.component.CfSecondaryButton
 import com.catchflower.app.ui.component.CfStat
 import com.catchflower.app.ui.component.CfTextButton
 import com.catchflower.app.ui.component.CfToast
+import com.catchflower.app.ui.component.ExternalOpen
 import com.catchflower.app.ui.component.rememberToaster
 import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
@@ -68,12 +72,43 @@ fun MyScreen(
     onPickRegion: () -> Unit,
     /** 프로필 조회가 실패했을 때의 `다시 시도`. [RankingUiMapper.profile]이 실패를 가른다. */
     onRetryProfile: () -> Unit,
+    /**
+     * `내가 공유한 꽃` — 화면 23을 `SHARED` 제목으로 연다.
+     *
+     * ✅ 2026-08-13까지 `준비 중` 토스트였다.
+     */
+    onOpenSharedList: () -> Unit,
+    /**
+     * `프로필 수정` — 화면 20에서 닉네임 편집 화면을 연다.
+     *
+     * ✅ 2026-08-13까지 `준비 중` 토스트였다.
+     */
+    onEditProfile: () -> Unit,
+    /**
+     * 프로필을 저장할 수 있는 빌드인가([ProfileEditViewModel.savable]).
+     *
+     * 🔴 **버튼을 그릴지 말지의 판단을 [ProfileEditViewModel.openable]에 맡긴다** —
+     *    여기서 `if (profile.nickname != null)`로 다시 쓰면 두 곳이 갈리고,
+     *    갈린 쪽은 **빈 칸을 저장해 닉네임을 지운다.**
+     */
+    profileEditable: Boolean,
+    /** 헤더 우측 `설정` — 화면 20-2를 연다. ✅ 2026-08-13까지 `준비 중` 토스트였다. */
+    onOpenSettings: () -> Unit,
+    /**
+     * 창구 메일 주소.
+     *
+     * 🔴 **비어 있으면 `고객문의` 행을 그리지 않는다**([SettingsRules.contactVisible]) —
+     *    지금 빌드가 그 상태다. 행을 두면 눌러서 **받는 사람이 빈** 메일 앱이 열리고,
+     *    보낸 사용자는 접수됐다고 믿는다(A 문서 4절 17번).
+     */
+    contactEmail: String = AppSecrets.contactEmail,
     modifier: Modifier = Modifier,
 ) {
-    // 예선 범위 밖 버튼들이 쓴다. **아무 일도 안 하는 버튼을 남기지 않는다**((38)) —
-    // 코드에 `TODO`만 달려 있으면 누른 사람에게는 앱이 고장난 것으로 보인다.
-    val toast = rememberToaster()
-    val notReady: () -> Unit = { toast(CfToast.NOT_READY) }
+    // ✅ **`준비 중` 토스트가 이 화면에서 사라졌다**(2026-08-13). 그 자리는 전부 실제
+    //    동작이다 — 아래 두 줄이 화면 20-2 설정과 **같은 것을 쓴다**(A 문서 3절 ⑤:
+    //    "둘 다 같은 동작"). 각자 쓰면 한쪽만 실패 문구를 띄우게 된다.
+    val openNotifications = rememberNotificationSettingsOpener()
+    val openContact = rememberContactOpener(contactEmail)
 
     LazyColumn(
         modifier.fillMaxSize(),
@@ -88,11 +123,18 @@ fun MyScreen(
             ) {
                 Text("마이", style = CfText.ScreenTitle, color = CfColor.TextPrimary)
                 Spacer(Modifier.weight(1f))
-                CfTextButton(text = "설정", onClick = { notReady() })
+                CfTextButton(text = "설정", onClick = onOpenSettings)
             }
         }
 
-        item { ProfileBlock(profile = profile, onRetry = onRetryProfile, notReady = notReady) }
+        item {
+            ProfileBlock(
+                profile = profile,
+                onRetry = onRetryProfile,
+                onEdit = onEditProfile,
+                editable = profileEditable,
+            )
+        }
 
         // 지표 3칸 — 종수(경쟁 축) / 발견 횟수(활동량) / 공유 수(기여도).
         //
@@ -148,7 +190,7 @@ fun MyScreen(
         }
 
         item {
-            // 메뉴 — 친구 관리·지난 시즌만 실제로 연결되고 나머지는 아직 화면이 없다.
+            // 메뉴 — **다섯 줄 전부 실제로 연결된다**(2026-08-13).
             MenuRow(
                 label = "친구 관리",
                 // 🔴 못 세면 `0명`이 아니라 **빈 칸**이다. 화면 18과 같은 값을 읽으므로
@@ -160,11 +202,15 @@ fun MyScreen(
                 label = "내가 공유한 꽃",
                 // 위 지표 3칸의 `공유`와 **같은 값을 읽는다.** 각자 세면 갈라진다.
                 value = stats?.let { "${it.shareCount}개" },
-                onClick = notReady,
+                onClick = onOpenSharedList,
             )
             MenuRow(label = "지난 시즌 기록", value = null, onClick = onOpenLastSeason)
-            MenuRow(label = "알림 설정", value = null, onClick = notReady)
-            MenuRow(label = "고객문의", value = null, onClick = notReady)
+            MenuRow(label = "알림 설정", value = null, onClick = openNotifications)
+            // 🔴 **주소가 없으면 줄 자체가 없다.** 설정 화면과 **같은 판단**을 쓴다 —
+            //    한쪽만 숨기면 안 숨긴 쪽이 빈 메일을 연다(위 [contactEmail] 주석).
+            if (SettingsRules.contactVisible(contactEmail)) {
+                MenuRow(label = "고객문의", value = null, onClick = openContact)
+            }
         }
     }
 }
@@ -186,8 +232,9 @@ fun MyScreen(
 private fun ProfileBlock(
     profile: RankingUiMapper.ProfileUi,
     onRetry: () -> Unit,
-    /** 예선 범위 밖 `프로필 수정`이 쓴다. */
-    notReady: () -> Unit,
+    onEdit: () -> Unit,
+    /** 서버에 저장할 수 있는 빌드인가. [MyScreen.profileEditable] 참고. */
+    editable: Boolean,
 ) {
     Column(
         Modifier
@@ -233,12 +280,21 @@ private fun ProfileBlock(
             }
         }
         Spacer(Modifier.height(CfDimen.Gap))
-        if (profile.nickname != null) {
-            CfSecondaryButton(text = "프로필 수정", onClick = notReady)
-        } else {
+        when {
+            // ✅ 실제로 화면 20-1을 연다(2026-08-13). 판단은 한 곳에만 있다.
+            ProfileEditViewModel.openable(profile.nickname, editable) ->
+                CfSecondaryButton(text = "프로필 수정", onClick = onEdit)
+
             // 못 받은 프로필을 고칠 수는 없다. `프로필 수정`을 열면 빈 칸을 저장해
             // **닉네임을 지운다.**
-            CfSecondaryButton(text = "다시 시도", onClick = onRetry)
+            profile.nickname == null ->
+                CfSecondaryButton(text = "다시 시도", onClick = onRetry)
+
+            // ⚠️ 닉네임은 받았는데 저장은 못 하는 빌드(키 없음). **아무 버튼도 안 그린다** —
+            //    실제로는 못 오는 조합이다(닉네임 자체가 서버에서 온다). 그래도 여기에
+            //    `프로필 수정`을 두면 눌러서 열린 화면이 저장할 곳이 없어
+            //    `잠시 후 다시 시도해 주세요`만 반복한다 = 죽은 버튼이 다시 생긴다.
+            else -> Unit
         }
         Spacer(Modifier.height(CfDimen.GapLarge))
     }
@@ -324,29 +380,42 @@ private fun SectionHeader(title: String, actionLabel: String?, onAction: () -> U
 }
 
 /**
- * 메뉴 행.
+ * 메뉴 행. **화면 20-2 설정도 같은 것을 쓴다**([SettingsScreen]) — 그래서 `internal`이다.
  *
  * ⚠️ 오른쪽 `>` 화살표만 두지 않는다 — 아이콘 단독 금지 규칙(A 문서)에 걸린다.
  *    값(`8명`)이 있으면 값이 어포던스를 대신하고, 없으면 `보기`를 적는다.
+ *
+ * 🔴 **[onClick]이 `null`이면 값 행이다** — `앱 버전`처럼 누를 수 없는 줄.
+ *    `{}`를 넘겨 "누를 수는 있지만 아무 일도 안 하는" 줄로 만들면 **죽은 버튼**이다
+ *    (A 문서 3절 ⑤). 그래서 눌림 자체를 붙이지 않고, `보기`도 쓰지 않는다 —
+ *    `보기`는 "누르면 열린다"는 약속이다.
  */
 @Composable
-private fun MenuRow(label: String, value: String?, onClick: () -> Unit) {
+internal fun MenuRow(label: String, value: String?, onClick: (() -> Unit)?) {
     Column {
         Row(
             Modifier
                 .fillMaxWidth()
-                .clickable(onClickLabel = label, onClick = onClick)
+                .then(
+                    if (onClick == null) Modifier
+                    else Modifier.clickable(onClickLabel = label, onClick = onClick),
+                )
                 .heightIn(min = CfDimen.MinTouch)
                 .padding(horizontal = CfDimen.ScreenPadding, vertical = CfDimen.GapMedium),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(label, style = CfText.Body, color = CfColor.TextPrimary)
             Spacer(Modifier.weight(1f))
-            Text(
-                value ?: "보기",
-                style = if (value != null) CfText.BodyBold else CfText.Body,
-                color = if (value != null) CfColor.TextPrimary else CfColor.TextSecondary,
-            )
+            // 값이 없고 누를 수도 없는 줄은 오른쪽을 비운다(있을 수 없는 조합이지만,
+            // `보기`가 남으면 눌러도 안 열리는 약속이 된다).
+            val trailing = value ?: if (onClick != null) "보기" else null
+            if (trailing != null) {
+                Text(
+                    trailing,
+                    style = if (value != null) CfText.BodyBold else CfText.Body,
+                    color = if (value != null) CfColor.TextPrimary else CfColor.TextSecondary,
+                )
+            }
         }
         HorizontalDivider(color = CfColor.Border, thickness = CfDimen.BorderThin)
     }
@@ -394,7 +463,21 @@ fun SeasonResultScreen(
     modifier: Modifier = Modifier,
 ) {
     val toast = rememberToaster()
-    val notReady: () -> Unit = { toast(CfToast.NOT_READY) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    /**
+     * `결과 공유하기`가 내보낼 문장. **null이면 버튼을 안 그린다**(아래 주석).
+     *
+     * 🔴 **순위를 넣지 않는다.** 이 화면은 지난 시즌 순위를 영구히 모른다(위 KDoc ·
+     *    4절 9번) — [ShareText.seasonResult]가 도감 종수만 쓰는 이유다.
+     *    `result`가 채워지는 날 순위를 넣더라도 **여기서 지어내지 않는다.**
+     */
+    val shareText = ShareText.seasonResult(stats?.speciesCount)
+    val shareResult: () -> Unit = {
+        if (shareText == null || !ExternalOpen.share(context, shareText)) {
+            toast(CfToast.SHARE_NO_APP)
+        }
+    }
 
     LazyColumn(
         modifier.fillMaxSize(),
@@ -554,11 +637,17 @@ fun SeasonResultScreen(
                 text = "$newSeasonLabel 시작하기",
                 onClick = onStartNewSeason,
             )
-            Spacer(Modifier.height(CfDimen.GapSmall))
-            com.catchflower.app.ui.component.CfGhostButton(
-                text = "결과 공유하기",
-                onClick = notReady,
-            )
+            // 🔴 **공유할 문장을 못 만들면 버튼을 그리지 않는다**(A 문서 3절 ①).
+            //    종수를 못 셌거나 0이면 `꽃 0종을 모았어요`가 남의 대화창에 남는다 —
+            //    빈 자랑을 남에게 보내는 것보다 버튼이 없는 것이 낫다.
+            //    ⚠️ 여기서 `0종`을 그냥 쓰지 않는 이유는 `배지 3개` 더미와 같다.
+            if (shareText != null) {
+                Spacer(Modifier.height(CfDimen.GapSmall))
+                com.catchflower.app.ui.component.CfGhostButton(
+                    text = "결과 공유하기",
+                    onClick = shareResult,
+                )
+            }
         }
     }
 }

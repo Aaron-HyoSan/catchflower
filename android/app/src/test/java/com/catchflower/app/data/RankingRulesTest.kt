@@ -134,54 +134,90 @@ class RankingRulesTest {
         assertNull(RankingRules.speciesToReach(ranked, myRank = 15, targetRank = 15))
     }
 
+    // 🔴 **더미 랭킹을 검사하던 테스트 5개를 지웠다**(2026-08-13, `DummyRanking.kt`와 함께).
+    //    `더미 지역 랭킹의 순위가 와이어프레임과 같다`·`친구 수는 A 문서의 8명과 같다`·
+    //    `더미 친구 랭킹에서 나는 4위다`·`대표 꽃이 서로 다르다`·`도감 200종 안에 있다`.
+    //
+    //    지운 이유는 "안 쓰니까"가 아니다. 그 5개는 **읽는 사람이 0명인 데이터**를
+    //    성실하게 검증하고 있었다 — 화면 17·18·19·20은 이미 전부 `region_ranking`·
+    //    `friend_ranking`·`users`에서 값을 받는데((31)·(38)), 초록불 5개가 계속 켜져 있어서
+    //    **더미가 아직 화면에 연결되어 있는 것처럼 보였다.** 실제로 `구현현황_AOS.md`가
+    //    `친구 목록은 더미`라고 적어 둔 채 남아 있었다.
+    //
+    //    ⚠️ 순위 계산 자체는 여기 위쪽 `종수 내림차순으로 정렬한다`·`동점자는 같은 순위를
+    //    받고 다음은 건너뛴다`가 **입력을 일부러 뒤섞어** 검증한다. 지운 5개는 그 규칙을
+    //    고정된 5·9행에 한 번 더 통과시킨 것뿐이라 빠지는 커버리지가 없다.
+    //
+    //    ⚠️ 더미를 다시 만들지 않는다. `가짜 사람을 보여주는 것이 미구현보다 나쁘다`
+    //    (`FriendsScreen` 주석)는 판단이 그대로 유효하다.
+
+    // ── `더 보기` (2026-08-13) ────────────────────────────────────────
+
+    /**
+     * 어떤 경우에 빨개지나: 더 보여줄 줄이 없는데 버튼을 그리면.
+     *
+     * 🔴 이웃이 3명인 동네에서 `4위부터 더 보기`가 뜨면 **없는 순위를 가리키는 버튼**이고
+     *    눌러도 줄이 안 늘어난다 — (38)에서 지운 죽은 버튼의 그 모양이다.
+     */
     @Test
-    fun `더미 지역 랭킹의 순위가 와이어프레임과 같다`() {
-        // 더미에는 순위를 박아 두지 않았다. 규칙이 계산한 결과가 와이어프레임(41·38·35·31·29)과
-        // 같은지 **여기서** 확인한다 — 화면에서는 확인할 수 없는 항목이다.
-        val ranked = RankingRules.rank(DummyRanking.regionTop())
-        assertEquals(listOf(1, 2, 3, 4, 5), ranked.map { it.rank })
-        assertEquals(listOf(41, 38, 35, 31, 29), ranked.map { it.entry.speciesCount })
-        assertEquals("연남동꽃선생", ranked.first().entry.nickname)
+    fun `남은 줄이 없으면 더 보기 순위가 없다`() {
+        val ranked = RankingRules.rank(listOf(entry("a", 41), entry("b", 35), entry("c", 29)))
+        assertNull(RankingRules.nextPageRank(ranked, ranked.size))
+        assertNull(RankingRules.nextPageRank(ranked, RankingRules.VISIBLE_ROWS))
+        assertNull(RankingRules.nextPageRank(emptyList(), 0))
     }
 
     @Test
-    fun `친구 수는 A 문서의 8명과 같다`() {
-        // ⚠️ A 문서가 화면 18 `친구 8명과 겨루는 중`과 화면 20 `친구 관리 8명`에
-        //    같은 숫자를 쓴다. 더미가 7명이면 두 화면이 조용히 어긋난다 —
-        //    화면만 봐서는 어느 쪽이 맞는지 알 수 없어서 실제로 놓쳤다.
-        val friendsOnly = DummyRanking.friends().filterNot { it.isMe }
-        assertEquals(DummyRanking.FRIEND_COUNT, friendsOnly.size)
-        assertEquals(8, DummyRanking.FRIEND_COUNT)
-        // 나는 정확히 한 명이다. 둘이면 `나 (...)` 행이 두 개 나온다.
-        assertEquals(1, DummyRanking.friends().count { it.isMe })
+    fun `더 보기는 숨은 첫 줄의 순위를 가리킨다`() {
+        val ranked = RankingRules.rank((1..8).map { entry("u$it", 50 - it) })
+        assertEquals(6, RankingRules.nextPageRank(ranked, 5))
+        assertEquals(2, RankingRules.nextPageRank(ranked, 1))
     }
 
+    /**
+     * 어떤 경우에 빨개지나: `마지막 줄의 순위 + 1`로 세면.
+     *
+     * 🔴 공동 4위가 둘이면 `rank()`가 5위를 **건너뛴다** — `+1`은 `5위부터 더 보기`가
+     *    되어 **존재하지 않는 순위**를 말한다. 화면에는 그냥 숫자 하나로 보여서
+     *    아무도 못 본다.
+     */
     @Test
-    fun `더미 친구 랭킹에서 나는 4위다`() {
-        // 와이어프레임 18: 1위 연남댁 38종, 나 13종.
-        val ranked = RankingRules.rank(DummyRanking.friends())
-        val me = ranked.first { it.entry.isMe }
-        assertEquals(4, me.rank)
-        assertEquals(13, me.entry.speciesCount)
-        assertEquals("연남댁", ranked.first().entry.nickname)
-        assertEquals(38, ranked.first().entry.speciesCount)
+    fun `동점으로 순위가 건너뛰어도 없는 순위를 말하지 않는다`() {
+        // 41 / 35 / 30 / 29 / 29 / 20 → 순위 1 2 3 4 4 6
+        val ranked = RankingRules.rank(
+            listOf(
+                entry("a", 41), entry("b", 35), entry("c", 30),
+                entry("d", 29, reachedAt = 1), entry("e", 29, reachedAt = 2),
+                entry("f", 20),
+            ),
+        )
+        assertEquals(listOf(1, 2, 3, 4, 4, 6), ranked.map { it.rank })
+        // 5줄을 보여줬다. 마지막 줄은 4위이므로 `+1`은 5 — 그런 순위는 없다.
+        assertEquals(6, RankingRules.nextPageRank(ranked, 5))
     }
 
+    /**
+     * ⚠️ 공동 순위가 걸쳐 있으면 **이미 보인 숫자가 다시 나온다.** 그건 참이다 —
+     *    그 순위에 아직 못 보여준 사람이 남아 있다.
+     */
     @Test
-    fun `더미 친구 랭킹의 대표 꽃이 서로 다르다`() {
-        // 와이어프레임은 전부 장미로 그렸다. 전부 같으면 썸네일 연결이 깨져도
-        // 화면으로 확인할 수 없어서 일부러 다르게 뒀다 — 그 의도를 고정한다.
-        val ids = DummyRanking.friends().map { it.signatureFlowerId }
-        assertEquals(ids.size, ids.toSet().size)
+    fun `공동 순위가 잘리면 그 순위를 다시 가리킨다`() {
+        // 41 / 35 / 30 / 29 / 29 / 29 → 순위 1 2 3 4 4 4
+        val ranked = RankingRules.rank(
+            listOf(
+                entry("a", 41), entry("b", 35), entry("c", 30),
+                entry("d", 29, reachedAt = 1), entry("e", 29, reachedAt = 2),
+                entry("f", 29, reachedAt = 3),
+            ),
+        )
+        assertEquals(4, RankingRules.nextPageRank(ranked, 5))
     }
 
+    /** A 문서 2절 17번의 예시 문구(`6위부터 더 보기`)가 이 값을 전제한다. */
     @Test
-    fun `더미 대표 꽃은 모두 도감 200종 안에 있다`() {
-        // 범위를 벗어나면 화면에서 썸네일 자리가 플레이스홀더로 바뀐다 —
-        // 그건 "데이터가 이상하다"가 아니라 "디자인이 그렇다"로 오해된다.
-        val ids = (DummyRanking.regionTop() + DummyRanking.friends()).map { it.signatureFlowerId }
-        ids.forEach { id ->
-            assertEquals("도감번호 $id 가 1..200 밖이다", true, id in 1..200)
-        }
+    fun `처음 보여주는 줄 수가 A문서 예시와 맞는다`() {
+        assertEquals(5, RankingRules.VISIBLE_ROWS)
+        val ranked = RankingRules.rank((1..10).map { entry("u$it", 50 - it) })
+        assertEquals(6, RankingRules.nextPageRank(ranked, RankingRules.VISIBLE_ROWS))
     }
 }

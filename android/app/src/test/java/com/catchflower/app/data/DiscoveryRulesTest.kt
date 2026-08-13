@@ -402,6 +402,87 @@ class DiscoveryRulesTest {
         assertEquals("누적 발견", 3, stats.discoveryCount)
     }
 
+    // ── 화면 23 목록([DiscoveryRules.discoveryList]) ──────────────────
+
+    /**
+     * 🔴 **`공유 N개`와 `내가 공유한 꽃` 목록의 줄 수가 같아야 한다.**
+     *
+     * 빨개지는 경우: 두 곳이 다른 기준으로 공개를 판정하면(예: 목록만 `FRIENDS`를
+     * 포함하면). 그러면 `공유 2개`를 누른 사용자에게 3줄이 나오는데 **양쪽 다
+     * 그럴듯해서 화면으로는 아무 이상이 없다.**
+     */
+    @Test
+    fun 공유_지표와_공유_목록의_수가_같다() {
+        val records = listOf(
+            d("a", 1, aug6, visibility = Visibility.PUBLIC),
+            d("b", 2, aug6, visibility = Visibility.PUBLIC),
+            d("c", 3, aug6, visibility = Visibility.FRIENDS),
+            d("d", 4, aug6, visibility = Visibility.PRIVATE),
+        )
+        assertEquals(
+            DiscoveryRules.profileStats(records).shareCount,
+            DiscoveryRules.discoveryList(records, sharedOnly = true).size,
+        )
+        assertEquals(2, DiscoveryRules.discoveryList(records, sharedOnly = true).size)
+        // 제목이 `발견 기록`일 때는 안 거른다 — 내 도감은 공개 여부와 무관하다.
+        assertEquals(4, DiscoveryRules.discoveryList(records, sharedOnly = false).size)
+    }
+
+    /** `친구에게만`은 공유가 아니다([isShared]의 유일한 참 조건은 `PUBLIC`이다). */
+    @Test
+    fun 공개만_공유로_본다() {
+        assertTrue(DiscoveryRules.isShared(d("a", 1, aug6, visibility = Visibility.PUBLIC)))
+        assertFalse(DiscoveryRules.isShared(d("b", 1, aug6, visibility = Visibility.FRIENDS)))
+        assertFalse(DiscoveryRules.isShared(d("c", 1, aug6, visibility = Visibility.PRIVATE)))
+    }
+
+    /**
+     * 🔴 **한 줄 = 기록 한 건이다(종이 아니다).**
+     *
+     * 빨개지는 경우: [DiscoveryRules.recentDiscoveries]를 재사용하면. 그건
+     * `distinctBy { flowerId }`로 종을 합치므로 같은 꽃을 세 번 찍은 사용자의
+     * 목록에서 **기록 두 건이 조용히 사라진다** — 지표는 `발견 횟수 3회`라고
+     * 말하는데 목록은 1줄이다.
+     */
+    @Test
+    fun 같은_종을_두_번_찍으면_두_줄이다() {
+        val records = listOf(
+            d("a", 1, aug6),
+            d("b", 1, aug6 - 86_400_000),
+            d("c", 2, aug6),
+        )
+        val rows = DiscoveryRules.discoveryList(records, sharedOnly = false)
+        assertEquals(3, rows.size)
+        // 같은 종의 두 건이 각각 남아 있다.
+        assertEquals(2, rows.count { it.flowerId == 1 })
+    }
+
+    /**
+     * 최신이 위다. **`capturedAt` 기준**이다 — 화면도 그 값을 그린다.
+     *
+     * 빨개지는 경우: 정렬을 빼거나 `createdAt`으로 정렬하면. 오프라인에서 찍고
+     * 며칠 뒤 등록한 기록이 실제로 갈리고, 그때 목록은 **찍은 날짜를 보여주면서
+     * 등록 순서로 늘어선다** — 순서가 뒤죽박죽인 것처럼 보인다.
+     */
+    @Test
+    fun 최근_촬영이_위에_온다() {
+        val records = listOf(
+            d("old", 1, aug6 - 172_800_000),
+            d("new", 2, aug6),
+            d("mid", 3, aug6 - 86_400_000),
+        )
+        val rows = DiscoveryRules.discoveryList(records, sharedOnly = false)
+        assertEquals(listOf("new", "mid", "old"), rows.map { it.id })
+    }
+
+    /** 공유가 0건이면 빈 목록이다 — 화면이 `아직 지도에 공유한 꽃이 없어요`를 그린다. */
+    @Test
+    fun 공유가_없으면_목록도_비어_있다() {
+        val records = listOf(d("a", 1, aug6, visibility = Visibility.PRIVATE))
+        assertTrue(DiscoveryRules.discoveryList(records, sharedOnly = true).isEmpty())
+        assertEquals(1, DiscoveryRules.discoveryList(records, sharedOnly = false).size)
+    }
+
     private object FailTransport : KakaoPlaceService.Transport {
         override suspend fun get(url: String, authorization: String): Pair<Int, String> =
             error("테스트에서 네트워크를 부르면 안 된다")

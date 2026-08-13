@@ -20,6 +20,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,8 +36,6 @@ import com.catchflower.app.data.model.RankedEntry
 import com.catchflower.app.data.model.RankingRules
 import com.catchflower.app.ui.component.CfSmallButton
 import com.catchflower.app.ui.component.CfTextButton
-import com.catchflower.app.ui.component.CfToast
-import com.catchflower.app.ui.component.rememberToaster
 import com.catchflower.app.ui.component.FlowerIllust
 import com.catchflower.app.ui.component.PhotoPlaceholder
 import com.catchflower.app.ui.theme.CfColor
@@ -143,8 +145,18 @@ private fun RankingTabs(current: RankingTab, onSelect: (RankingTab) -> Unit) {
 @Composable
 private fun RegionRanking(vm: RankingViewModel, onPickRegion: () -> Unit, onCapture: () -> Unit) {
     val state = vm.region
-    val toast = rememberToaster()
-    val notReady: () -> Unit = { toast(CfToast.NOT_READY) }
+    /**
+     * `더 보기`를 눌렀나(2026-08-13 · 오너 `죽어있는 버튼 없도록 전부 구현해다오`).
+     *
+     * 🔴 **서버를 다시 부르지 않는다.** `region_ranking`에는 `limit`·`offset`이 없어서
+     *    **이미 동네 전체가 내려와 있다**(0002 · `order by species_count desc` 뒤에
+     *    자르는 절이 없다). 그동안 이 버튼이 죽어 있던 이유가 "더 못 읽어서"가 아니라
+     *    **화면이 안 그려서**였다 — 필요한 것은 offset이 아니라 이 `Boolean`이다.
+     *
+     * ⚠️ 탭을 옮기면 접힌다. 그건 의도다 — 접힌 상태가 이 화면의 첫 모습이고,
+     *    펼친 상태를 기억하면 `더 보기`가 없는 화면을 처음 보는 사람이 생긴다.
+     */
+    var expanded by remember { mutableStateOf(false) }
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
@@ -209,17 +221,23 @@ private fun RegionRanking(vm: RankingViewModel, onPickRegion: () -> Unit, onCapt
                         color = CfColor.TextPrimary,
                     )
                 }
-                items(state.rows) { ranked -> RankRow(ranked, vm) }
-                item {
-                    // `6위부터 더 보기` — 마지막 행의 **순위 다음**이다.
-                    // ⚠️ `rows.size + 1`로 세면 안 된다: 동점자가 있으면 5행이 4위까지일
-                    //    수 있어서 이미 보여 준 순위를 다시 가리킨다.
-                    CfTextButton(
-                        text = "${(state.rows.lastOrNull()?.rank ?: 0) + 1}위부터 더 보기",
-                        // 🔴 서버 함수에 offset이 없어 더 못 읽는다(§9). 빈 람다로 두면
-                        //    눌러도 아무 일이 없어서 목록이 고장난 것으로 보인다((38)).
-                        onClick = notReady,
-                    )
+                // 처음에는 [RankingRules.VISIBLE_ROWS]줄만 보여준다. 동네 전체가 이미
+                // 손에 있으므로(위 [expanded] 주석) 자르는 판단은 여기서 한다.
+                val visible = if (expanded) state.rows else state.rows.take(RankingRules.VISIBLE_ROWS)
+                items(visible) { ranked -> RankRow(ranked, vm) }
+
+                // 🔴 **더 보여줄 줄이 없으면 버튼을 그리지 않는다.** 이웃이 3명인 동네에서
+                //    `4위부터 더 보기`가 뜨면 **없는 순위를 가리키는 버튼**이 되고, 눌러도
+                //    아무 줄도 늘지 않아 고장으로 읽힌다((38)에서 지운 그 모양이다).
+                val nextRank = RankingRules.nextPageRank(state.rows, visible.size)
+                if (nextRank != null) {
+                    item {
+                        // `6위부터 더 보기`(A 문서 2절 17번).
+                        CfTextButton(
+                            text = "${nextRank}위부터 더 보기",
+                            onClick = { expanded = true },
+                        )
+                    }
                 }
             }
         }
@@ -451,9 +469,14 @@ private fun RankRow(ranked: RankedEntry, vm: RankingViewModel) {
                     Modifier.background(CfColor.Surface)
                 }
             )
-            .clickable(onClickLabel = "${entry.nickname} 도감 보기") {
-                // TODO(다음 단계): 상대 도감 요약 (공개 범위 내) — 주석 ④
-            }
+            // 🔴 **`clickable`을 지웠다 (2026-08-13).** `onClickLabel = "{닉네임} 도감 보기"`를
+            //    달고 **빈 람다**를 갖고 있었다 — 스크린리더에게는 "도감을 여는 버튼"이라고
+            //    말하면서 누르면 아무 일도 안 일어난다. 눈으로 보는 사람에게는 물결만 뜬다.
+            //    ⚠️ `DeadButtonTest`가 **못 잡던 두 번째 모양**이다: 검사는 `onClick = {}`와
+            //       `onClick = { 블록주석 }`을 보는데 이건 **줄 주석이 든 후행 람다**였다.
+            //    상대 도감 요약(주석 ④)을 붙이려면 문구가 먼저 필요하다 — A 문서 4절 18번에
+            //    올렸다. 그때까지는 **누를 수 없게 두는 것이 정직하다**(화면 20-2 `앱 버전`과
+            //    같은 판단이고, 화면 01을 아직 안 만드는 이유도 같다).
             .padding(horizontal = CfDimen.GapMedium, vertical = CfDimen.GapMedium),
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -59,10 +59,10 @@ fun CaptureFlow(
         CaptureState.Camera -> CameraScreen(
             onPhotoTaken = vm::onPhotoTaken,
             onClose = onExit,
-            // 도움말은 화면이 따로 없다 (기획서에 없음). 촬영 팁은 화면 12가 갖고 있으므로
-            // 지금은 닫기와 같게 두지 않고 아무것도 하지 않는다 —
-            // TODO(다음 단계): 촬영 팁 시트. 지금 onExit에 붙이면 "도움말을 눌렀는데 나가진다".
-            onHelp = {},
+            // 🔴 `onHelp = {}`를 넘기고 있었다 — **`도움말`이 눌러도 아무 일이 없었다**
+            //    (2026-08-13에 고쳤다). 화면 07이 팁 시트를 **직접** 띄우므로 인자가
+            //    없어졌다. `onExit`에 붙이지 않은 판단은 그대로 유효하다 —
+            //    "도움말을 눌렀는데 화면이 나가진다"가 된다.
             modifier = modifier,
         )
 

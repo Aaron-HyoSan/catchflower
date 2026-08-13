@@ -38,6 +38,7 @@ import com.catchflower.app.ui.component.CfSmallButton
 import com.catchflower.app.ui.component.CfTextButton
 import com.catchflower.app.ui.component.CfToast
 import com.catchflower.app.ui.component.rememberToaster
+import com.catchflower.app.ui.ranking.FriendsViewModel
 import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
 import com.catchflower.app.ui.theme.CfText
@@ -64,6 +65,14 @@ import com.catchflower.app.ui.theme.CfText
 @Composable
 fun RecordDetailScreen(
     vm: RecordViewModel,
+    /**
+     * `친구 추가`(2026-08-13 · A 문서 3절 ③).
+     *
+     * ⚠️ **화면 19 검색과 같은 인스턴스여야 한다.** 따로 만들면 방금 요청을 보낸
+     *    사람이 다른 화면에서 다시 `친구 추가`로 보이고, 서버는 409를 성공으로
+     *    삼키니 **아무 표시 없이 같은 일이 반복된다**([FriendsViewModel.justRequested]).
+     */
+    friendsVm: FriendsViewModel,
     onBack: () -> Unit,
     /** `도감에서 보기`. 도감 탭 상세로 건너간다. */
     onOpenDex: (Int) -> Unit,
@@ -71,7 +80,6 @@ fun RecordDetailScreen(
 ) {
     val record = vm.record ?: return
     val toast = rememberToaster()
-    val notReady: () -> Unit = { toast(CfToast.NOT_READY) }
 
     // 삭제를 확인 중인 댓글. null이면 다이얼로그가 없다.
     //
@@ -113,7 +121,29 @@ fun RecordDetailScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(CfDimen.Gap),
         ) {
-            item { AuthorRow(vm = vm, record = record, onAddFriend = notReady) }
+            item {
+                AuthorRow(
+                    vm = vm,
+                    record = record,
+                    // 내 기록·로그인 전·키 없는 빌드에서는 버튼을 안 그린다
+                    // ([RecordRules.canAddFriend]).
+                    canAdd = vm.canAddFriend(friendsVm.searchable),
+                    // 이미 보낸 요청은 **버튼이 아니라 상태 표시**다(A 문서 3절 ③).
+                    requested = vm.authorId() in friendsVm.justRequested,
+                    onAddFriend = {
+                        val target = vm.authorId()
+                        if (target == null) {
+                            toast(CfToast.NETWORK_ERROR)
+                        } else {
+                            friendsVm.add(target) { ok ->
+                                // 🔴 `{이름}님과 친구가 되었어요`가 아니다 — 요청은
+                                //    `pending`이고 수락은 상대만 한다(C-2).
+                                toast(if (ok) CfToast.FRIEND_REQUEST_SENT else CfToast.NETWORK_ERROR)
+                            }
+                        }
+                    },
+                )
+            }
             item { FlowerRow(vm = vm, record = record, onOpenDex = onOpenDex) }
 
             // 기록의 한 줄 설명. 없으면 칸을 뺀다(빈 줄만 남기지 않는다).
@@ -255,7 +285,13 @@ private fun DeleteCommentDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
  *    `탈퇴한 사용자예요`를 쓰면 살아 있는 사람이 그대로 굳는다.
  */
 @Composable
-private fun AuthorRow(vm: RecordViewModel, record: Discovery, onAddFriend: () -> Unit) {
+private fun AuthorRow(
+    vm: RecordViewModel,
+    record: Discovery,
+    canAdd: Boolean,
+    requested: Boolean,
+    onAddFriend: () -> Unit,
+) {
     val name = RecordRules.authorName(vm.authorNickname, vm.authorNamesLoaded)
     val meta = RecordRules.authorMeta(
         place = record.placeName,
@@ -278,8 +314,18 @@ private fun AuthorRow(vm: RecordViewModel, record: Discovery, onAddFriend: () ->
                 Text(text = meta, style = CfText.Caption, color = CfColor.TextTertiary)
             }
         }
-        // 친구 요청은 서버 층이 아직 없다(`friend_requests` 쓰기 경로 미구현).
-        CfSmallButton(text = "친구 추가", onClick = onAddFriend)
+        // 2026-08-13: `friendships` insert 정책이 이미 있어서 실제로 보낸다
+        // ([com.catchflower.app.data.FriendService]). 마이그레이션은 필요 없었다.
+        when {
+            requested ->
+                Text(text = "요청 보냄", style = CfText.Caption, color = CfColor.TextTertiary)
+
+            canAdd -> CfSmallButton(text = "친구 추가", onClick = onAddFriend)
+
+            // 그릴 수 없는 경우는 **자리를 비운다.** 회색 버튼을 두면 왜 안 눌리는지
+            // 화면에 안 적혀서 고장으로 읽힌다(A 문서 1절 44번과 같은 이유).
+            else -> Unit
+        }
     }
 }
 

@@ -33,16 +33,22 @@ import com.catchflower.app.ui.component.NavTab
 import com.catchflower.app.ui.dex.DexDetailScreen
 import com.catchflower.app.ui.dex.DexFilterSheet
 import com.catchflower.app.ui.dex.DexHomeScreen
+import com.catchflower.app.ui.dex.DiscoveryListScreen
+import com.catchflower.app.ui.dex.DiscoveryListMode
 import com.catchflower.app.ui.dex.DexViewModel
 import com.catchflower.app.ui.map.MapScreen
 import com.catchflower.app.ui.map.MapViewModel
 import com.catchflower.app.ui.my.MyScreen
+import com.catchflower.app.ui.my.ProfileEditScreen
+import com.catchflower.app.ui.my.ProfileEditViewModel
 import com.catchflower.app.ui.place.PlaceScreen
 import com.catchflower.app.ui.place.PlaceViewModel
 import com.catchflower.app.ui.place.RecordDetailScreen
 import com.catchflower.app.ui.place.RecordViewModel
 import com.catchflower.app.ui.my.SeasonResultScreen
+import com.catchflower.app.ui.my.SettingsScreen
 import com.catchflower.app.ui.ranking.FriendsScreen
+import com.catchflower.app.ui.ranking.FriendsViewModel
 import com.catchflower.app.ui.ranking.RankingScreen
 import com.catchflower.app.ui.ranking.RankingViewModel
 import com.catchflower.app.ui.region.RegionPickerScreen
@@ -141,6 +147,12 @@ private fun CatchFlowerRoot() {
     var detailFlowerId by remember { mutableStateOf<Int?>(null) }
     var filterOpen by remember { mutableStateOf(false) }
 
+    // 화면 23. 도감 탭 `전체 보기`와 마이 탭 `내가 공유한 꽃`이 **같은 화면을 다른 제목으로**
+    // 연다([DiscoveryListMode]). 그래서 열림 여부를 `Boolean`이 아니라 **모드**로 든다 —
+    // 플래그 두 개로 두면 둘 다 켜진 상태가 만들어지고, 그때 어느 제목이 나오는지는
+    // `when`의 순서에 달린다(= 화면으로만 드러나는 버그).
+    var discoveryListMode by remember { mutableStateOf<DiscoveryListMode?>(null) }
+
     val dexViewModel: DexViewModel = viewModel()
     val rankingViewModel: RankingViewModel = viewModel()
     // ⚠️ **지도 탭 안에서 만들지 않는다.** 탭을 옮길 때마다 새로 생기면 `MapView`가
@@ -156,6 +168,20 @@ private fun CatchFlowerRoot() {
     val placeViewModel: PlaceViewModel = viewModel()
     val recordViewModel: RecordViewModel = viewModel()
 
+    // 화면 19 검색 · 화면 16 `친구 추가`(2026-08-13).
+    //
+    // ⚠️ **랭킹 탭·마이 탭·화면 16이 같은 인스턴스를 쓴다.** 각자 만들면
+    //    방금 요청을 보낸 사람이 다른 화면에서는 다시 `친구 추가`로 보이고,
+    //    누르면 서버가 409를 성공으로 삼켜서 **아무 표시 없이 같은 일이 반복된다**
+    //    ([FriendsViewModel.justRequested]).
+    val friendsViewModel: FriendsViewModel = viewModel()
+
+    // 화면 20-1 `프로필 수정`(2026-08-13).
+    //
+    // ⚠️ **여기서 만든다.** 화면 안에서 `viewModel()`을 부르면 화면이 사라질 때 같이
+    //    사라지고, 그러면 저장 중에 회전한 사용자가 **저장 중이 아닌 화면**으로 돌아온다.
+    val profileEditViewModel: ProfileEditViewModel = viewModel()
+
     // 지도 → 화면 15 → 화면 16. **두 단을 각각 플래그로 둔다** — 한 개로 합치면
     // 화면 16의 `뒤로`가 지도까지 돌아가고, 그러면 사용자가 방금 본 장소를 잃는다.
     var placeOpen by remember { mutableStateOf(false) }
@@ -165,6 +191,8 @@ private fun CatchFlowerRoot() {
     // 두 탭이 같은 화면(친구 관리·지난 시즌)을 공유하므로 상태도 여기서 공유한다.
     var friendsOpen by remember { mutableStateOf(false) }
     var seasonResultOpen by remember { mutableStateOf(false) }
+    var profileEditOpen by remember { mutableStateOf(false) }
+    var settingsOpen by remember { mutableStateOf(false) }
 
     // 화면 17·20의 `동네 선택하기`가 여는 자리. 화면 02를 위에 겹쳐 띄운다.
     //
@@ -238,18 +266,35 @@ private fun CatchFlowerRoot() {
                 when (tab) {
                     NavTab.DEX -> {
                         val id = detailFlowerId
-                        if (id == null) {
-                            DexHomeScreen(
+                        val listMode = discoveryListMode
+                        when {
+                            // ⚠️ **도감 상세가 화면 23 위에 있다.** 순서를 뒤집으면
+                            //    목록에서 줄을 눌러도 목록이 그대로 남아 **아무 일도
+                            //    안 일어난 것처럼 보인다.** 이 순서 덕에 상세의 `뒤로`가
+                            //    목록으로 돌아온다(목록을 닫고 상세를 열면 뒤로가 도감
+                            //    홈으로 튀어서 방금 보던 줄을 잃는다).
+                            id != null -> DexDetailScreen(
+                                vm = dexViewModel,
+                                flowerId = id,
+                                onBack = { detailFlowerId = null },
+                            )
+
+                            listMode != null -> DiscoveryListScreen(
+                                vm = dexViewModel,
+                                mode = listMode,
+                                onBack = { discoveryListMode = null },
+                                onFlowerClick = { detailFlowerId = it },
+                                onCapture = { tab = NavTab.CAPTURE },
+                            )
+
+                            else -> DexHomeScreen(
                                 vm = dexViewModel,
                                 onFlowerClick = { detailFlowerId = it },
                                 onOpenFilter = { filterOpen = true },
                                 onCapture = { tab = NavTab.CAPTURE },
-                            )
-                        } else {
-                            DexDetailScreen(
-                                vm = dexViewModel,
-                                flowerId = id,
-                                onBack = { detailFlowerId = null },
+                                onOpenAllDiscoveries = {
+                                    discoveryListMode = DiscoveryListMode.ALL
+                                },
                             )
                         }
                     }
@@ -261,6 +306,8 @@ private fun CatchFlowerRoot() {
                         // 화면 16을 덮어서 기록 상세를 열 수 없다.
                         recordOpen -> RecordDetailScreen(
                             vm = recordViewModel,
+                            // 화면 19 검색 결과와 **같은 인스턴스**다(위 주석).
+                            friendsVm = friendsViewModel,
                             // 뒤로 = 화면 15로. `placeOpen`은 그대로 둔다.
                             onBack = { recordOpen = false },
                             // `도감에서 보기`는 도감 탭 상세로 건너간다.
@@ -309,6 +356,7 @@ private fun CatchFlowerRoot() {
                             //    friendCount와 **같은 출처**여야 한다 — 갈리면
                             //    `친구 0명` 아래에 8명이 깔린다(FriendsScreen 주석).
                             friends = rankingViewModel.friendRanking,
+                            friendsVm = friendsViewModel,
                             onBack = { friendsOpen = false },
                         )
 
@@ -337,6 +385,7 @@ private fun CatchFlowerRoot() {
                             //    friendCount와 **같은 출처**여야 한다 — 갈리면
                             //    `친구 0명` 아래에 8명이 깔린다(FriendsScreen 주석).
                             friends = rankingViewModel.friendRanking,
+                            friendsVm = friendsViewModel,
                             onBack = { friendsOpen = false },
                         )
 
@@ -351,6 +400,52 @@ private fun CatchFlowerRoot() {
                             },
                         )
 
+                        // 화면 20-2 설정.
+                        //
+                        // ⚠️ **`regionPickerOpen`보다 뒤에 온다.** 설정의 `활동 지역`이
+                        //    화면 02를 위에 겹쳐 띄우고, 그 화면을 닫으면 **설정으로
+                        //    돌아온다** — 순서를 바꾸면 화면 02가 설정 밑에 깔려
+                        //    영원히 안 보인다.
+                        settingsOpen -> SettingsScreen(
+                            // 🔴 문자열을 박지 않는다 — `1.0`을 적어 두면 버전을 올린
+                            //    뒤에도 설정 화면만 옛 버전을 말한다.
+                            version = BuildConfig.VERSION_NAME,
+                            onPickRegion = { regionPickerOpen = true },
+                            onBack = { settingsOpen = false },
+                        )
+
+                        // 화면 20-1. `프로필 수정`이 여는 자리.
+                        //
+                        // 🔴 **`onSaved`에서 랭킹을 다시 읽는다.** 안 읽으면 저장에
+                        //    성공하고 돌아온 화면 20이 **옛 닉네임**을 그린다 —
+                        //    위 `regionPickerOpen`과 같은 이유이고, 사용자에게는
+                        //    "저장했다고 해 놓고 안 바뀌었다"로 보인다.
+                        profileEditOpen -> ProfileEditScreen(
+                            vm = profileEditViewModel,
+                            // 랭킹 탭과 같은 출처다 — 여기 다시 물으면 두 화면이
+                            // 다른 이름을 말할 수 있다.
+                            current = rankingViewModel.profile.nickname,
+                            onClose = { profileEditOpen = false },
+                            onSaved = rankingViewModel::refresh,
+                        )
+
+                        // 화면 23을 `내가 공유한 꽃` 제목으로 연다. 목록은 도감 탭과
+                        // **같은 `DexViewModel`**에서 나온다 — 지표 3칸의 `공유 N개`와
+                        // 줄 수가 어긋나지 않게(DiscoveryListScreen 주석).
+                        discoveryListMode != null -> DiscoveryListScreen(
+                            vm = dexViewModel,
+                            mode = discoveryListMode!!,
+                            onBack = { discoveryListMode = null },
+                            // 🔴 **탭을 옮긴다.** 마이 탭 안에서 도감 상세를 그리면
+                            //    거기서 `뒤로`를 눌렀을 때 돌아갈 자리가 없다.
+                            onFlowerClick = { flowerId ->
+                                discoveryListMode = null
+                                detailFlowerId = flowerId
+                                tab = NavTab.DEX
+                            },
+                            onCapture = { tab = NavTab.CAPTURE },
+                        )
+
                         else -> MyScreen(
                             // 랭킹 탭과 **같은 ViewModel**을 읽는다 — 각자 물으면
                             // 화면 17과 화면 20이 다른 동네를 말할 수 있다.
@@ -362,6 +457,12 @@ private fun CatchFlowerRoot() {
                             onOpenLastSeason = { seasonResultOpen = true },
                             onPickRegion = { regionPickerOpen = true },
                             onRetryProfile = rankingViewModel::refresh,
+                            onOpenSharedList = {
+                                discoveryListMode = DiscoveryListMode.SHARED
+                            },
+                            onEditProfile = { profileEditOpen = true },
+                            onOpenSettings = { settingsOpen = true },
+                            profileEditable = profileEditViewModel.savable,
                         )
                     }
                 }
@@ -378,6 +479,11 @@ private fun CatchFlowerRoot() {
                 friendsOpen = false
                 seasonResultOpen = false
                 regionPickerOpen = false
+                profileEditOpen = false
+                settingsOpen = false
+                // 화면 23도 닫는다. 안 닫으면 마이 탭에서 `내가 공유한 꽃`을 열어 둔 채
+                // 도감 탭으로 갔을 때 **도감이 아니라 공유 목록**이 나온다.
+                discoveryListMode = null
                 // 화면 15·16도 같이 닫는다. 안 닫으면 지도 탭을 눌렀을 때 지도가 아니라
                 // 아까 보던 **남의 기록 상세**가 나온다(친구 관리에서 겪은 그 모양).
                 placeOpen = false

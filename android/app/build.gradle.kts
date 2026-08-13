@@ -53,6 +53,13 @@ android {
         buildConfigField("String", "KAKAO_REST_API_KEY", secret("KAKAO_REST_API_KEY"))
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", secret("KAKAO_NATIVE_APP_KEY"))
 
+        // 🔴 **키가 아니라 창구 주소다.** 그래도 같은 길로 넣는다 — 저장소 어디에도
+        //    연락처가 없고(A 문서 4절 17번), 개인 메일을 소스에 커밋하면 앱스토어
+        //    심사 페이지에 그 주소가 공개된다. 비어 있으면 화면 20-2가
+        //    **`고객문의` 행을 아예 안 그린다**(빈 받는사람으로 메일 앱이 열리면
+        //    보낸 사람은 접수됐다고 믿는다).
+        buildConfigField("String", "CONTACT_EMAIL", secret("CONTACT_EMAIL"))
+
         // 🔴 **넘겨줄 APK만 x86을 뺀다** — `-PcfPhoneOnly` 를 줄 때만 적용된다.
         //
         // APK 107MB 중 **24MB가 x86·x86_64**다. 실제 폰에는 그 ABI가 없어서

@@ -327,6 +327,42 @@ private fun AlternativeRow(candidate: RankedCandidate, onClick: () -> Unit) {
 }
 
 /**
+ * 촬영 팁 카드. **문구는 A 문서 2절 12번 `팁 제목`·`팁 4개`가 전부다.**
+ *
+ * 🔴 **두 곳이 이걸 같이 쓴다** — 화면 12(판별 실패)와 화면 07 `도움말`
+ * ([com.catchflower.app.ui.capture.CameraScreen]). 각자 적으면 한쪽이 낡는다:
+ * 같은 데이터를 두 곳에서 각각 그려서 **한쪽이 틀린 것을 아무도 몰랐던 일**이
+ * 이미 있었다((39) 화면 05·13 사진).
+ *
+ * ⚠️ 화면 07은 어두운 화면이지만 이 카드는 **밝은 카드 그대로** 띄운다 —
+ *    시트가 프리뷰 위에 뜨므로 카드 자체가 밝아야 글자가 읽힌다.
+ */
+@Composable
+internal fun CaptureTipCard(modifier: Modifier = Modifier) {
+    Column(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(CfColor.Surface)
+            .padding(16.dp),
+    ) {
+        Text("이렇게 찍으면 잘 알아봐요", style = CfText.Section, color = CfColor.TextPrimary)
+        Spacer(Modifier.height(10.dp))
+        listOf(
+            "꽃 한 송이가 화면에 꽉 차게",
+            "그림자 없는 밝은 곳에서",
+            "정면이나 살짝 위에서",
+            "흔들리지 않게 잠시 멈춰서",
+        ).forEach { tip ->
+            Row(Modifier.padding(vertical = 4.dp)) {
+                Text("· ", style = CfText.Body, color = CfColor.TextSecondary)
+                Text(tip, style = CfText.Body, color = CfColor.TextSecondary)
+            }
+        }
+    }
+}
+
+/**
  * 화면 12 AI 판별 실패 — `12_판별실패.svg`.
  *
  * [streak]가 [GamePolicy.FAIL_STREAK_FOR_NOT_A_FLOWER] 이상이면 제목을
@@ -371,27 +407,7 @@ fun IdentifyFailedScreen(
         Spacer(Modifier.height(24.dp))
 
         // 사진을 다시 보여주지 않는다 — 실패한 사진은 저장하지 않기 때문이다.
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(CfColor.Surface)
-                .padding(16.dp),
-        ) {
-            Text("이렇게 찍으면 잘 알아봐요", style = CfText.Section, color = CfColor.TextPrimary)
-            Spacer(Modifier.height(10.dp))
-            listOf(
-                "꽃 한 송이가 화면에 꽉 차게",
-                "그림자 없는 밝은 곳에서",
-                "정면이나 살짝 위에서",
-                "흔들리지 않게 잠시 멈춰서",
-            ).forEach { tip ->
-                Row(Modifier.padding(vertical = 4.dp)) {
-                    Text("· ", style = CfText.Body, color = CfColor.TextSecondary)
-                    Text(tip, style = CfText.Body, color = CfColor.TextSecondary)
-                }
-            }
-        }
+        CaptureTipCard()
 
         Spacer(Modifier.height(12.dp))
         Text(

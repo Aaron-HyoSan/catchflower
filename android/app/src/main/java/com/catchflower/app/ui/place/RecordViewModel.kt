@@ -299,6 +299,26 @@ class RecordViewModel @JvmOverloads constructor(
         )
     }
 
+    /**
+     * 작성자 줄에 `친구 추가`를 그리는가. 판정은 [RecordRules.canAddFriend]다.
+     *
+     * ⚠️ **[canDelete]와 같은 이유로 내 uuid를 화면에 내보내지 않는다** — 화면이
+     *    직접 비교하면 그 비교가 Composable 안에 남아 어느 층에서도 검증되지 않는다.
+     *
+     * @param serverReady [com.catchflower.app.ui.ranking.FriendsViewModel.searchable].
+     */
+    fun canAddFriend(serverReady: Boolean): Boolean {
+        val owner = record?.userId ?: return false
+        return RecordRules.canAddFriend(
+            authorId = owner,
+            myUserId = discoveries.userId,
+            serverReady = serverReady,
+        )
+    }
+
+    /** 이 기록 주인의 uuid. `친구 추가`가 요청을 보낼 대상이다. */
+    fun authorId(): String? = record?.userId
+
     /** 도감 정보(`금계국` · `국화과 · 6~8월`). 못 찾으면 null — 그 칸을 그리지 않는다. */
     fun flower(): Flower? = record?.let { flowers.byId(it.flowerId) }
 }

@@ -127,7 +127,9 @@ object DiscoveryRules {
         // 🔴 `공유`는 **공개로 올린 것**만이다. `친구에게만`·`나만 보기`까지 세면
         //    "나만 보기로 저장했는데 공유 26개"가 되어 사용자가 **공개된 줄로 읽는다.**
         //    화면 13에서 매번 고르는 값이라 실제로 섞인다.
-        shareCount = discoveries.count { it.visibility == Visibility.PUBLIC },
+        // 🔴 `공유`는 **공개로 올린 것**만이다. 판정은 [isShared] 하나뿐이다 —
+        //    화면 23의 `내가 공유한 꽃` 목록도 같은 함수를 쓴다(아래 주석).
+        shareCount = discoveries.count(::isShared),
     )
 
     data class ProfileStats(
@@ -135,6 +137,33 @@ object DiscoveryRules {
         val discoveryCount: Int,
         val shareCount: Int,
     )
+
+    /**
+     * `지도에 공유했다`의 유일한 정의(2026-08-13).
+     *
+     * 🔴 **[profileStats]의 `공유 26개`와 화면 23 `내가 공유한 꽃` 목록이 이 함수를
+     *    같이 쓴다.** 각자 `visibility == PUBLIC`을 적으면 한쪽만 `FRIENDS`를 포함하도록
+     *    바뀌는 날 **숫자는 26인데 목록은 31줄**이 된다 — 둘 다 그럴듯해서 아무도 못 본다
+     *    (`구현현황_AOS.md`에 적힌 `같은 값을 두 곳에서 세지 않는다`가 이것이다).
+     *
+     * ⚠️ `FRIENDS`는 **공유가 아니다.** 화면 13에서 매번 고르는 값이라 실제로 섞이는데,
+     *    `친구에게만`을 세면 "나만 보기로 저장했는데 공유됨"으로 읽는다.
+     */
+    fun isShared(discovery: Discovery): Boolean = discovery.visibility == Visibility.PUBLIC
+
+    /**
+     * 화면 23 목록. 최신순이고 **종별로 묶지 않는다.**
+     *
+     * 🔴 **[recentDiscoveries]를 재사용하지 않는다.** 그쪽은 `distinctBy { flowerId }`라
+     *    같은 종을 세 번 찍으면 **두 건이 사라진다** — 화면 20의 `총 발견 112회`를 누른
+     *    사용자가 112줄이 아닌 37줄을 보고 기록이 지워진 줄 안다.
+     *
+     * @param sharedOnly `내가 공유한 꽃`으로 들어왔을 때만 true.
+     */
+    fun discoveryList(discoveries: List<Discovery>, sharedOnly: Boolean): List<Discovery> =
+        discoveries
+            .filter { !sharedOnly || isShared(it) }
+            .sortedByDescending { it.capturedAt }
 
     /** 화면 10 `12번째 꽃` — 이 종이 새로 들어간 뒤의 도감 순번. */
     fun dexOrderAfterAdding(discoveries: List<Discovery>, flowerId: Int): Int {

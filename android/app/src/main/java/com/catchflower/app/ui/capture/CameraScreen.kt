@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -68,14 +69,22 @@ import kotlinx.coroutines.launch
  * ⚠️ **앨범 버튼을 넣지 않는다.** 기획서 5장 규칙이고, 와이어프레임 주석 ③이
  *    "앨범 버튼을 아예 두지 않고, 왜 없는지를 문구로 설명해야 '기능 고장'으로
  *    오해하지 않는다"고 못 박았다. 그래서 고지 문구가 자리를 차지한다.
+ *
+ * 🔴 **`도움말`을 이 화면이 직접 처리한다 (2026-08-13).** 전에는 `onHelp`를 인자로
+ *    받았고 [CaptureFlow]가 **빈 람다**를 넘겼다 — 즉 눌러도 아무 일이 없었다.
+ *    ⚠️ 그 자리는 `DeadButtonTest`가 **못 잡던 모양**이다: 버튼의 `onClick`은
+ *    비어 있지 않았고(`onClick = onHelp`), 빈 람다는 **부르는 쪽**에 있었다.
+ *    인자를 없애면 그 자리 자체가 사라진다 — 다음 사람이 다시 빈 람다를 넘길 수 없다.
  */
 @Composable
 fun CameraScreen(
     onPhotoTaken: (ByteArray) -> Unit,
     onClose: () -> Unit,
-    onHelp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // A 문서 2절 07번 헤더 `우 도움말`. 팁 문구는 12번 표에 있고 카드는 화면 12와
+    // **같은 컴포저블**을 쓴다([CaptureTipCard]).
+    var helpVisible by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
@@ -179,7 +188,7 @@ fun CameraScreen(
 
         CameraOverlay(
             onClose = onClose,
-            onHelp = onHelp,
+            onHelp = { helpVisible = true },
             flashOn = flashOn,
             onToggleFlash = { flashOn = !flashOn },
             onSwitch = { useFront = !useFront },
@@ -204,7 +213,29 @@ fun CameraScreen(
                 else -> null
             },
         )
+
+        if (helpVisible) CaptureTipDialog(onClose = { helpVisible = false })
     }
+}
+
+/**
+ * 화면 07 `도움말`이 띄우는 촬영 팁.
+ *
+ * ⚠️ **새 문구가 하나도 없다.** 카드는 화면 12와 같은 [CaptureTipCard]이고 `닫기`는
+ *    이 화면 헤더가 이미 쓰는 라벨이다(A 문서 2절 07번). 여기서 `팁을 확인했어요`
+ *    같은 말을 지어내면 톤 검토를 안 거친 문장이 하나 늘어난다.
+ *
+ * ⚠️ 제목을 [AlertDialog]의 `title`로 올리지 않는다 — 카드가 이미 `이렇게 찍으면
+ *    잘 알아봐요`를 들고 있어서 **같은 문장이 두 번** 나온다.
+ */
+@Composable
+private fun CaptureTipDialog(onClose: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onClose,
+        text = { CaptureTipCard() },
+        confirmButton = { CfTextButton(text = "닫기", onClick = onClose) },
+        containerColor = CfColor.Background,
+    )
 }
 
 /**

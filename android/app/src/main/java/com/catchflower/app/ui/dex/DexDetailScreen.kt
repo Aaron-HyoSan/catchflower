@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.catchflower.app.core.ShareText
 import com.catchflower.app.core.Visibility
 import com.catchflower.app.data.model.Discovery
 import com.catchflower.app.data.model.Flower
@@ -34,6 +35,7 @@ import com.catchflower.app.ui.component.CfToast
 import com.catchflower.app.ui.component.rememberToaster
 import com.catchflower.app.ui.component.CfVisibilityBadge
 import com.catchflower.app.ui.component.DiscoveryPhoto
+import com.catchflower.app.ui.component.ExternalOpen
 import com.catchflower.app.ui.component.FlowerIllust
 import com.catchflower.app.ui.component.FlowerSilhouette
 import com.catchflower.app.ui.theme.CfColor
@@ -73,9 +75,23 @@ fun DexDetailScreen(
     }
 
     val collected = flower.id in vm.collectedIds
-    // 예선 범위 밖 `공유`(외부 공유 시트). 빈 람다였다((38)).
     val toast = rememberToaster()
-    val notReady: () -> Unit = { toast(CfToast.NOT_READY) }
+
+    /**
+     * 헤더 `공유` → 시스템 공유 시트.
+     *
+     * 처음엔 빈 람다였고((38)), 그다음엔 `아직 준비 중이에요`였다. 2026-08-13에
+     * 실제 동작이 됐다(A 문서 3절 ①).
+     *
+     * ⚠️ **[ShareText.flower]가 null이면 시트를 띄우지 않는다.** 꽃 이름이 없으면
+     *    `캐치플라워에서  모았어요`가 남의 대화창에 남는다. 여기서는 이름이 없는
+     *    꽃이 도감에 없지만, 문장을 만드는 쪽의 판단을 화면이 뒤집지 않는다.
+     */
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val share: () -> Unit = {
+        val text = ShareText.flower(flower.name)
+        if (text == null || !ExternalOpen.share(context, text)) toast(CfToast.SHARE_NO_APP)
+    }
     val discoveries = vm.discoveriesFor(flower.id)
     val similar = vm.similarTo(flower)
 
@@ -89,7 +105,7 @@ fun DexDetailScreen(
                 onBack = onBack,
                 trailing = {
                     // 미발견 종은 공유할 기록이 없다.
-                    if (collected) CfTextButton(text = "공유", onClick = notReady)
+                    if (collected) CfTextButton(text = "공유", onClick = share)
                     else Spacer(Modifier.size(CfDimen.GapLarge))
                 },
             )

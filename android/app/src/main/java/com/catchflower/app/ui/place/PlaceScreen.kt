@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.catchflower.app.core.MapLinks
 import com.catchflower.app.core.RelativeTime
 import com.catchflower.app.data.model.Discovery
 import com.catchflower.app.ui.component.CfChipGroup
@@ -32,6 +33,7 @@ import com.catchflower.app.ui.component.CfSecondaryButton
 import com.catchflower.app.ui.component.CfSmallButton
 import com.catchflower.app.ui.component.CfStat
 import com.catchflower.app.ui.component.CfToast
+import com.catchflower.app.ui.component.ExternalOpen
 import com.catchflower.app.ui.component.rememberToaster
 import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
@@ -78,20 +80,35 @@ fun PlaceScreen(
     onOpenRecord: (Discovery) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // `길찾기`는 카카오맵 앱으로 넘기는 기능이다(와이어프레임 15 주석 ①). 예선 범위
-    // 밖이라 토스트를 띄운다 — 빈 람다로 두면 눌러도 아무 일이 없어서 고장으로 읽힌다.
     val toast = rememberToaster()
-    val notReady: () -> Unit = { toast(CfToast.NOT_READY) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    // 장소명이 없으면 **좌표를 쓰지 않는다.** `37.5601, 126.9251`이 제목이 되면
+    // 그게 장소 이름으로 읽힌다(프리뷰 카드와 같은 판단).
+    val title = vm.placeName ?: "내 발견"
+
+    /**
+     * `길찾기` → 카카오맵 앱, 없으면 카카오맵 웹(와이어프레임 15 주석 ①).
+     *
+     * 2026-08-13까지 `아직 준비 중이에요`였다(A 문서 3절 ②).
+     *
+     * ⚠️ **목적지 이름은 화면 제목과 같은 값이다.** 다르게 넣으면 사용자가 보던
+     *    장소명과 지도 앱이 말하는 목적지가 어긋나는데, 좌표는 맞으니 아무도 안 본다.
+     */
+    val route: () -> Unit = {
+        val at = vm.coords
+        val opened = at != null &&
+            ExternalOpen.firstThatOpens(context, MapLinks.routeChain(at.first, at.second, title))
+        if (!opened) toast(CfToast.MAP_NO_APP)
+    }
 
     Column(modifier.fillMaxSize()) {
         CfHeader(
-            // 장소명이 없으면 **좌표를 쓰지 않는다.** `37.5601, 126.9251`이 제목이 되면
-            // 그게 장소 이름으로 읽힌다(프리뷰 카드와 같은 판단).
-            title = vm.placeName ?: "내 발견",
+            title = title,
             onBack = onBack,
             // 주석 ①: `길찾기 = 최상단 우측 고정`. 카드 내부 버튼이라 Small이다
             // (A 문서 1절 Small 예시가 `길찾기`다).
-            trailing = { CfSmallButton(text = "길찾기", onClick = notReady) },
+            trailing = { CfSmallButton(text = "길찾기", onClick = route) },
         )
 
         when (val state = vm.ui) {

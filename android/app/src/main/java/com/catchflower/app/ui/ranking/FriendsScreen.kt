@@ -15,11 +15,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,14 +31,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.catchflower.app.BuildConfig
+import com.catchflower.app.core.AppLinks
+import com.catchflower.app.core.ShareText
+import com.catchflower.app.data.FriendRules
 import com.catchflower.app.data.model.RankedEntry
 import com.catchflower.app.ui.component.CfHeader
 import com.catchflower.app.ui.component.CfPrimaryButton
+import com.catchflower.app.ui.component.CfSmallButton
 import com.catchflower.app.ui.component.CfTextButton
 import com.catchflower.app.ui.component.CfToast
+import com.catchflower.app.ui.component.ExternalOpen
 import com.catchflower.app.ui.component.rememberToaster
 import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
@@ -55,7 +65,7 @@ private enum class FriendTab { MINE, INVITE }
  *
  * 에뮬레이터에서 이 화면이 **스스로 모순된 상태**로 떠 있었다:
  * 헤더는 서버가 센 `친구 0명`인데 그 밑에 `연남댁 38종`·`효산맘 31종` … **8명**이
- * 깔려 있었다. 헤더만 실측 소스로 바꾸고((31)) 목록은 [DummyRanking]에 남겨 둔
+ * 깔려 있었다. 헤더만 실측 소스로 바꾸고((31)) 목록은 옛 `DummyRanking`에 남겨 둔
  * 결과다 — **한 화면에 진짜와 가짜가 같이 있으면 사용자는 가짜를 믿는다**(숫자가
  * 작은 쪽이 틀린 것처럼 보인다).
  *
@@ -83,21 +93,55 @@ fun FriendsScreen(
      * 🔴 **더미로 되돌리지 마라.** 위 클래스 주석의 사고가 그것이다.
      */
     friends: List<RankedEntry>,
+    /**
+     * 닉네임 검색·친구 요청(2026-08-13 · A 문서 3절 ③).
+     *
+     * ⚠️ **화면이 직접 만들지 않고 받는다.** `viewModel()`을 여기서 부르면
+     *    미리보기·테스트가 이 화면을 그릴 수 없다(다른 화면과 같은 방식).
+     */
+    friendsVm: FriendsViewModel,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var tab by remember { mutableStateOf(FriendTab.MINE) }
-    // 예선 범위 밖 버튼(`검색`·`초대 링크 보내기`). 빈 람다로 두면 눌러도 아무 일이
-    // 없어서 앱이 고장난 것으로 보인다((38)).
+    /** `검색`을 누르면 목록 대신 검색 화면이 뜬다. 다시 누르거나 뒤로 가면 닫힌다. */
+    var searching by remember { mutableStateOf(false) }
     val toast = rememberToaster()
-    val notReady: () -> Unit = { toast(CfToast.NOT_READY) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    /**
+     * `초대 링크 보내기` → 시스템 공유 시트(A 문서 3절 ①).
+     *
+     * ⚠️ **링크가 지금 404다.** 앱이 출시 전이라 스토어 페이지가 없다 —
+     *    A 문서 4절 16번에 적어 두었고, 출시되면 **코드 변경 없이** 살아난다.
+     *    그래서 링크를 다른 것으로 바꿔 두지 않는다(랜딩 페이지를 지어내면 그건
+     *    영구히 아무도 안 만드는 페이지가 된다).
+     */
+    val invite: () -> Unit = {
+        val text = ShareText.invite(AppLinks.playStore(BuildConfig.APPLICATION_ID))
+        if (!ExternalOpen.share(context, text)) toast(CfToast.SHARE_NO_APP)
+    }
 
     Column(modifier.fillMaxSize()) {
         CfHeader(
             title = "친구",
-            onBack = onBack,
-            trailing = { CfTextButton(text = "검색", onClick = notReady) },
+            // ⚠️ 검색 중이면 **뒤로가 검색을 닫는다.** 화면을 통째로 나가면 방금 찾던
+            //    사람을 다시 찾아야 한다.
+            onBack = { if (searching) searching = false else onBack() },
+            trailing = {
+                // 🔴 **키 없는 빌드에서는 그리지 않는다.** 서버가 없으면 눌러도 영원히
+                //    `연결이 불안정해요`뿐이다 — 그건 죽은 버튼의 다른 얼굴이다
+                //    (화면 20 `고객문의`와 같은 처리).
+                if (friendsVm.searchable) {
+                    CfTextButton(text = "검색", onClick = { searching = !searching })
+                }
+            },
         )
+
+        if (searching) {
+            FriendSearchPanel(vm = friendsVm)
+            return@Column
+        }
 
         Row(Modifier.fillMaxWidth()) {
             val mineLabel = friendCount?.let { "내 친구 $it" } ?: "내 친구"
@@ -109,7 +153,134 @@ fun FriendsScreen(
             FriendTab.MINE -> MyFriendsList(friendCount, friends)
             // 연락처 매칭이 없는 동안은 **초대 링크 하나만** 둔다. 가짜 연락처 목록을
             // 그리는 것보다 낫다(클래스 주석).
-            FriendTab.INVITE -> ContactsDeniedFallback(notReady)
+            FriendTab.INVITE -> ContactsDeniedFallback(onInvite = invite)
+        }
+    }
+}
+
+/**
+ * 닉네임 검색 — A 문서 3절 ③.
+ *
+ * ## 이 화면이 말하는 다섯 가지가 서로 다르다
+ *
+ * 🔴 빈 검색창 · 한 글자 · 찾는 중 · 없음 · 실패를 **한 문장으로 뭉치면 각각 틀린 말이
+ *    된다.** 특히 `그 닉네임을 가진 사람이 없어요`를 실패에 쓰면 **못 물어본 것을
+ *    없다고 말한다**([FriendSearchUi] 주석).
+ *
+ * ## 버튼 자리
+ *
+ * ⚠️ `요청 보냄`·`이미 친구예요`는 **버튼이 아니라 상태 표시다.** 누를 수 있게 두고
+ *    눌렀을 때 막으면 `누를 수 있는데 실패하는 버튼`이 된다(A 문서 3절 ③).
+ */
+@Composable
+private fun FriendSearchPanel(vm: FriendsViewModel) {
+    val toast = rememberToaster()
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(CfDimen.ScreenPadding),
+    ) {
+        OutlinedTextField(
+            value = vm.query,
+            onValueChange = vm::onQueryChange,
+            modifier = Modifier.fillMaxWidth(),
+            // A 문서 3절 ③ `19 검색창`. placeholder다 — 라벨로 두면 입력 중에 사라진다.
+            placeholder = {
+                Text("닉네임으로 찾기", style = CfText.Body, color = CfColor.TextTertiary)
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(CfDimen.RadiusCard),
+            // ⚠️ 화면 02와 같은 이유로 `Search`가 아니라 `Done`이다 — 검색은 타이핑
+            //    중에 자동으로 돌아서 눌러야 하는 키가 없다.
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = CfColor.Background,
+                unfocusedContainerColor = CfColor.Background,
+                focusedIndicatorColor = CfColor.Primary,
+                unfocusedIndicatorColor = CfColor.Border,
+                cursorColor = CfColor.Primary,
+            ),
+        )
+        Spacer(Modifier.height(CfDimen.GapMedium))
+
+        when (val state = vm.list) {
+            // 빈 검색창에는 아무 말도 하지 않는다.
+            FriendSearchUi.Idle -> Unit
+
+            FriendSearchUi.TooShort -> Text(
+                "두 글자 이상 입력해 주세요",
+                style = CfText.Body,
+                color = CfColor.TextSecondary,
+            )
+
+            // 찾는 중에는 문구를 바꾸지 않는다 — 0.3초마다 글자가 바뀌면 읽을 수 없다.
+            FriendSearchUi.Searching -> Unit
+
+            FriendSearchUi.NoResult -> Text(
+                "그 닉네임을 가진 사람이 없어요",
+                style = CfText.Body,
+                color = CfColor.TextSecondary,
+            )
+
+            is FriendSearchUi.Failed -> Column {
+                // 3절 토스트의 네트워크 오류 문구. **새 문구를 쓰지 않는다.**
+                Text(
+                    "연결이 불안정해요. 잠시 후 다시 시도해 주세요.",
+                    style = CfText.Body,
+                    color = CfColor.TextSecondary,
+                )
+                Spacer(Modifier.height(CfDimen.GapSmall))
+                CfTextButton(text = "다시 시도", onClick = vm::retry)
+            }
+
+            is FriendSearchUi.Loaded -> LazyColumn(
+                Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(CfDimen.GapMedium),
+            ) {
+                items(vm.rowsWithLocalState(state.rows), key = { it.id }) { row ->
+                    SearchResultRow(row) { id ->
+                        vm.add(id) { ok ->
+                            // 🔴 **`{이름}님과 친구가 되었어요`를 쓰지 않는다.** 요청은
+                            //    `pending`으로 들어가고 수락은 상대만 할 수 있다(C-2).
+                            toast(if (ok) CfToast.FRIEND_REQUEST_SENT else CfToast.NETWORK_ERROR)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchResultRow(row: FriendRules.Found, onAdd: (String) -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(CfDimen.RadiusCard))
+            .background(CfColor.Surface)
+            .padding(CfDimen.GapMedium),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Avatar(row.nickname)
+        Spacer(Modifier.width(CfDimen.GapMedium))
+        Text(
+            row.nickname,
+            style = CfText.BodyBold,
+            color = CfColor.TextPrimary,
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        when (row.state) {
+            // 2절 16번의 라벨을 그대로 쓴다 — 같은 동작을 화면마다 다르게 부르지 않는다.
+            FriendRules.State.NONE ->
+                CfSmallButton(text = "친구 추가", onClick = { onAdd(row.id) })
+
+            FriendRules.State.REQUESTED ->
+                Text("요청 보냄", style = CfText.Body, color = CfColor.TextTertiary)
+
+            FriendRules.State.FRIEND ->
+                Text("이미 친구예요", style = CfText.Body, color = CfColor.TextSecondary)
         }
     }
 }
@@ -162,8 +333,8 @@ private fun RowScope.FriendTabItem(label: String, selected: Boolean, onClick: ()
  */
 @Composable
 private fun ContactsDeniedFallback(
-    /** 예선 범위 밖 `초대 링크 보내기`가 쓴다 — 공유 시트가 아직 없다. */
-    notReady: () -> Unit,
+    /** `초대 링크 보내기` → 공유 시트(2026-08-13 · A 문서 3절 ①). */
+    onInvite: () -> Unit,
 ) {
     Column(
         Modifier
@@ -186,7 +357,7 @@ private fun ContactsDeniedFallback(
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(CfDimen.GapLarge))
-        CfPrimaryButton(text = "초대 링크 보내기", onClick = notReady)
+        CfPrimaryButton(text = "초대 링크 보내기", onClick = onInvite)
     }
 }
 
@@ -273,7 +444,7 @@ private fun MyFriendsList(friendCount: Int?, all: List<RankedEntry>) {
 
 // 🔴 **`InviteList`·`ContactRow`·`SectionLabel`을 지웠다**(2026-08-09).
 //    연락처에서 찾은 친구 3명(`김영희 010-2•••-4567` …)과 미가입 지인 3명을 그리던
-//    자리다. 전부 [DummyRanking]의 **가짜 사람·가짜 번호**였고, 화면은
+//    자리다. 전부 옛 `DummyRanking`의 **가짜 사람·가짜 번호**였고, 화면은
 //    `연락처에 캐치플라워 이웃 3명이 있어요`라고 **읽은 적도 없는 연락처를 읽은 것처럼**
 //    말했다. 마스킹(`maskPhone`)까지 성실하게 해서 더 진짜처럼 보였다.
 //

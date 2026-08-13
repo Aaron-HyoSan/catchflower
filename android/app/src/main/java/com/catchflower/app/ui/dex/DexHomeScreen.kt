@@ -39,8 +39,6 @@ import com.catchflower.app.ui.component.CfChip
 import com.catchflower.app.ui.component.CfPrimaryButton
 import com.catchflower.app.ui.component.CfProgressBar
 import com.catchflower.app.ui.component.CfTextButton
-import com.catchflower.app.ui.component.CfToast
-import com.catchflower.app.ui.component.rememberToaster
 import com.catchflower.app.ui.component.FlowerIllust
 import com.catchflower.app.ui.component.FlowerSilhouette
 import com.catchflower.app.ui.theme.CfColor
@@ -62,12 +60,15 @@ fun DexHomeScreen(
     onFlowerClick: (Int) -> Unit,
     onOpenFilter: () -> Unit,
     onCapture: () -> Unit,
+    /**
+     * `전체 보기` — 화면 23을 [com.catchflower.app.ui.dex.DiscoveryListMode.ALL]로 연다.
+     *
+     * ✅ 2026-08-13까지 `준비 중` 토스트였다. 이제 화면이 있다.
+     */
+    onOpenAllDiscoveries: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val isEmpty = vm.collectedCount == 0
-    // 예선 범위 밖 `전체 보기`(전체 발견 기록 목록 화면이 없다). 빈 람다였다((38)).
-    val toast = rememberToaster()
-    val notReady: () -> Unit = { toast(CfToast.NOT_READY) }
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
@@ -104,7 +105,11 @@ fun DexHomeScreen(
         } else {
             // --- 화면 04 ---
             fullWidth {
-                SectionRow(title = "최근 발견한 꽃", actionText = "전체 보기", onAction = notReady)
+                SectionRow(
+                    title = "최근 발견한 꽃",
+                    actionText = "전체 보기",
+                    onAction = onOpenAllDiscoveries,
+                )
             }
             fullWidth {
                 RecentRow(

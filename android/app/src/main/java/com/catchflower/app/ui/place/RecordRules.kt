@@ -184,4 +184,30 @@ object RecordRules {
      */
     fun deleteToastIsNetwork(pgCode: String): Boolean =
         pgCode != com.catchflower.app.data.ReactionService.DENIED
+
+    /**
+     * 작성자 줄에 `친구 추가`를 그리는가(2026-08-13 · A 문서 3절 ③).
+     *
+     * 🔴 **내 기록에는 안 그린다.** 서버 `friendships_no_self`가 막으므로 눌러도 실패한다 —
+     *    [canDeleteComment]에서 피한 그 `누를 수 있는데 실패하는 버튼`이다. 지도에는
+     *    내가 공유한 기록이 섞여 있어서 **실제로 자주 열린다.**
+     *
+     * 🔴 **`myUserId`가 비면 그리지 않는다.** 익명 로그인이 아직 안 끝난 프레임인데,
+     *    빈 문자열끼리 비교하면 이 판정이 뒤집힌다([canDeleteComment]와 같은 함정).
+     *    `discoveries.user_id`는 `not null`이지만 **양쪽이 다 비면 참이 되는 모양**을
+     *    미리 끊는다.
+     *
+     * ⚠️ **키 없는 빌드에서도 그리지 않는다.** 서버가 없으면 눌러도 영원히
+     *    `연결이 불안정해요`뿐이고, 그건 죽은 버튼의 다른 얼굴이다(4절 17번).
+     *
+     * @param authorId 기록 주인 uuid([com.catchflower.app.data.model.Discovery.userId]).
+     * @param myUserId 내 uuid. 로그인 전이면 빈 문자열일 수 있다.
+     * @param serverReady 친구 요청을 보낼 수 있는 빌드인가
+     *   ([com.catchflower.app.ui.ranking.FriendsViewModel.searchable]).
+     */
+    fun canAddFriend(authorId: String, myUserId: String, serverReady: Boolean): Boolean {
+        if (!serverReady) return false
+        if (myUserId.isBlank()) return false
+        return authorId != myUserId
+    }
 }

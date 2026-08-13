@@ -107,4 +107,31 @@ object RankingRules {
         val gap = leader.entry.speciesCount - me.entry.speciesCount
         return if (gap > 0) leader.entry.nickname to gap else null
     }
+
+    /**
+     * 화면 17이 처음 보여주는 줄 수. A 문서 2절 17번의 `6위부터 더 보기`가 이 값을 전제한다.
+     *
+     * ⚠️ 이 숫자를 바꾸면 **A 문서의 예시 문구도 같이 바뀐다**(6이 아니게 된다).
+     */
+    const val VISIBLE_ROWS = 5
+
+    /**
+     * `더 보기` 버튼에 쓸 순위. **더 보여줄 줄이 없으면 `null`** — 화면은 버튼을 뺀다.
+     *
+     * 🔴 **`보인 줄 수 + 1`도 `마지막 줄의 순위 + 1`도 안 된다.** 동점자가 있으면
+     *    `rank()`가 순위를 건너뛴다(공동 4위 둘이면 다음은 6위) — 그러면 `5위부터 더 보기`가
+     *    **없는 순위를 가리킨다.** 반대로 공동 4위가 셋이라 6번째 줄도 4위면
+     *    `+1`은 이미 지나간 자리를 가리킨다.
+     *    그래서 **숨은 첫 줄의 순위를 그대로 쓴다** — 목록이 실제로 이어지는 자리다.
+     *    (공동 순위라서 이미 보인 숫자가 다시 나오는 경우가 있는데, 그건 참이다:
+     *    그 순위에 아직 못 보여준 사람이 남아 있다.)
+     *
+     * 🔴 **`region_ranking`에는 `limit`이 없다**(0002) — 이 함수가 자르는 것은
+     *    **화면**이지 조회가 아니다. `offset`을 기다릴 이유가 없었다.
+     *
+     * @param rows 동네 전체 순위(내려온 그대로).
+     * @param shownCount 지금 화면에 그린 줄 수.
+     */
+    fun nextPageRank(rows: List<RankedEntry>, shownCount: Int): Int? =
+        rows.getOrNull(shownCount)?.rank
 }
