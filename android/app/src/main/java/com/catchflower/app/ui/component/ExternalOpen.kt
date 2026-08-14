@@ -63,6 +63,24 @@ object ExternalOpen {
         urls.any { start(context, Intent(Intent.ACTION_VIEW, Uri.parse(it))) }
 
     /**
+     * 브라우저로 주소 하나를 연다. 카카오 로그인(웹 OAuth)이 쓴다.
+     *
+     * ⚠️ **[firstThatOpens]를 돌려쓰지 않는다.** 저쪽은 지도 앱 후보를 순서대로
+     *    시도하는 함수라 "하나라도 열리면 성공"이고, 로그인은 **그 한 주소가 열려야**
+     *    한다. 이름이 하는 일을 말해야 호출부가 실패를 옳게 다룬다.
+     *
+     * ⚠️ 커스텀 탭을 쓰지 않는다 — `androidx.browser` 의존성이 늘고, 실패하면
+     *    어차피 여기로 내려온다. 로그인 후 앱으로 돌아오는 것은 브라우저가 아니라
+     *    `catchflower://auth-callback` intent-filter가 한다.
+     *
+     * @return 열었으면 true. false면 브라우저가 없는 기기다.
+     */
+    fun browser(context: Context, url: String): Boolean {
+        if (url.isBlank()) return false
+        return start(context, Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    }
+
+    /**
      * 이 앱의 **시스템 알림 설정**을 연다. 화면 20 `알림 설정`.
      *
      * 🔴 **우리 화면에 토글을 만들지 않는다.** 앱이 보내는 알림이 하나도 없어서

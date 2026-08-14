@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.catchflower.app.core.LoginGate
+import com.catchflower.app.data.AnonymousUsage
 import com.catchflower.app.data.DiscoveryRepository
 import com.catchflower.app.data.FlowerRepository
 import com.catchflower.app.data.ReactionResult
@@ -53,6 +55,8 @@ class RecordViewModel @JvmOverloads constructor(
     private val reactions: ReactionSource? = DiscoveryRepository.get(app).let { repo ->
         repo.auth?.let { account -> ReactionService(account, myUserId = { account.userId() }) }
     },
+    /** 로그인 게이트의 입력. 댓글·좋아요·신고는 **비로그인 0회**다(오너 결정 2026-08-14). */
+    private val usage: AnonymousUsage = AnonymousUsage.get(app),
 ) : AndroidViewModel(app) {
 
     private val flowers = FlowerRepository.get(app)
@@ -102,6 +106,37 @@ class RecordViewModel @JvmOverloads constructor(
 
     var sendState by mutableStateOf(CommentSendState.IDLE)
         private set
+
+    /**
+     * 로그인 시트를 띄워야 하는 행동. null이면 안 띄운다
+     * ([com.catchflower.app.ui.component.LoginGateSheet]).
+     *
+     * 🔴 **남의 기록에 관여하는 행위는 비로그인 0회다**(오너 결정 2026-08-14 ·
+     *    공유계약 3절). 판별 2회와 달리 횟수가 없다 — 그 갈림은
+     *    [LoginGate.requiresLogin] 안에 있고 여기서 다시 쓰지 않는다.
+     */
+    var loginRequired by mutableStateOf<LoginGate.GatedAction?>(null)
+        private set
+
+    fun dismissLoginRequired() {
+        loginRequired = null
+    }
+
+    /**
+     * 이 행동이 막혔으면 시트를 띄우고 true를 준다.
+     *
+     * ⚠️ **버튼을 숨기거나 비활성으로 만들지 않는다.** 1절 44번과 같은 이유다 —
+     *    왜 못 누르는지 화면에 안 적히면 고장으로 읽힌다. 눌리게 두고 **이유를 말한다.**
+     */
+    private fun blockedByLogin(action: LoginGate.GatedAction): Boolean {
+        val blocked = LoginGate.requiresLogin(
+            action = action,
+            kakaoLinked = usage.kakaoLinked(),
+            identifyCount = usage.identifyCount(),
+        )
+        if (blocked) loginRequired = action
+        return blocked
+    }
 
     /**
      * 내가 좋아요를 눌렀는가. **[reactionState]와 따로 둔다.**
@@ -182,6 +217,9 @@ class RecordViewModel @JvmOverloads constructor(
      *    없어서 가짜 값을 만들어야 하고, 그러면 `1분 전`이 기기 시계로 계산된 값이 된다.
      */
     fun submitComment() {
+        // 로그인 게이트. 🔴 **`canSubmit` 앞에 둔다** — 뒤에 두면 빈 입력에서는
+        //    시트가 안 뜨고, "글자를 쓰면 막히는" 이상한 순서가 된다.
+        if (blockedByLogin(LoginGate.GatedAction.COMMENT)) return
         val discovery = record ?: return
         val src = reactions ?: return
         val body = draft
@@ -210,6 +248,7 @@ class RecordViewModel @JvmOverloads constructor(
      *    남는다.
      */
     fun toggleLike() {
+        if (blockedByLogin(LoginGate.GatedAction.LIKE)) return
         val discovery = record ?: return
         val src = reactions ?: return
         val before = reactionState ?: return // 숫자를 모르면 토글할 기준이 없다
@@ -234,6 +273,10 @@ class RecordViewModel @JvmOverloads constructor(
      * @param onDone true면 A 문서 3절 `신고를 접수했어요. 확인 후 처리됩니다.`
      */
     fun report(onDone: (Boolean) -> Unit) {
+        // ⚠️ **[onDone]을 부르지 않고 나간다.** 부르면 `false`가 되어 화면이
+        //    `연결이 불안정해요`를 띄우는데, 연결 문제가 아니라 로그인 문제다 —
+        //    틀린 안내를 시트와 **동시에** 보여주게 된다.
+        if (blockedByLogin(LoginGate.GatedAction.REPORT)) return
         val discovery = record ?: return onDone(false)
         val src = reactions ?: return onDone(false)
         viewModelScope.launch {

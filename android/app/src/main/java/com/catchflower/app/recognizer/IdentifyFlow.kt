@@ -33,6 +33,35 @@ sealed interface IdentifyOutcome {
 }
 
 /**
+ * 이 결과가 **비로그인 판별 횟수를 깎는가** (오너 결정 2026-08-14 · 공유계약 3절).
+ *
+ * 오너 원문은 `여기 판별은 성공이라고 하면 될듯하다`다. 그 "성공"을
+ * **후보가 1개 이상 떴다**로 읽었다 — 사용자가 고를 화면(09·09변형)까지 갔으면
+ * 앱이 할 일은 다 한 것이고, 거기서 등록을 안 한 것은 사용자의 선택이다.
+ *
+ * | 결과 | 센다 | 왜 |
+ * |---|---|---|
+ * | [IdentifyOutcome.Confident] | ✅ | 화면 09 — 답을 줬다 |
+ * | [IdentifyOutcome.Ambiguous] | ✅ | 화면 09변형 — 후보를 줬다. 사용자가 고른다 |
+ * | [IdentifyOutcome.Failed] | ❌ | 화면 12 — floor 미달. **우리가 못 맞힌 것이다** |
+ *
+ * 🔴 **네트워크 실패·일일 한도 초과도 세지 않는다.** 그 경로는 [IdentifyOutcome]을
+ *    만들지 않고 토스트([com.catchflower.app.ui.component.CfToast.NETWORK_ERROR])로
+ *    끝나므로 이 값을 지나지 않는다 — 즉 **구조로 지켜진다.** 만약 나중에 실패를
+ *    `Failed`로 뭉개서 이 함수에 넣으면 그때도 ❌이므로 안전한 방향이다.
+ *
+ * ⚠️ **`when`에 `else`가 없다.** 새 결과 타입이 생기면 **컴파일이 깨진다** — 그게
+ *    의도다. 조용히 "성공"으로 떨어지면 무료 판별이 무한이 되고, 조용히 "실패"로
+ *    떨어지면 성공한 사람의 횟수가 안 줄어든다. **둘 다 화면에 증상이 없다.**
+ */
+val IdentifyOutcome.countsAsSuccess: Boolean
+    get() = when (this) {
+        is IdentifyOutcome.Confident -> true
+        is IdentifyOutcome.Ambiguous -> true
+        IdentifyOutcome.Failed -> false
+    }
+
+/**
  * 순위가 붙은 후보. [rank]는 1부터다.
  *
  * ⚠️ [rank]는 화면에 안 보이지만 **DB에 저장한다** (discoveries.ai_picked_rank).

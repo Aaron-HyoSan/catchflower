@@ -37,6 +37,7 @@ import com.catchflower.app.ui.component.CfSecondaryButton
 import com.catchflower.app.ui.component.CfSmallButton
 import com.catchflower.app.ui.component.CfTextButton
 import com.catchflower.app.ui.component.CfToast
+import com.catchflower.app.ui.component.LoginGateSheet
 import com.catchflower.app.ui.component.rememberToaster
 import com.catchflower.app.ui.ranking.FriendsViewModel
 import com.catchflower.app.ui.theme.CfColor
@@ -89,6 +90,16 @@ fun RecordDetailScreen(
     //    화면 층에 두고, 항목은 콜백만 올린다.
     var pendingDelete by remember { mutableStateOf<CommentRow?>(null) }
     val onDeleteRequest: (CommentRow) -> Unit = { pendingDelete = it }
+
+    // 로그인 게이트(오너 결정 2026-08-14). 댓글·좋아요·신고는 **비로그인 0회**다.
+    //
+    // 🔴 **버튼을 숨기거나 비활성으로 만들지 않았다** — 그래서 이 시트가 유일한 설명이다.
+    //    이 한 줄이 빠지면 `등록`·하트·`신고`가 **눌리지만 아무 일도 하지 않는다**
+    //    (ViewModel은 `loginRequired`만 세우고 조용히 나간다). 죽은 버튼 14개가 그 모양이었다.
+    // ⚠️ [ModalBottomSheet]는 별도 창에 그려지므로 `Column` 바깥·안쪽 어디에 두어도
+    //    되지만, **`LazyColumn` 항목 안에는 두지 않는다** — 스크롤로 사라지면 시트도
+    //    같이 사라진다(위 `pendingDelete`와 같은 이유).
+    LoginGateSheet(visible = vm.loginRequired != null, onDismiss = vm::dismissLoginRequired)
 
     Column(modifier.fillMaxSize()) {
         CfHeader(

@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.catchflower.app.data.FlowerRepository
 import com.catchflower.app.ui.component.CfToast
+import com.catchflower.app.ui.component.LoginGateSheet
 import androidx.compose.ui.platform.LocalContext
 
 /**
@@ -54,6 +55,11 @@ fun CaptureFlow(
     //    화면 07은 프리뷰가 화면을 꽉 채워야 하므로 **제외한다** — 대신 헤더가 직접 여백을 갖는다
     //    (`CameraScreen` 주석 참조). 여기서 07까지 밀면 프리뷰에 검은 띠가 생긴다.
     val insetModifier = modifier.statusBarsPadding().navigationBarsPadding()
+
+    // 로그인 게이트(오너 결정 2026-08-14). **`when`보다 먼저 그리지 않는다** —
+    // 시트는 아래 화면 위에 겹쳐야 한다. 판정은 `vm`이 이미 했다
+    // (`LoginGate.requiresLogin`) — 여기서 횟수를 다시 세지 않는다.
+    LoginGateSheet(visible = vm.loginRequired != null, onDismiss = vm::dismissLoginRequired)
 
     when (val state = vm.state) {
         CaptureState.Camera -> CameraScreen(

@@ -5,7 +5,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.catchflower.app.core.AppSecrets
 import com.catchflower.app.core.GamePolicy
+import com.catchflower.app.core.LoginGate
 import com.catchflower.app.core.Visibility
+import com.catchflower.app.data.AnonymousUsage
 import com.catchflower.app.data.Coordinate
 import com.catchflower.app.data.DiscoveryRepository
 import com.catchflower.app.data.DiscoveryRules
@@ -30,6 +32,7 @@ import com.catchflower.app.recognizer.QaPreFilterSwitch
 import com.catchflower.app.recognizer.RankedCandidate
 import com.catchflower.app.recognizer.RecognitionError
 import com.catchflower.app.recognizer.ScientificNameIndex
+import com.catchflower.app.recognizer.countsAsSuccess
 import com.catchflower.app.ui.component.CfToast
 import java.util.Calendar
 import java.util.UUID
@@ -159,6 +162,13 @@ class CaptureViewModel @JvmOverloads constructor(
     /** 장소명·행정구역. 카카오 키가 없으면 [NoPlaceService]. */
     private val places: PlaceService =
         if (AppSecrets.hasKakaoKey) KakaoPlaceService() else NoPlaceService,
+    /**
+     * 비로그인 사용량. 로그인 게이트(오너 결정 2026-08-14)의 입력이다.
+     *
+     * ⚠️ 주입 가능하게 둔 이유는 테스트다 — 기본값은 `Context`를 쓰므로 JVM에서
+     *    부를 수 없다([AnonymousUsage] 구현 주석).
+     */
+    private val usage: AnonymousUsage = AnonymousUsage.get(app),
 ) : AndroidViewModel(app) {
 
     private val repository = FlowerRepository.get(app)
@@ -271,8 +281,43 @@ class CaptureViewModel @JvmOverloads constructor(
     /** 위치·장소 조회. 분석과 **병렬로** 돌린다. */
     private var locationJob: Job? = null
 
-    /** 화면 07에서 셔터를 눌렀다. */
+    /**
+     * 로그인 시트를 띄워야 하는 행동. null이면 안 띄운다
+     * ([com.catchflower.app.ui.component.LoginGateSheet]).
+     *
+     * 🔴 **화면이 아니라 여기 있는 이유.** 판정은 [LoginGate]가 하고 저장은
+     *    [AnonymousUsage]가 하는데, 그 둘을 읽는 `if`가 컴포저블 안에 있으면
+     *    **검증 밖에 남는다.** 게이트가 조용히 안 걸리는 것은 화면에 증상이 없다.
+     */
+    var loginRequired by mutableStateOf<LoginGate.GatedAction?>(null)
+        private set
+
+    fun dismissLoginRequired() {
+        loginRequired = null
+    }
+
+    /**
+     * 화면 07에서 셔터를 눌렀다.
+     *
+     * 🔴 **로그인 게이트가 여기 있다** — 카메라 **진입**이 아니다. 등록을 마치면
+     *    [backToCamera]로 돌아오므로 진입만 막으면 **한 번 들어와서 무한히 찍을 수
+     *    있다.** 셔터가 판별 흐름의 유일한 입구다.
+     *
+     * ⚠️ 게이트에 걸리면 [analyze]를 시작하지 않는다 → **유료 API 호출 0건.**
+     *    사진은 이미 찍혔지만 저장도 하지 않는다(그 경로는 [record]에만 있다).
+     */
     fun onPhotoTaken(jpeg: ByteArray) {
+        if (LoginGate.requiresLogin(
+                action = LoginGate.GatedAction.IDENTIFY,
+                kakaoLinked = usage.kakaoLinked(),
+                identifyCount = usage.identifyCount(),
+            )
+        ) {
+            loginRequired = LoginGate.GatedAction.IDENTIFY
+            // 상태를 바꾸지 않는다 — 카메라 위에 시트가 뜬다. `나중에 할게요`를 누르면
+            // 원래 화면이 그대로 남는다(시트가 원래 행동을 이어서 하지 않는다).
+            return
+        }
         analysisJob?.cancel()
         locationJob?.cancel()
         val shot = Pending(jpeg = jpeg, capturedAt = System.currentTimeMillis())
@@ -344,7 +389,15 @@ class CaptureViewModel @JvmOverloads constructor(
             return
         }
 
-        when (val outcome = flow.decide(result)) {
+        val outcome = flow.decide(result)
+        // 🔴 **비로그인 판별 횟수는 여기서만 더한다**(오너 결정 2026-08-14 · 공유계약 3절).
+        //    성공/실패 판정을 이 `if`로 다시 쓰지 않고 [countsAsSuccess]를 읽는다 —
+        //    아래 분기와 갈리면 "후보를 봤는데 횟수가 안 줄었다"가 되고 화면에는
+        //    아무 증상이 없다. 통신 실패·한도 초과는 위에서 이미 return했으므로
+        //    **여기까지 오지 않는다** = 우리 사정으로 남의 횟수를 깎지 않는다.
+        if (outcome.countsAsSuccess) usage.recordIdentify()
+
+        when (outcome) {
             is IdentifyOutcome.Failed -> {
                 failStreak++
                 // 🔴 화면 12에 **왜** 왔는지 남긴다. `판별 응답`의 `통과=N`과 함께 읽으면

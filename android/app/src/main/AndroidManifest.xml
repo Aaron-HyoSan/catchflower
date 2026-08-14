@@ -54,6 +54,33 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 카카오 로그인이 끝나고 브라우저가 앱으로 돌아오는 자리.
+             🔴 **이 필터가 없으면 카카오 인증은 성공하고 앱은 그대로다** — 브라우저가
+                `catchflower://auth-callback`을 열려다 받는 앱을 못 찾는다.
+                증상은 "눌러도 안 돼요"이고, 로그에도 아무것도 안 남는다.
+             ⚠️ `MainActivity`에 붙이지 않은 이유는 `AuthCallbackActivity` 주석에 있다
+                (`singleTask`가 앱 전체 태스크 동작을 바꾼다).
+             ⚠️ `noHistory`로 둔다 — 최근 앱 목록에 빈 화면이 남으면 사용자가
+                그걸 앱이라고 생각하고 누른다.
+             ⚠️ **스킴을 `applicationId`와 같게 두지 않는다.** 겹치면 다른 앱이
+                가로챌 수 있고, 안드로이드가 선택 대화상자를 띄운다
+                (`SupabaseAuthUrls.APP_REDIRECT` 주석).
+             🔴 이 주소는 Supabase 콘솔 **Redirect URLs 허용목록**에도 있어야 한다.
+                없으면 서버가 오류 대신 Site URL로 **조용히** 보낸다 — 그러면 이
+                필터는 멀쩡한데 인텐트가 아예 오지 않는다. -->
+        <activity
+            android:name=".AuthCallbackActivity"
+            android:exported="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="catchflower" android:host="auth-callback" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

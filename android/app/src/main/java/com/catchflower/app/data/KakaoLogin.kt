@@ -81,16 +81,19 @@ import android.net.Uri
  *    🔴 앞자리가 다른 것을 보고 "다른 앱을 등록했다"로 읽지 않는다. 지도 SDK는
  *    네이티브 앱키를, 로그인은 REST 키를 쓴다.
  *
- * ## 🔴 그래도 아직 **눌릴 화면이 없다** — 그리고 이게 지금 유일한 구멍이다
+ * ## ✅ 눌릴 화면이 생겼다 (2026-08-14) — 남은 구멍은 **콘솔 한 줄**이다
  *
- * 화면 01이 없다. 이 층은 **아무도 부르지 않는다**([KakaoLoginTest]가 그 사실을
- * 고정한다). 즉 상수를 true로 바꾼 것은 **버튼을 연 것이 아니라 자물쇠를 푼 것**이다.
+ * 화면 01(전면 로그인)은 여전히 없지만, 오너 결정(`비로그인은 판별 2회`)으로
+ * **로그인 시트**가 생겼다([com.catchflower.app.ui.component.LoginGateSheet]) —
+ * 시작은 [com.catchflower.app.data.KakaoLinkService]가 하고, 부르는 화면이 두 곳뿐인지는
+ * [KakaoLoginTest]가 고정한다(전에는 `아무도 부르지 않는다`를 고정했고 그날 뒤집혔다).
  *
- * ⚠️ **화면을 붙이는 날 반드시 같이 해야 하는 것:**
- *    1. `AndroidManifest.xml`에 `catchflower://auth-callback` **intent-filter**.
- *       없으면 카카오 인증이 성공하고 브라우저가 그 주소를 열지만 **받는 앱이 없다** —
- *       사용자는 로그인이 끝났는데 앱은 그대로다(증상: "눌러도 안 돼요").
- *    2. `redirect_to`가 Supabase 콘솔 **Redirect URLs 허용목록**에 있어야 한다.
+ * ⚠️ **화면을 붙이며 같이 한 것 / 아직 남은 것:**
+ *    1. ✅ `AndroidManifest.xml`에 `catchflower://auth-callback` **intent-filter**를 넣었다
+ *       (`AuthCallbackActivity`). 없으면 카카오 인증이 성공하고 브라우저가 그 주소를
+ *       열지만 **받는 앱이 없다** — 사용자는 로그인이 끝났는데 앱은 그대로다.
+ *    2. 🔴 **아직 남았다.** `redirect_to`가 Supabase 콘솔 **Redirect URLs 허용목록**에
+ *       있어야 한다.
  *       🔴 **없으면 서버가 오류 대신 Site URL로 조용히 보낸다.**
  *       ⚠️ 이건 **아직 못 쟀다.** 재려고 `state`를 열어 봤는데 GoTrue의 `state`는
  *       JWT가 아니라 **불투명한 uuid**여서, 우리 값과 대조군(`bogusscheme://nope`)이
