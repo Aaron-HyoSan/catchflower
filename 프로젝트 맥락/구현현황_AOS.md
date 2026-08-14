@@ -10,7 +10,12 @@
      것처럼 보인다**(22차에 `RankingRulesTest`에서 이미 당한 모양이다 — 총계만 맞추면
      이런 교체는 문서에 한 글자도 안 남는다).
      XML(--rerun-tasks): 52개 클래스 · 646 · 실패 0 · 에러 0 · 건너뜀 0
-     python으로 test-results/*.xml 의 tests 합을 냈다(표 파싱이 아니라 실행 결과다) -->
+     python으로 test-results/*.xml 의 tests 합을 냈다(표 파싱이 아니라 실행 결과다)
+     ✅ **5절 표를 행 단위로 대조했다 — 처음으로 완전히 맞았다.** 52행/646 vs XML 52/646 ·
+     표에만 있는 클래스 0 · XML에만 있는 클래스 0 · **개수가 다른 행 0**.
+     17~22차에는 매번 여기가 어긋났다(총계만 맞고 행이 거짓 / 파서가 먼저 틀림).
+     ⚠️ 대조는 `클래스명 → 개수` 사전 두 개를 비교하는 것이다 — **합만 비교하면
+     두 행이 서로 상쇄돼도 통과한다.** -->
 <!-- 🔴 **22차 실측(다시 셌다).** 537 → 625 (+88)이 전부 설명된다:
      신설 7개 = `FriendRulesTest` 13 · `FriendServiceTest` 15 · `NicknameRulesTest` 15 ·
      `ProfileServiceTest` 18 · `SettingsRulesTest` 7 · `MapLinksTest` 6 · `ShareTextTest` 6 (= 80) +
