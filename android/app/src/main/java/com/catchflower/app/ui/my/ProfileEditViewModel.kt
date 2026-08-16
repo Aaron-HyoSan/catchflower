@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.catchflower.app.core.LoginGate
+import com.catchflower.app.data.AnonymousUsage
 import com.catchflower.app.data.DiscoveryRepository
 import com.catchflower.app.data.NicknameRules
 import com.catchflower.app.data.ProfileResult
@@ -31,6 +33,8 @@ class ProfileEditViewModel @JvmOverloads constructor(
     private val source: ProfileSource? = DiscoveryRepository.get(app).auth?.let { auth ->
         ProfileService(auth, myUserId = { DiscoveryRepository.get(app).userId })
     },
+    /** 로그인 게이트의 입력. 닉네임 변경은 **비로그인 0회**다(오너 결정 2026-08-16). */
+    private val usage: AnonymousUsage = AnonymousUsage.get(app),
 ) : AndroidViewModel(app) {
 
     var input by mutableStateOf("")
@@ -52,9 +56,52 @@ class ProfileEditViewModel @JvmOverloads constructor(
     val savable: Boolean get() = source != null
 
     /**
+     * 로그인 시트를 띄워야 하는 행동. null이면 안 띄운다
+     * ([com.catchflower.app.ui.component.LoginGateSheet]).
+     */
+    var loginRequired by mutableStateOf<LoginGate.GatedAction?>(null)
+        private set
+
+    fun dismissLoginRequired() {
+        loginRequired = null
+    }
+
+    /**
+     * `프로필 수정`을 눌렀다. **화면을 열어도 되는지**를 여기서 판정한다
+     * (오너 결정 2026-08-16 · 닉네임 변경은 비로그인 0회).
+     *
+     * 🔴 **버튼을 숨기지 않는다.** 안 그리면 왜 못 바꾸는지 화면에 안 적히고, 그건
+     *    고장으로 읽힌다([LoginGate.GatedAction] 주석 · 죽은 버튼 14개와 같은 판단).
+     *    눌리게 두고 **시트로 이유를 말한다.**
+     *
+     * ⚠️ **[save]에서 막지 않는 이유**: 다 쓴 이름을 버리게 된다([save] 주석과 같은 판단).
+     *
+     * ⚠️ **[open]을 여기서 부르지 않는다** — 화면 20-1이 열릴 때 `LaunchedEffect(current)`가
+     *    부른다. 두 곳에서 부르면 같은 값을 두 번 넣게 되고, 나중에 한쪽만 고치면
+     *    **어느 쪽이 이겼는지 화면으로 알 수 없다.**
+     *
+     * @return true면 화면 20-1을 연다. false면 **열지 않고** 시트가 뜬다.
+     */
+    fun requestOpen(): Boolean {
+        if (LoginGate.requiresLogin(
+                action = LoginGate.GatedAction.PROFILE_EDIT,
+                kakaoLinked = usage.kakaoLinked(),
+                identifyCount = usage.identifyCount(),
+            )
+        ) {
+            loginRequired = LoginGate.GatedAction.PROFILE_EDIT
+            return false
+        }
+        return true
+    }
+
+    /**
      * 화면을 열 때 부른다.
      *
      * 🔴 **닉네임을 못 받았으면(null) 열지 않는다** — 판단은 [openable]이 한다.
+     *
+     * ⚠️ **게이트를 지나서 부른다** — 화면은 [requestOpen]만 부른다. 이 함수를 직접
+     *    부르는 새 자리를 만들면 게이트를 우회한다.
      */
     fun open(current: String?) {
         original = current

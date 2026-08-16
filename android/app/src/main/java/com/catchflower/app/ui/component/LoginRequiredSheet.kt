@@ -18,8 +18,12 @@ import com.catchflower.app.ui.theme.CfText
 import kotlinx.coroutines.launch
 
 /**
- * 로그인 요구 시트. **비로그인 판별 2회를 다 쓴 뒤** 액션을 누르면 뜬다
- * (`LoginGate.requiresLogin` == true).
+ * 로그인 요구 시트. 막힌 액션을 누르면 뜬다(`LoginGate.requiresLogin` == true).
+ *
+ * ⚠️ **`판별 2회를 다 쓴 뒤`만이 아니다**(2026-08-16에 이 첫 줄을 고쳤다). 댓글·좋아요·
+ *    신고·친구 요청·닉네임 변경은 **0회**라 첫 번째 누름에서 바로 뜬다 —
+ *    `LoginGate.GatedAction` 표가 원본이다. 시트는 어느 행동인지 모른 채 뜬다
+ *    (제목이 하나뿐이라 구분할 필요가 없다 · 아래 `설명 줄이 없다` 참조).
  *
  * ## 문구 (A 문서 3절 `로그인 없이 쓸 수 있는 범위 — 판별 2회` 표)
  *
@@ -64,7 +68,9 @@ import kotlinx.coroutines.launch
  *    `KakaoLinkLauncher`를 안 부르는 채로 쓰이고, 그때 `카카오로 3초 만에
  *    시작하기`는 **눌리지만 아무 일도 하지 않는다** — 죽은 버튼 14개가 그 모양이었다.
  *
- * ⚠️ **두 곳에서 쓴다**(촬영 흐름 · 화면 16). 각자 [KakaoLinkLauncher]를 부르게 두면
+ * ⚠️ **네 곳에서 쓴다**(촬영 흐름 · 화면 16 · 화면 19 · 화면 20 = `프로필 수정`).
+ *    2026-08-16에 둘에서 넷이 됐다 — 화면 16은 **시트를 두 개** 그린다(`RecordViewModel`과
+ *    `FriendsViewModel`이 각자 판정 주인이다). 각자 [KakaoLinkLauncher]를 부르게 두면
  *    실패 처리가 갈리고, 한쪽만 고쳐진다 — 그때 증상은 "어떤 화면에서는 눌러도
  *    아무 일이 없다"이고 원인이 화면에 안 보인다.
  *

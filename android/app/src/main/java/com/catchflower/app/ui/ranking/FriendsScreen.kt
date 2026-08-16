@@ -46,6 +46,7 @@ import com.catchflower.app.ui.component.CfSmallButton
 import com.catchflower.app.ui.component.CfTextButton
 import com.catchflower.app.ui.component.CfToast
 import com.catchflower.app.ui.component.ExternalOpen
+import com.catchflower.app.ui.component.LoginGateSheet
 import com.catchflower.app.ui.component.rememberToaster
 import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
@@ -121,6 +122,16 @@ fun FriendsScreen(
         val text = ShareText.invite(AppLinks.playStore(BuildConfig.APPLICATION_ID))
         if (!ExternalOpen.share(context, text)) toast(CfToast.SHARE_NO_APP)
     }
+
+    // 로그인 게이트(오너 결정 2026-08-16). 친구 요청은 **비로그인 0회**다.
+    //
+    // 🔴 **이 한 줄이 빠지면 `친구 추가`가 눌리지만 아무 일도 하지 않는다** —
+    //    [FriendsViewModel.add]는 막히면 `loginRequired`만 세우고 조용히 나가고,
+    //    `onDone`도 부르지 않으므로 토스트조차 없다(화면 16과 같은 구조).
+    LoginGateSheet(
+        visible = friendsVm.loginRequired != null,
+        onDismiss = friendsVm::dismissLoginRequired,
+    )
 
     Column(modifier.fillMaxSize()) {
         CfHeader(

@@ -200,8 +200,13 @@ object RecordRules {
      * ⚠️ **키 없는 빌드에서도 그리지 않는다.** 서버가 없으면 눌러도 영원히
      *    `연결이 불안정해요`뿐이고, 그건 죽은 버튼의 다른 얼굴이다(4절 17번).
      *
+     * ⚠️ **이 판정은 로그인 여부를 보지 않는다** — 그건
+     *    [com.catchflower.app.core.LoginGate.GatedAction.FRIEND_REQUEST]가 본다.
+     *    익명 세션에도 uuid가 있어서 여기서는 로그인한 것과 구분되지 않는다.
+     *
      * @param authorId 기록 주인 uuid([com.catchflower.app.data.model.Discovery.userId]).
-     * @param myUserId 내 uuid. 로그인 전이면 빈 문자열일 수 있다.
+     * @param myUserId 내 uuid. **익명 로그인이 끝나기 전** 프레임에서만 빈 문자열이다
+     *   (익명 세션이 붙으면 값이 있다 — `카카오 연결 여부`와는 무관하다).
      * @param serverReady 친구 요청을 보낼 수 있는 빌드인가
      *   ([com.catchflower.app.ui.ranking.FriendsViewModel.searchable]).
      */

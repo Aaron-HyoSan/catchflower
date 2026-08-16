@@ -1,5 +1,6 @@
 package com.catchflower.app.core
 
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -41,6 +42,28 @@ import org.junit.Test
  *    1번에 걸려서 `아무 검사도 안 잡는다`로 읽었다.
  */
 class LoginGateTest {
+
+    /**
+     * 이 프로젝트 루트. `디자이너_업무` 폴더를 찾아 올라간다
+     * ([com.catchflower.app.ui.DeadButtonTest]와 같은 방식 · 건너뛰지 않는다).
+     */
+    private val projectRoot: File by lazy {
+        var dir: File? = File("").absoluteFile
+        while (dir != null && !File(dir, "디자이너_업무").isDirectory) dir = dir.parentFile
+        dir ?: throw AssertionError("프로젝트 루트를 못 찾았다 — 건너뛰게 만들면 검증이 사라진다")
+    }
+
+    private val mainSources: List<File> by lazy {
+        val root = File(projectRoot, "android/app/src/main/java")
+        if (!root.isDirectory) throw AssertionError("main 소스 폴더를 못 찾았다: ${root.path}")
+        root.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
+    }
+
+    /** 주석을 뺀 본문. **KDoc의 `[…GatedAction.X]` 참조가 호출처로 세지 않도록** 뗀다. */
+    private fun bodyOf(file: File): String =
+        file.readText()
+            .replace(Regex("""/\*[\s\S]*?\*/"""), " ")
+            .lineSequence().map { it.substringBefore("//") }.joinToString("\n")
 
     private fun anon(action: LoginGate.GatedAction, count: Int) =
         LoginGate.requiresLogin(action, kakaoLinked = false, identifyCount = count)
@@ -135,6 +158,36 @@ class LoginGateTest {
         }
     }
 
+    /**
+     * 🔴 **친구 요청·닉네임 변경도 0회다** (오너 결정 2026-08-16).
+     *
+     * ## 왜 위 검사가 이걸 못 잡았나
+     *
+     * 위 [댓글_좋아요_신고는_횟수가_없다]는 **목록에 적은 세 개**만 본다. 2026-08-16까지
+     * 친구 요청과 닉네임 변경은 [LoginGate.GatedAction]에 **아예 없었고**, 없는 것은
+     * 어떤 검사도 못 본다 — 오너가 실기기에서 `마이프로필이나 설정을 바꿀때면 로그인이
+     * 없어도되네?`로 발견했다.
+     *
+     * 그래서 [게이트가_걸리는_행동은_여덟_개다]가 **목록 자체**를 고정하고, 이 검사가
+     * **어느 무리에 넣었는지**를 고정한다. 둘 중 하나만 있으면 다시 같은 일이 난다.
+     */
+    @Test
+    fun 친구요청과_닉네임변경도_횟수가_없다() {
+        val zeroTimes = listOf(
+            LoginGate.GatedAction.FRIEND_REQUEST,
+            LoginGate.GatedAction.PROFILE_EDIT,
+        )
+        for (action in zeroTimes) {
+            for (count in 0..3) {
+                assertTrue(
+                    "$action 이 $count 회에서 열렸다 — 판별 무리에 넣으면 비로그인이 " +
+                        "남의 알림함에 남거나 랭킹에 보이는 이름을 바꾼다",
+                    anon(action, count),
+                )
+            }
+        }
+    }
+
     // ── 로그인하면 전부 열린다 ────────────────────────────────────────
 
     /**
@@ -154,14 +207,23 @@ class LoginGateTest {
     }
 
     /**
-     * ⚠️ **6개가 전부인지** 고정한다. 새 행동이 늘면 이 검사가 빨개지고, 그때
+     * ⚠️ **8개가 전부인지** 고정한다. 새 행동이 늘면 이 검사가 빨개지고, 그때
      *    위 두 무리 중 어디에 속하는지 **결정**하게 만든다 — `requiresLogin`의 `when`은
      *    컴파일로 잡지만, 여기 목록은 "판별 무리에 잘못 넣었다"를 잡는다.
+     *
+     * 🔴 **이 검사가 잡지 못하는 방향이 하나 있다: 목록에 넣지 않는 것.**
+     *    2026-08-16에 실제로 그랬다 — 친구 요청과 닉네임 변경은 enum에 없어서
+     *    게이트를 아예 지나지 않았고, `when`의 exhaustive 검사도 이 목록 검사도
+     *    **둘 다 초록이었다.** 그 방향은 코드로 못 막는다(없는 것은 컴파일러도
+     *    grep도 못 찾는다) → **서버에 쓰는 새 자리를 만들 때마다 여기 표를 본다.**
      */
     @Test
-    fun 게이트가_걸리는_행동은_여섯_개다() {
+    fun 게이트가_걸리는_행동은_여덟_개다() {
         assertEquals(
-            listOf("IDENTIFY", "REGISTER", "SHARE", "COMMENT", "LIKE", "REPORT"),
+            listOf(
+                "IDENTIFY", "REGISTER", "SHARE",
+                "COMMENT", "LIKE", "REPORT", "FRIEND_REQUEST", "PROFILE_EDIT",
+            ),
             LoginGate.GatedAction.entries.map { it.name },
         )
     }
@@ -184,6 +246,59 @@ class LoginGateTest {
         assertEquals(0, LoginGate.remainingAnonymousIdentifies(kakaoLinked = false, identifyCount = 7))
     }
 
+    // ── 판정을 **부르는 곳이 있는가** (소스 검사) ──────────────────────
+
+    /**
+     * 🔴 **선언만 있고 아무 데서도 판정하지 않는 행동이 없다.**
+     *
+     * ## 왜 이 검사가 필요한가 (2026-08-16)
+     *
+     * 위 검사들은 전부 **판정 함수**만 본다. 그래서 `GatedAction`에 값을 넣고
+     * **부르는 자리를 안 만들어도 전부 초록이다** — `CfToast`에서 같은 일이
+     * 났고([com.catchflower.app.ui.DeadButtonTest] 마지막 검사), 그 결함은
+     * **화면에도 증상이 없다**(막혀야 할 것이 그냥 잘 된다).
+     *
+     * ## ⚠️ 승인 목록이 있다 — `REGISTER`·`SHARE`는 **부르는 곳이 없는 게 맞다**
+     *
+     * 게이트는 **셔터 한 곳**에만 있다([LoginGate.GatedAction.SHARE] 주석).
+     * 판별에 실패한 사람은 등록·공유 화면에 도달하지 못하고, 반대로 2회째 판별에
+     * 성공한 사람(`identifyCount == 2`)이 등록에서 다시 판정을 받으면
+     * **찍고 확정까지 한 뒤에 막힌다** — 오너가 금지한 그 모양이다. 두 상수는
+     * `요금표`로 남는다(정책을 한 표에서 읽게 하는 값).
+     *
+     * 🔴 **금지가 아니라 승인 목록으로 쓴다** — [com.catchflower.app.ui.DeadButtonTest]의
+     *    `빈_람다를_넘기는_자리는_승인된_곳뿐이다`와 같은 이유다. "부르는 곳이 없어도
+     *    된다"를 규칙으로 두면 이 검사는 곧 아무것도 안 잡는다.
+     *
+     * ⚠️ **주석은 호출처로 세지 않는다.** `[…GatedAction.FRIEND_REQUEST]`처럼 KDoc에
+     *    이름을 적어 두는 것이 통과 사유가 되면, 문서가 구현을 승인하게 된다.
+     */
+    @Test
+    fun 선언된_행동은_전부_부르는_곳이_있다() {
+        val sources = mainSources.filter { it.name != "LoginGate.kt" }
+        assertTrue("main 소스를 한 개도 못 읽었다", sources.size > 30)
+
+        val bodies = sources.map { bodyOf(it) }
+        // 이 검사가 **실제로 무언가를 보고 있는지** 먼저 센다. 호출 형태가 바뀌면
+        // (예: `GatedAction`을 import해서 접두사 없이 쓰면) 전부 0곳이 되어
+        // "모두 빠졌다"로 빨개져야 하고, 조용히 통과해서는 안 된다.
+        val called = LoginGate.GatedAction.entries.filter { action ->
+            bodies.any { it.contains("GatedAction.${action.name}") }
+        }
+        assertTrue("게이트를 부르는 자리를 하나도 못 찾았다 — 이 검사가 비어 있다", called.isNotEmpty())
+
+        val orphans = LoginGate.GatedAction.entries
+            .map { it.name }
+            .filterNot { it in CALLSITE_OPTIONAL }
+            .filterNot { name -> bodies.any { it.contains("GatedAction.$name") } }
+        assertEquals(
+            "선언만 하고 아무 데서도 판정하지 않는 행동이다 — 부르는 자리를 붙이거나, " +
+                "부를 필요가 없는 이유를 적어 CALLSITE_OPTIONAL에 넣어라: $orphans",
+            emptyList<String>(),
+            orphans,
+        )
+    }
+
     /** 로그인한 사용자에게는 남은 횟수라는 개념이 없다. 0을 주면 "다 썼다"로 읽힌다. */
     @Test
     fun 로그인하면_남은_횟수를_세지_않는다() {
@@ -191,6 +306,20 @@ class LoginGateTest {
             Int.MAX_VALUE,
             LoginGate.remainingAnonymousIdentifies(kakaoLinked = true, identifyCount = 99),
         )
+    }
+
+    private companion object {
+        /**
+         * **부르는 곳이 없어도 되는** 행동. 목록 밖이면
+         * [선언된_행동은_전부_부르는_곳이_있다]가 빨개진다.
+         *
+         * - `REGISTER`·`SHARE` — 게이트는 **셔터 한 곳**이다. 등록·공유 화면은 판별에
+         *   성공해야 도달하므로 거기서 다시 판정하면 **2회째를 찍고 확정한 사람이
+         *   마지막에 막힌다.** 두 상수는 정책을 한 표에서 읽게 하는 값으로 남는다.
+         *   ⚠️ 촬영 흐름 밖에서 공유를 여는 자리가 생기면(예: 저장된 기록을 나중에
+         *   지도에 올리기) **그때는 `SHARE`를 여기서 빼고 그 자리에서 판정해야 한다.**
+         */
+        val CALLSITE_OPTIONAL = setOf("REGISTER", "SHARE")
     }
 
     /**

@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.catchflower.app.core.LoginGate
+import com.catchflower.app.data.AnonymousUsage
 import com.catchflower.app.data.DiscoveryRepository
 import com.catchflower.app.data.FriendResult
 import com.catchflower.app.data.FriendRules
@@ -60,6 +62,8 @@ class FriendsViewModel @JvmOverloads constructor(
     private val source: FriendSource? = DiscoveryRepository.get(app).auth?.let { auth ->
         FriendService(auth, myUserId = { DiscoveryRepository.get(app).userId })
     },
+    /** 로그인 게이트의 입력. 친구 요청은 **비로그인 0회**다(오너 결정 2026-08-16). */
+    private val usage: AnonymousUsage = AnonymousUsage.get(app),
 ) : AndroidViewModel(app) {
 
     var query by mutableStateOf("")
@@ -77,6 +81,22 @@ class FriendsViewModel @JvmOverloads constructor(
      */
     var justRequested by mutableStateOf<Set<String>>(emptySet())
         private set
+
+    /**
+     * 로그인 시트를 띄워야 하는 행동. null이면 안 띄운다
+     * ([com.catchflower.app.ui.component.LoginGateSheet]).
+     *
+     * 🔴 **이 값을 그리는 화면이 둘이다** — 화면 19([FriendsScreen])와 화면 16
+     *    ([com.catchflower.app.ui.place.RecordDetailScreen]). 둘이 **같은 인스턴스**를
+     *    쓰기 때문이다([justRequested] 주석). 한 곳에만 시트를 두면 다른 화면에서는
+     *    `친구 추가`가 **눌리지만 아무 일도 안 하는 버튼**이 된다.
+     */
+    var loginRequired by mutableStateOf<LoginGate.GatedAction?>(null)
+        private set
+
+    fun dismissLoginRequired() {
+        loginRequired = null
+    }
 
     /** 서버 기능이 있는 빌드인가. 없으면 `검색` 버튼을 그리지 않는다. */
     val searchable: Boolean get() = source != null
@@ -123,9 +143,24 @@ class FriendsViewModel @JvmOverloads constructor(
      *    고른다 — ViewModel이 문구를 들면 A 문서와의 대응이 화면에서 안 보인다
      *    (`RecordViewModel.deleteComment`와 같은 모양).
      *
+     * 🔴 **2026-08-16: 로그인 게이트가 여기 붙었다**(오너 결정 · 비로그인 0회).
+     *    막혔을 때 [onDone]을 **부르지 않는다** — `false`로 부르면 화면이
+     *    `연결이 불안정해요`를 띄워서 **로그인이 필요한 것을 네트워크 문제로 말한다.**
+     *    설명은 [loginRequired]가 띄우는 시트가 한다.
+     *
      * @param onDone `true`면 요청이 저장됐다. `false`면 실패다.
+     *   **로그인이 필요해 막힌 경우에는 아예 안 부른다.**
      */
     fun add(userId: String, onDone: (Boolean) -> Unit) {
+        if (LoginGate.requiresLogin(
+                action = LoginGate.GatedAction.FRIEND_REQUEST,
+                kakaoLinked = usage.kakaoLinked(),
+                identifyCount = usage.identifyCount(),
+            )
+        ) {
+            loginRequired = LoginGate.GatedAction.FRIEND_REQUEST
+            return
+        }
         val src = source ?: run {
             onDone(false)
             return

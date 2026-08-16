@@ -101,6 +101,14 @@ fun RecordDetailScreen(
     //    같이 사라진다(위 `pendingDelete`와 같은 이유).
     LoginGateSheet(visible = vm.loginRequired != null, onDismiss = vm::dismissLoginRequired)
 
+    // 🔴 **친구 요청은 시트가 따로다**(2026-08-16). 판정 주인이 [FriendsViewModel]이라
+    //    `vm.loginRequired`에는 안 들어온다 — 한 줄로 합칠 수 없다. 이게 없으면
+    //    `친구 추가`가 **눌리지만 아무 일도 하지 않는 버튼**이 된다(화면 19와 같은 구조).
+    LoginGateSheet(
+        visible = friendsVm.loginRequired != null,
+        onDismiss = friendsVm::dismissLoginRequired,
+    )
+
     Column(modifier.fillMaxSize()) {
         CfHeader(
             title = "꽃 기록",
@@ -136,8 +144,14 @@ fun RecordDetailScreen(
                 AuthorRow(
                     vm = vm,
                     record = record,
-                    // 내 기록·로그인 전·키 없는 빌드에서는 버튼을 안 그린다
+                    // 내 기록·세션 없음·키 없는 빌드에서는 버튼을 안 그린다
                     // ([RecordRules.canAddFriend]).
+                    //
+                    // 🔴 **`로그인 전`이라고 적혀 있던 자리다 — 2026-08-16에 거짓임이
+                    //    드러났다.** 익명 세션에도 uuid가 있으므로(그게 게이트 설계의
+                    //    전제다) `myUserId`가 비어 있지 않고, 버튼은 **비로그인에도
+                    //    그려진다.** 막는 것은 이 조건이 아니라 위 [LoginGateSheet]와
+                    //    [FriendsViewModel.add]의 게이트다.
                     canAdd = vm.canAddFriend(friendsVm.searchable),
                     // 이미 보낸 요청은 **버튼이 아니라 상태 표시**다(A 문서 3절 ③).
                     requested = vm.authorId() in friendsVm.justRequested,

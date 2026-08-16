@@ -33,6 +33,7 @@ import com.catchflower.app.ui.capture.CaptureFlow
 import com.catchflower.app.ui.component.AppLoadingGate
 import com.catchflower.app.ui.component.AppLoadingScreen
 import com.catchflower.app.ui.component.CfBottomNav
+import com.catchflower.app.ui.component.LoginGateSheet
 import com.catchflower.app.ui.component.NavTab
 import com.catchflower.app.ui.dex.DexDetailScreen
 import com.catchflower.app.ui.dex.DexFilterSheet
@@ -494,7 +495,14 @@ private fun CatchFlowerRoot() {
                             onOpenSharedList = {
                                 discoveryListMode = DiscoveryListMode.SHARED
                             },
-                            onEditProfile = { profileEditOpen = true },
+                            // 🔴 **게이트를 지나야 열린다**(오너 결정 2026-08-16 ·
+                            //    닉네임 변경은 비로그인 0회). 판정은
+                            //    [ProfileEditViewModel.requestOpen]이 하고 여기서
+                            //    `if (linked)`를 쓰지 않는다 — 그 `if`가 컴포저블 안에
+                            //    남으면 어느 층에서도 검증되지 않는다.
+                            onEditProfile = {
+                                if (profileEditViewModel.requestOpen()) profileEditOpen = true
+                            },
                             onOpenSettings = { settingsOpen = true },
                             profileEditable = profileEditViewModel.savable,
                         )
@@ -531,6 +539,16 @@ private fun CatchFlowerRoot() {
     if (filterOpen) {
         DexFilterSheet(vm = dexViewModel, onDismiss = { filterOpen = false })
     }
+
+    // 로그인 게이트 — `프로필 수정`(오너 결정 2026-08-16 · 비로그인 0회).
+    //
+    // 🔴 **`when` 밖에 둔다.** 안에 두면 시트가 화면 20-1과 같은 가지에 묶이는데,
+    //    막힌 경우에는 그 화면을 **열지 않는** 것이 요점이라 시트도 같이 안 뜬다 —
+    //    그러면 `프로필 수정`이 눌리지만 아무 일도 하지 않는 버튼이 된다.
+    LoginGateSheet(
+        visible = profileEditViewModel.loginRequired != null,
+        onDismiss = profileEditViewModel::dismissLoginRequired,
+    )
 }
 
 // ✅ **`Placeholder`를 지웠다**(2026-08-09). 마지막 사용처였던 지도 탭에 화면 14가
