@@ -274,6 +274,46 @@ class DeadButtonTest {
         )
     }
 
+    /**
+     * 🔴 **선언만 있고 아무 데서도 안 뜨는 토스트 문구가 없다.**
+     *
+     * 빨개지는 경우: A 문서에서 문구를 가져와 `CfToast`에 넣고 **띄우는 자리를 잊었을 때**.
+     *
+     * ⚠️ **2026-08-16에 실제로 그 상태가 됐다.** 로그인 성공/실패 문구
+     * ([com.catchflower.app.ui.component.CfToast.LOGIN_LINKED] ·
+     * [com.catchflower.app.ui.component.CfToast.LOGIN_NOT_LINKED])를 넣었는데,
+     * 그것을 띄우는 `AuthCallbackActivity.kt`가 커밋에서 빠졌다. 🔴 **컴파일도 되고
+     * 테스트도 전부 초록이었다** — 상수는 잘 선언돼 있고, 안 부르는 것은 결함이 아니다.
+     * 그리고 이 문구는 **오너 폰의 카카오 콜백에서만 뜨는 것**이라 여기서 화면으로
+     * 확인할 방법도 없다. `CfToast` 첫 주석이 말한 그대로다 —
+     * **"안 쓰는 상수는 구현됐다고 착각하게 만든다."**
+     *
+     * ⚠️ [NOT_READY]는 **0곳이 정답**이라 제외한다
+     * ([준비중_토스트를_쓰는_곳이_없다]가 반대 방향으로 지킨다).
+     * ⚠️ [bodyOf]가 주석을 먼저 뗀다 — KDoc의 `[CfToast.X]` 참조는 **호출처로 세지 않는다.**
+     *    안 그러면 "주석에 이름을 적어 두는 것"이 이 검사를 통과시킨다.
+     */
+    @Test
+    fun 선언된_토스트_문구는_전부_띄우는_곳이_있다() {
+        val toastFile = mainSources.single { it.name == "CfToast.kt" }
+        val declared = Regex("""^\s{4}([A-Z][A-Z0-9_]*)\(""", RegexOption.MULTILINE)
+            .findAll(bodyOf(toastFile)).map { it.groupValues[1] }.toList()
+        assertTrue(
+            "CfToast 상수를 못 읽었다 — 이 검사가 비어 있다(선언 형식이 바뀌었나): $declared",
+            declared.size >= 10,
+        )
+
+        val callers = mainSources.filter { it.name != "CfToast.kt" }.map { bodyOf(it) }
+        val orphans = declared
+            .filter { it != "NOT_READY" }
+            .filterNot { name -> callers.any { it.contains("CfToast.$name") } }
+        assertEquals(
+            "선언만 하고 띄우지 않는 문구다 — 띄우는 자리를 붙여라(호출처가 빠진 커밋이 실제로 있었다): $orphans",
+            emptyList<String>(),
+            orphans,
+        )
+    }
+
     private companion object {
         /**
          * `on… = {}`가 **정당한** 자리. 목록 밖이면

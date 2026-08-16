@@ -3,7 +3,9 @@ package com.catchflower.app
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import com.catchflower.app.ui.component.CfToast
 import com.catchflower.app.ui.component.KakaoLinkLauncher
+import com.catchflower.app.ui.component.showToastNow
 
 /**
  * `catchflower://auth-callback`을 받는다. **화면이 없다** — 받아서 표시하고 [MainActivity]로 넘긴다.
@@ -21,11 +23,16 @@ import com.catchflower.app.ui.component.KakaoLinkLauncher
  * [com.catchflower.app.data.KakaoLinkService.callbackSucceeded]가 한다 —
  * 여기서 `if (data != null)`로 다시 쓰면 **연결이 안 됐는데 게이트가 열린다.**
  *
- * ## ⚠️ 성공했을 때 사용자에게 아무 말도 하지 않는다
+ * ## 🔵 결과를 **말한다** (2026-08-16 · 오너가 문구 작성을 위임했다)
  *
- * A 문서에 **로그인 성공 문구가 없다**(4절 22번에 올렸다). 지어내지 않았다.
- * 지금은 조용히 연결되고, 다음 촬영에서 시트가 안 뜨는 것으로 사용자가 알게 된다.
- * 🔴 이건 좋은 상태가 아니다 — 실패했을 때와 화면이 **똑같다.** 문구가 오면 붙인다.
+ * 그전까지는 성공해도 아무 말도 하지 않았다(A 문서에 문구가 없어서 지어내지 않았다 ·
+ * 4절 22번). 🔴 문제는 **실패했을 때와 화면이 똑같다는 것**이었다 — 사용자는 연결됐는지
+ * 모르는 채로 다시 촬영해 보고, 시트가 뜨는지로 결과를 알아냈다.
+ * 지금은 [CfToast.LOGIN_LINKED] / [CfToast.LOGIN_NOT_LINKED]를 띄운다.
+ *
+ * ⚠️ **성공/실패를 `ok` 하나로 갈라 띄운다.** 원인별 문구를 만들지 않았다 —
+ *    `callbackSucceeded`가 취소와 서버 설정 오류를 **구분해 주지 않기 때문**이고,
+ *    구분 못 하는 것을 구분한 듯 말하면 틀린 안내가 된다([CfToast.LOGIN_NOT_LINKED]).
  */
 class AuthCallbackActivity : Activity() {
 
@@ -33,7 +40,11 @@ class AuthCallbackActivity : Activity() {
         super.onCreate(savedInstanceState)
         // ⚠️ `intent.data`를 문자열로만 넘긴다. 파싱은 `callbackSucceeded`가 하고,
         //    그 함수는 `android.net.Uri`를 쓰지 않는다 — JVM 테스트에서 죽기 때문이다.
-        KakaoLinkLauncher.onCallback(this, intent?.data?.toString())
+        val linked = KakaoLinkLauncher.onCallback(this, intent?.data?.toString())
+
+        // 🔴 **결과를 여기서 말한다.** 이 액티비티는 곧 `finish()`되지만 토스트는
+        //    시스템 창이라 그 뒤에도 뜬다([showToastNow] 주석).
+        showToastNow(this, if (linked) CfToast.LOGIN_LINKED else CfToast.LOGIN_NOT_LINKED)
 
         // 앱으로 되돌린다. **새 태스크를 만들지 않는다**(`CLEAR_TOP`이면 이미 떠 있는
         // MainActivity가 앞으로 온다) — 안 그러면 앱이 두 개 열린 것처럼 보인다.
