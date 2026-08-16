@@ -137,6 +137,22 @@ def main():
         sys.exit(f"🔴 별칭 {n_alias}개 중 {n_control}개만 대조군(id≤200)에 있다 — "
                  "확장분에 별칭이 붙었다면 판단 근거를 다시 본다(계약 1-1-e).")
 
+    # 🔴 **수집 그룹이 자산에 실렸는지 센다** (계약 1-6). `collect_group_id`가 전 종에서
+    #    자기 id면 B-4가 **아무것도 안 한 상태**인데, 아래 픽스처는 정상으로 만들어지고
+    #    JVM 테스트도 전부 초록이다(접기가 없으면 후보가 줄지 않을 뿐 예외가 없다).
+    #    ⚠️ 13·2044를 여기 다시 적지 않는다 — `collect_groups.py`에서 읽는다.
+    import collect_groups  # noqa: E402  (위에서 `공용_적재`를 sys.path에 넣었다)
+    n_member = sum(1 for f in flowers if f["collect_group_id"] != f["id"])
+    if n_member != collect_groups.MEMBER_COUNT:
+        sys.exit(f"🔴 자산에서 접힌 종이 {n_member}개다 — "
+                 f"{collect_groups.MEMBER_COUNT}개여야 한다(계약 1-6).\n"
+                 "  python3 꽃도감/_tools/build_app_data.py 를 먼저 돌린다.")
+    # 대조군에도 다 있어야 한다 — 그룹 8개의 대표·멤버가 전부 id ≤ 200이다.
+    # 여기가 갈리면 아래 `대조군 187칸` 측정이 다른 것을 재게 된다.
+    if sum(1 for f in control if f["collect_group_id"] != f["id"]) != n_member:
+        sys.exit(f"🔴 접힌 종 {n_member}개 중 일부가 대조군(id≤200) 밖이다 — "
+                 "확장분에 그룹이 생겼다면 대조군 측정 기준을 다시 정한다(계약 1-6).")
+
     def slim(fs):
         # `bloom_source`도 담는다 — **개화월 필터가 도는지 재려면 이 축이 필요하다.**
         # 근거 있는 종(human·draft·observed)과 근거 없는 종(peak_window·unknown)을
@@ -149,11 +165,21 @@ def main():
         #    (별칭은 속 단위 지표에 원리상 안 나타난다). 즉 "재고 있다"는 착각만 남는다.
         #    `f["scientific_aliases"]`를 `.get`으로 읽지 않는다 — 칸이 없으면 여기서
         #    죽어야 한다(빈 목록으로 조용히 넘어가면 위와 같은 상태가 된다).
+        # 🔴 `collect_group_id`도 담는다 (계약 1-6 · B-4). 안 담으면 `IdentifyFlow.decide`가
+        #    **접기 없이** 돌면서 화면12 비율·Top-1이 **그대로 나온다** — 접기는 후보
+        #    개수와 표시 이름을 바꾸고, 그 둘은 위 지표에 원리상 안 나타난다.
+        #    즉 안 담으면 "B-4를 재고 있다"는 착각만 남는다.
+        # 🔴 `ai_difficulty`도 담는다. 접으면 **대표종의 난이도**로 임계값이 갈리는데
+        #    (32 서양민들레 상 0.85 → 31 민들레 중 0.70), 전 종을 `LOW`로 눙치면
+        #    09 / 09변형 분기가 **원리상 안 움직인다.** floor는 난이도와 무관하므로
+        #    기존 기대값(후보0개 66 · floor미달 42 · 통과 92)은 이 필드에 영향받지 않는다.
         return [
             {"id": f["id"], "name": f["name"],
              "scientific_name": f["scientific_name"], "bloom_months": f["bloom_months"],
              "bloom_source": f["bloom_source"],
-             "scientific_aliases": f["scientific_aliases"]}
+             "scientific_aliases": f["scientific_aliases"],
+             "ai_difficulty": f["ai_difficulty"],
+             "collect_group_id": f["collect_group_id"]}
             for f in fs
         ]
 

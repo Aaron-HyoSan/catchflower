@@ -53,6 +53,20 @@ class DiscoveryRepository(
      *    **"일시 실패에 멈추는가"를 테스트할 수 없다** — 거기가 이 함수의 핵심이다.
      */
     private val log: (String) -> Unit = { android.util.Log.i("CatchFlower", it) },
+    /**
+     * 도감번호 → **수집 그룹 대표 번호** (B-4 · 계약 1-6). 기본값은 항등이다.
+     *
+     * 🔴 **왜 저장 계층에 있는가.** B-4 이전에 등록된 기록은 **접힌 종의 번호를 들고
+     *    있다** — 실제로 그렇다: 8월에 민들레를 찍으면 대표 민들레(3~5월)가 개화월
+     *    필터에서 빠지고 `Taraxacum sect.`가 서양민들레(32)로 번역됐다.
+     *    그 기록을 그대로 두면 도감 그리드에는 칸이 없는데 `모은 꽃`은 1을 세서
+     *    **그리드 37칸 · 카드 38종**이 된다. 둘 다 그럴듯해서 아무도 못 본다.
+     *
+     * ⚠️ **화면마다 접지 않는다.** 읽는 자리가 도감·마이·지도·랭킹으로 넷이라
+     *    한 군데를 빠뜨리면 그 화면만 조용히 다르다. 그래서 **들어오는 문 하나**에서
+     *    접고, [DiscoveryRules] 이하는 그룹을 아예 모른다.
+     */
+    private val groupOf: (Int) -> Int = { it },
 ) {
 
     var userId: String = userId
@@ -81,7 +95,7 @@ class DiscoveryRepository(
      */
     suspend fun load() {
         if (_loaded.value) return
-        val loaded = store.load()
+        val loaded = collapseToGroups(store.load())
         _discoveries.value = loaded
         _loaded.value = true
 
@@ -91,6 +105,32 @@ class DiscoveryRepository(
         // 로그인 **뒤에** 올린다. 앞에 두면 기기 로컬 id로 보내서 RLS가 42501로
         // 전부 거부하고, 그 기록들이 `rejected`로 박혀 **다시는 올라가지 않는다.**
         syncPending()
+    }
+
+    /**
+     * B-4 이관 — 접힌 종의 기록을 **대표종 번호로 바꿔 파일에 다시 쓴다**(계약 1-6).
+     *
+     * 🔴 **읽을 때마다 접는 것으로 끝내지 않고 파일까지 고치는 이유.** 업로드 큐가
+     *    파일을 읽어 서버로 보낸다 — 메모리에서만 접으면 **화면은 대표종인데 서버에는
+     *    멤버 번호**가 올라가고, 서버 랭킹은 그 둘을 **2종으로 센다.**
+     *    `모은 꽃 37종`인데 랭킹은 38종이 되고, 어느 쪽이 맞는지 화면으로는 알 수 없다.
+     *
+     * ⚠️ 멱등이다. 두 번 돌아도 대표종은 자기 자신으로 남는다([Flower.collectGroupId]).
+     * ⚠️ **이미 서버에 올라간 행은 여기서 못 고친다** — 앱은 자기 행을 UPDATE하지
+     *    않는다(계약 1-3의 업로드는 INSERT뿐이다). 그건 오너가 SQL로 한 번 돌려야
+     *    하는 항목이라 `구현현황_AOS.md` 8절에 적어 둔다.
+     */
+    private suspend fun collapseToGroups(records: List<Discovery>): List<Discovery> {
+        val collapsed = records.map { record ->
+            val rep = groupOf(record.flowerId)
+            if (rep == record.flowerId) record else record.copy(flowerId = rep)
+        }
+        val changed = collapsed.indices.count { collapsed[it].flowerId != records[it].flowerId }
+        if (changed > 0) {
+            log("B-4 수집 그룹 이관: 기록 ${changed}건의 도감번호를 대표종으로 바꿨다")
+            store.save(collapsed)
+        }
+        return collapsed
     }
 
     /**
@@ -272,6 +312,10 @@ class DiscoveryRepository(
                         // 덮어쓸 수 있다 — 그러면 며칠 뒤 조용히 로그인이 끊긴다.
                         uploader = DiscoveryUploader(auth),
                         uploadState = UploadState.default(context),
+                        // B-4 — 도감 자산이 그룹의 원본이다(계약 1-6). 여기서 표를
+                        // 다시 적지 않는다: 두 곳에 적으면 한쪽만 늘어난 날
+                        // **등록은 대표종인데 도감 칸은 멤버**가 된다.
+                        groupOf = FlowerRepository.get(context)::groupIdOf,
                     ).also { instance = it }
                 }
             }

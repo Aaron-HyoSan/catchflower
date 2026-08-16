@@ -107,10 +107,25 @@ class IdentifyFlow(private val repository: FlowerRepository) {
     fun decide(candidates: List<Candidate>): IdentifyOutcome {
         val ranked = candidates
             .sortedByDescending { it.score }
+            // ① 종 → **수집 그룹 대표종**으로 접는다 (B-4 · 계약 1-6).
+            //    화면에 뜨는 이름·일러스트와 등록되는 도감 칸이 여기서 정해진다.
+            .mapNotNull { candidate ->
+                repository.representativeOf(candidate.flowerId)?.let { it to candidate.score }
+            }
+            // ② **같은 칸을 두 번 보여주지 않는다.** 접기만 하고 중복을 안 지우면
+            //    화면 09 변형의 후보 3개가 `민들레 / 민들레 / 별꽃`이 된다 —
+            //    같은 이름 두 개 중 하나를 고르라는 화면이고, 예외는 안 난다.
+            .distinctBy { (flower, _) -> flower.id }
+            // ③ 자르기는 **접은 뒤에** 한다.
+            //    🔴 **다만 여기서 자르는 것으로는 후보가 늘지 않는다.** 이 목록은
+            //    [PlantNetRecognizer.parse]가 이미 3개로 잘라서 준다 — 그래서 접기를
+            //    여기서만 하면 `민들레 / 서양민들레 / 별꽃`이 **2개**로 줄어든다.
+            //    후보를 채우는 일은 **끊는 단위를 그룹으로 바꾼** 인식기 쪽이 한다
+            //    ([PlantNetRecognizer.groupOf]). 여기 `take`는 인식기를 갈아 끼웠을 때
+            //    (Mock·서버 판별) 3개를 넘겨도 화면이 깨지지 않게 하는 방어선이다.
             .take(GamePolicy.CANDIDATE_COUNT)
-            .mapIndexedNotNull { index, candidate ->
-                val flower = repository.byId(candidate.flowerId) ?: return@mapIndexedNotNull null
-                RankedCandidate(rank = index + 1, flower = flower, score = candidate.score)
+            .mapIndexed { index, (flower, score) ->
+                RankedCandidate(rank = index + 1, flower = flower, score = score)
             }
 
         val top = ranked.firstOrNull() ?: return IdentifyOutcome.Failed

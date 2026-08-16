@@ -129,7 +129,8 @@ class PlaceViewModel @JvmOverloads constructor(
     }
 
     /** 칩 라벨. 도감에서 못 찾은 id는 [PlaceRules.chips]가 뺀다. */
-    fun flowerName(flowerId: Int): String? = flowers.byId(flowerId)?.name
+    // B-4 — 서버 행이 접힌 종을 가리킬 수 있다. 지도 핀도 도감과 같은 칸을 말해야 한다.
+    fun flowerName(flowerId: Int): String? = flowers.representativeOf(flowerId)?.name
 
     /**
      * 내 uuid. `사람들의 기록`에서 **내 기록을 뺀다.**

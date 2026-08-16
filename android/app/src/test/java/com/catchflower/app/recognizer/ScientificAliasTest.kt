@@ -5,7 +5,7 @@ import com.catchflower.app.core.BloomSource
 import com.catchflower.app.core.GamePolicy
 import com.catchflower.app.core.Rarity
 import com.catchflower.app.core.Season
-import com.catchflower.app.data.model.Flower
+import com.catchflower.app.data.FixtureDex
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -33,40 +33,7 @@ import org.junit.Test
  */
 class ScientificAliasTest {
 
-    private val fixture: JSONObject by lazy {
-        val text = javaClass.classLoader!!.getResourceAsStream("plantnet_replay.json")!!
-            .bufferedReader().use { it.readText() }
-        JSONObject(text)
-    }
-
-    private fun dex(key: String): List<Flower> {
-        val arr = fixture.getJSONArray(key)
-        return (0 until arr.length()).map { i ->
-            val o = arr.getJSONObject(i)
-            val months = o.getJSONArray("bloom_months")
-            val aliases = o.getJSONArray("scientific_aliases")
-            Flower(
-                id = o.getInt("id"),
-                name = o.getString("name"),
-                scientificName = o.getString("scientific_name"),
-                scientificAliases = (0 until aliases.length()).map { aliases.getString(it) },
-                family = "",
-                bloomMonths = (0 until months.length()).map { months.getInt(it) },
-                bloomLabel = "",
-                bloomSource = BloomSource.fromWire(o.getString("bloom_source")),
-                season = Season.SPRING,
-                color = "",
-                rarity = Rarity.COMMON,
-                habitat = "",
-                aiDifficulty = AiDifficulty.LOW,
-                similarFlowerIds = emptyList(),
-                similarFlowerNames = emptyList(),
-                illustBatch = 1,
-            )
-        }
-    }
-
-    private val full = dex("flowers_full")
+    private val full = FixtureDex.full()
     private val byId = full.associateBy { it.id }
     private val index = ScientificNameIndex(full)
 

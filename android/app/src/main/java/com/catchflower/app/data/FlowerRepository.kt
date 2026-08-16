@@ -37,6 +37,29 @@ class FlowerRepository private constructor(val flowers: List<Flower>) {
     /** 화면 05·09의 '비슷한 꽃' — 도감 안에 있는 것만. */
     fun similarTo(flower: Flower): List<Flower> = flower.similarFlowerIds.mapNotNull(byId::get)
 
+    // ── B-4 수집 그룹 (계약 1-6) ─────────────────────────────────────
+    /**
+     * 도감 그리드가 그리는 목록 — **2,044칸**. 접힌 13종은 여기 없다.
+     *
+     * 🔴 **[flowers]와 다르다.** 후보 집합·학명 매칭은 [flowers](2,057행)를 쓰고,
+     *    **사람에게 보이는 칸**만 이 목록이다. 둘을 뒤집으면 증상이 갈린다:
+     *    그리드에 [flowers]를 쓰면 채울 수 없는 칸 13개가 생기고,
+     *    후보에 이걸 쓰면 8월 서양민들레가 사라져 **인식이 준다**([Flower.collectGroupId]).
+     */
+    val dexFlowers: List<Flower> by lazy { flowers.filter { it.isDexRepresentative } }
+
+    /** 이 종이 접히는 도감 칸의 번호. 그룹에 없으면 자기 번호. 모르는 번호는 그대로 돌려준다. */
+    fun groupIdOf(id: Int): Int = byId[id]?.collectGroupId ?: id
+
+    /**
+     * 도감 칸으로 쓸 대표종. 멤버를 넣으면 대표를 준다.
+     *
+     * ⚠️ 화면에 이름·일러스트를 낼 때는 **반드시 이걸 통과시킨다.** [byId]를 그대로
+     *    쓰면 접힌 종의 이름이 뜨는데(`서양민들레`), 그 종은 도감에 칸이 없어서
+     *    눌러도 갈 곳이 없다 — 예외는 안 나고 화면만 조용히 어긋난다.
+     */
+    fun representativeOf(id: Int): Flower? = byId[groupIdOf(id)]
+
     /**
      * 화면 06 색상 필터에 쓰는 대표색 목록.
      *
@@ -129,6 +152,10 @@ class FlowerRepository private constructor(val flowers: List<Flower>) {
                     similarFlowerNames = o.getJSONArray("similar_flower_names").let { arr ->
                         List(arr.length()) { arr.getString(it) }
                     },
+                    // 계약 1-6. 🔴 **`optInt`를 쓰지 않는다** — 칸이 없으면 조용히 `0`이
+                    //    되고, 그러면 `id == collectGroupId`가 **전 종에서 거짓**이 되어
+                    //    도감 그리드가 **0칸**이 된다. 없으면 여기서 죽는 게 맞다.
+                    collectGroupId = o.getInt("collect_group_id"),
                     illustBatch = o.getInt("illust_batch"),
                 )
             }
@@ -154,6 +181,29 @@ class FlowerRepository private constructor(val flowers: List<Flower>) {
             check(aliasCount == GamePolicy.SCIENTIFIC_ALIAS_COUNT) {
                 "학명 별칭이 ${GamePolicy.SCIENTIFIC_ALIAS_COUNT}개여야 한다. 실제 ${aliasCount}개" +
                     " — `공용_적재/scientific_aliases.py`와 자산이 어긋났다"
+            }
+            // 🔴 **수집 그룹을 센다** (계약 1-6). 위 `getInt`는 칸이 있는지만 보므로
+            //    적재가 **전 종에 자기 id**를 내려도 통과한다 — 그러면 B-4가 아무것도
+            //    안 한 상태로 앱이 **정상 동작한다**(도감이 2,057칸이 되고, 민들레
+            //    두 칸 중 하나는 영구히 못 채운다). 자산이 갈아 끼워질 수 있으니
+            //    적재 쪽 검사에 의존하지 않고 여기서도 센다.
+            val slots = flowers.count { it.isDexRepresentative }
+            check(slots == GamePolicy.DEX_SLOT_COUNT) {
+                "도감 칸이 ${GamePolicy.DEX_SLOT_COUNT}개여야 한다. 실제 ${slots}개" +
+                    " — `공용_적재/collect_groups.py`와 자산이 어긋났다"
+            }
+            // 🔴 **사슬을 금지한다.** A→B→C면 한 번 접기로 안 끝나고, 도감 칸을 세는
+            //    쪽과 등록하는 쪽이 **서로 다른 칸**을 쓴다(둘 다 그럴듯한 숫자가 나온다).
+            for (flower in flowers) {
+                val rep = flowers.getOrNull(flower.collectGroupId - 1)
+                check(rep != null && rep.id == flower.collectGroupId) {
+                    "${flower.id} ${flower.name}의 collect_group_id ${flower.collectGroupId}가" +
+                        " 도감에 없는 번호다"
+                }
+                check(rep.isDexRepresentative) {
+                    "${flower.id} ${flower.name}의 대표 ${rep.id} ${rep.name}이 또 다른 그룹의" +
+                        " 멤버다 — 접기가 사슬이 된다"
+                }
             }
             return FlowerRepository(flowers)
         }

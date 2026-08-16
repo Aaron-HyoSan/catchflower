@@ -189,9 +189,12 @@ class RankingViewModel @JvmOverloads constructor(
     val myRegionRank: RankedEntry? get() = regionTop.firstOrNull { it.entry.isMe }
 
     /** 꽃 이름·일러스트를 위해 도감을 참조한다. 행의 `대표 꽃 · 장미`. */
-    fun flowerName(flowerId: Int): String = repository.byId(flowerId)?.name.orEmpty()
+    // 🔴 **대표종으로 접어서 본다**(B-4 · 계약 1-6). 서버 행에는 접힌 종의 번호가
+    //    남아 있을 수 있다 — 앱은 자기 행을 UPDATE하지 않고 iOS는 아직 B-4가 없다.
+    //    `byId`로 읽으면 랭킹에 `서양민들레`가 뜨는데 도감에는 그 칸이 없다.
+    fun flowerName(flowerId: Int): String = repository.representativeOf(flowerId)?.name.orEmpty()
 
-    fun flower(flowerId: Int) = repository.byId(flowerId)
+    fun flower(flowerId: Int) = repository.representativeOf(flowerId)
 
     // 🔴 **`forceNoFriends`·`toggleNoFriends`·`effectiveShowInvite`를 지웠다**(2026-08-09).
     //    더미 시절에는 친구가 항상 8명이라 "친구 0명 분기"(와이어프레임 18 주석 ④)를

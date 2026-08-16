@@ -51,6 +51,8 @@ class IdentifySuccessCountTest {
         aiDifficulty = AiDifficulty.LOW,
         similarFlowerIds = emptyList(),
         similarFlowerNames = emptyList(),
+        // 31 민들레는 **대표종**이다(계약 1-6). 자기 id를 넣는다.
+        collectGroupId = 31,
         illustBatch = 1,
     )
 

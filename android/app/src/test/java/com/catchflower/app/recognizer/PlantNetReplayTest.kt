@@ -5,6 +5,7 @@ import com.catchflower.app.core.BloomSource
 import com.catchflower.app.core.GamePolicy
 import com.catchflower.app.core.Rarity
 import com.catchflower.app.core.Season
+import com.catchflower.app.data.FixtureDex
 import com.catchflower.app.data.FlowerRepository
 import com.catchflower.app.data.model.Flower
 import kotlinx.coroutines.runBlocking
@@ -34,48 +35,7 @@ class PlantNetReplayTest {
 
     // ── 픽스처 ──────────────────────────────────────────────────────────
 
-    private val fixture: JSONObject by lazy {
-        val stream = javaClass.classLoader!!.getResourceAsStream("plantnet_replay.json")
-        requireNotNull(stream) {
-            "plantnet_replay.json이 없다. " +
-                "python3 android/_tools/build_plantnet_replay_fixture.py 를 돌린다"
-        }
-        JSONObject(stream.bufferedReader().use { it.readText() })
-    }
-
-    private fun dex(key: String): List<Flower> {
-        val arr = fixture.getJSONArray(key)
-        return (0 until arr.length()).map { i ->
-            val o = arr.getJSONObject(i)
-            val months = o.getJSONArray("bloom_months")
-            Flower(
-                id = o.getInt("id"),
-                name = o.getString("name"),
-                scientificName = o.getString("scientific_name"),
-                // 계약 1-1-e. 🔴 **`optJSONArray`로 눙치지 않는다** — 픽스처에 칸이
-                //    없으면 여기서 죽어야 한다. 빈 목록으로 넘어가면 별칭 없는
-                //    색인으로 재면서 **지표는 그대로 나온다**(속 단위라 안 보인다).
-                scientificAliases = o.getJSONArray("scientific_aliases").let { a ->
-                    (0 until a.length()).map { a.getString(it) }
-                },
-                family = "",
-                bloomMonths = (0 until months.length()).map { months.getInt(it) },
-                bloomLabel = "",
-                // 판별 자체는 `bloomSource`를 안 본다(개화월과 학명만 쓴다). 그런데
-                // **개화월 필터가 도는지 재려면 이 축이 필요하다** — 아래
-                // `개화월 필터가 근거 있는 종을 실제로 좁힌다`가 이걸로 표본을 가른다.
-                bloomSource = BloomSource.fromWire(o.getString("bloom_source")),
-                season = Season.SPRING,
-                color = "",
-                rarity = Rarity.COMMON,
-                habitat = "",
-                aiDifficulty = AiDifficulty.LOW,
-                similarFlowerIds = emptyList(),
-                similarFlowerNames = emptyList(),
-                illustBatch = 1,
-            )
-        }
-    }
+    private val fixture: JSONObject by lazy { FixtureDex.raw() }
 
     /**
      * **대조군 200종.** JVM 테스트는 assets를 못 읽어서 픽스처가 함께 들고 있다.
@@ -86,10 +46,10 @@ class PlantNetReplayTest {
      *    그러면 "확장 때문인가 파이프라인이 깨진 건가"를 가릴 수 없다.
      *    확장 쪽은 [flowersFull]로 **따로** 잰다.
      */
-    private val flowers: List<Flower> by lazy { dex("flowers") }
+    private val flowers: List<Flower> by lazy { FixtureDex.control() }
 
     /** 앱이 실제로 싣는 도감 2,057종. 확장이 판별을 어떻게 바꾸는지 잰다. */
-    private val flowersFull: List<Flower> by lazy { dex("flowers_full") }
+    private val flowersFull: List<Flower> by lazy { FixtureDex.full() }
 
     private val index by lazy { ScientificNameIndex(flowers) }
 
@@ -129,13 +89,26 @@ class PlantNetReplayTest {
     private fun candidatesFor(month: Int): List<Int> =
         flowers.filter { month in it.bloomMonths }.map { it.id }
 
-    private fun recognizer(body: String) = PlantNetRecognizer(
+    private fun recognizer(
+        body: String,
+        index: ScientificNameIndex = this.index,
+        /** 계약 1-6. **기본값은 항등** — 대조군(B-4 전)이 이 값이다. */
+        groupOf: (Int) -> Int = { it },
+    ) = PlantNetRecognizer(
         index = index,
         apiKey = "replay",
         transport = object : PlantNetRecognizer.Transport {
             override suspend fun post(url: String, contentType: String, b: ByteArray) = 200 to body
         },
+        groupOf = groupOf,
     )
+
+    /** 화면에 실제로 뜨는 후보. 화면 09는 1순위+대안, 09변형은 3개, 화면 12는 없다. */
+    private fun shown(outcome: IdentifyOutcome): List<RankedCandidate> = when (outcome) {
+        is IdentifyOutcome.Confident -> listOf(outcome.top) + outcome.alternatives
+        is IdentifyOutcome.Ambiguous -> outcome.candidates
+        IdentifyOutcome.Failed -> emptyList()
+    }
 
     // ── 검증 ────────────────────────────────────────────────────────────
 
@@ -491,6 +464,154 @@ class PlantNetReplayTest {
         assertTrue("가장 좁은 달(${pool.min()}종)과 가장 넓은 달(${pool.max()}종)의 차이가 " +
             "10배 미만이다 — 개화월 필터가 사실상 꺼진 것이다", pool.max() > pool.min() * 10)
         assertTrue("겨울(1월 ${pool[0]}종)이 근거 있는 종의 10%를 넘는다", pool[0] < evidenced.size / 10)
+    }
+
+    /**
+     * 🔴 **B-4 수집 그룹이 무엇을 고치는가** — 같은 캐시 200장으로 전/후를 함께 잰다
+     * (유료 호출 0건 · 계약 1-6).
+     *
+     * ## 처음에 잰 축은 틀렸다
+     *
+     * **후보 개수**를 재려고 했다. 결과가 **전/후 완전히 같았다** — 제철 달
+     * `[42, 55, 36, 67]` → `[42, 55, 36, 67]`, 같은 칸이 두 번 뜬 사진 **0장**.
+     * 이유는 코드가 아니라 데이터였다: 응답에 같은 속이 2번 이상 나온 사진이 35장인데,
+     * 그 이름들이 **색인 단계에서 이미 한 종으로 모인다** — `Taraxacum mongolicum`은
+     * 31번의 별칭이고(계약 1-1-e), 도감에 없는 `T. erythrospermum`·`sect. Taraxacum`은
+     * 속 폴백으로 역시 31번이 된다. 즉 **접힐 짝이 후보 목록까지 오지 못한다.**
+     * → 후보 개수는 이 표본에서 B-4를 **원리상 못 재는 축**이다. 그 사실을 아래
+     *   `후보 개수 분포`로 함께 찍어 둔다(0장이 결함이 아니라는 근거).
+     *
+     * ## 실제로 잴 수 있는 축: **같은 사진이 달에 따라 다른 칸에 등록된다**
+     *
+     * 민들레 사진 한 장을 4월과 8월에 각각 태우면 **등록되는 도감 칸이 다르다.**
+     * 개화월 하드 필터가 후보를 좁히고 속 폴백이 남은 것을 고르기 때문이다:
+     *
+     * | | 4월 후보 | 1순위로 번역되는 종 |
+     * |---|---|---|
+     * | 4월 | 31 민들레(3~5월) · 32 서양민들레(3~10월) | **31 민들레** |
+     * | 8월 | 32뿐 (31은 개화월에서 빠진다) | **32 서양민들레** |
+     *
+     * 🔴 사용자에게 이건 **"같은 꽃을 두 번 모아야 하는 도감"** 이다. 그리고 화면에는
+     *    아무 증상이 없다 — 4월에도 8월에도 그럴듯한 이름이 뜬다.
+     *    B-4는 둘을 한 칸(31)으로 접어 이 갈림을 없앤다.
+     *
+     * ⚠️ **달이 다르면 진짜로 다른 꽃인 경우와 구분해야 한다.** 장미 사진은 6월에
+     *    찔레꽃(29)·8월에 장미(81)로 갈리는데 그건 **다른 꽃**이고 B-4의 대상이 아니다.
+     *    그래서 "갈렸다"를 세는 게 아니라 **"같은 수집 그룹 안에서 갈렸다"** 를 센다.
+     */
+    @Test
+    fun `B4 수집 그룹이 달에 따라 갈리는 등록 칸을 없앤다`() = runBlocking {
+        val dex = flowersFull
+        val idx = ScientificNameIndex(dex)
+        val after = FlowerRepository.forTest(dex)
+        // 🔴 **대조군은 `collect_group_id`를 자기 id로 되돌린 같은 도감이다.**
+        //    다른 배열을 쓰면 후보풀·색인이 함께 달라져 **무엇 때문에 움직였는지** 모른다.
+        val before = FlowerRepository.forTest(dex.map { it.copy(collectGroupId = it.id) })
+        val flowAfter = IdentifyFlow(after)
+        val flowBefore = IdentifyFlow(before)
+        val poolCache = HashMap<Int, List<Int>>()
+        fun pool(month: Int) = poolCache.getOrPut(month) {
+            dex.filter { month in it.bloomMonths }.map { it.id }
+        }
+
+        /** 이 사진을 이 달에 태웠을 때 **등록되는 칸**. 화면 12면 null. */
+        suspend fun slot(photo: Photo, month: Int, b4: Boolean): Int? {
+            val flow = if (b4) flowAfter else flowBefore
+            val group: (Int) -> Int = if (b4) after::groupIdOf else { { it } }
+            val result = recognizer(photo.body, idx, group).identify(ByteArray(1), pool(month))
+            return shown(flow.decide(result)).firstOrNull()?.flower?.id
+        }
+
+        // 제철 달 vs 8월. **둘 다 후보가 나온 사진만** 센다 — 한쪽이 화면 12면
+        // 갈린 게 아니라 못 맞힌 것이고, 그건 floor·커버리지의 몫이다.
+        var comparable = 0
+        var splitSameGroup = 0      // 🔴 B-4가 고치는 것
+        var splitOtherFlower = 0    // 다른 꽃이다. B-4와 무관
+        var splitAfter = 0
+        val examples = ArrayList<String>()
+
+        for (photo in photos) {
+            val peak = peakMonth.getValue(photo.cls)
+            if (peak == 8) continue // 해바라기 — 두 달이 같으면 잴 것이 없다
+            val b1 = slot(photo, peak, b4 = false) ?: continue
+            val b2 = slot(photo, 8, b4 = false) ?: continue
+            comparable++
+            if (b1 != b2) {
+                if (after.groupIdOf(b1) == after.groupIdOf(b2)) {
+                    splitSameGroup++
+                    if (examples.size < 3) {
+                        examples += "${photo.file}: ${peak}월 $b1 ${before.byId(b1)?.name}" +
+                            " / 8월 $b2 ${before.byId(b2)?.name}"
+                    }
+                } else {
+                    splitOtherFlower++
+                }
+            }
+            val a1 = slot(photo, peak, b4 = true) ?: continue
+            val a2 = slot(photo, 8, b4 = true) ?: continue
+            if (a1 != a2 && after.groupIdOf(a1) == after.groupIdOf(a2)) splitAfter++
+        }
+
+        // 후보 개수 분포도 함께 남긴다 — **0장이 결함이 아니라는 근거**다(위 주석).
+        val distBefore = IntArray(4)
+        val distAfter = IntArray(4)
+        var dupSlot = 0
+        for (photo in photos) {
+            val month = peakMonth.getValue(photo.cls)
+            val b = shown(flowBefore.decide(
+                recognizer(photo.body, idx).identify(ByteArray(1), pool(month))))
+            val a = shown(flowAfter.decide(
+                recognizer(photo.body, idx, after::groupIdOf).identify(ByteArray(1), pool(month))))
+            distBefore[b.size]++
+            distAfter[a.size]++
+            if (b.map { after.groupIdOf(it.flower.id) }.distinct().size < b.size) dupSlot++
+        }
+
+        println(
+            "B-4 (캐시 200장 · 유료 호출 0건)\n" +
+                "  등록 칸이 달에 따라 갈린 사진 — 비교 가능 ${comparable}장 중\n" +
+                "    같은 수집 그룹 안에서 갈림: 대조군 ${splitSameGroup}장 → B-4 ${splitAfter}장\n" +
+                "    다른 꽃으로 갈림(B-4 무관): ${splitOtherFlower}장\n" +
+                examples.joinToString("") { "    · $it\n" } +
+                "  후보 개수 분포(0/1/2/3) 제철 달 — 대조군 ${distBefore.toList()} → " +
+                "B-4 ${distAfter.toList()} · 같은 칸 중복 ${dupSlot}장\n" +
+                "    (0장이 정상이다 — 같은 그룹의 학명은 색인·별칭 단계에서 이미 한 종으로 모인다)",
+        )
+
+        // ① **결함이 이 표본에 실재하는가.** 0이면 아래 ②가 `0 == 0`으로 저절로
+        //    통과한다 — 그룹 표를 빈 것으로 갈아도 초록이 된다.
+        assertTrue(
+            "대조군에서 달에 따라 같은 그룹 안에서 갈리는 사진이 없다 — 이 표본으로는 B-4를 " +
+                "잴 수 없다. `collect_group_id`가 픽스처에 실렸는지 본다(계약 1-6)",
+            splitSameGroup > 0,
+        )
+        // ② 🔴 **B-4가 그걸 없앤다.** 이게 B-4의 사용자 쪽 효과다.
+        assertEquals(
+            "B-4를 켜도 달에 따라 등록 칸이 갈리는 사진이 ${splitAfter}장 남았다 — " +
+                "접기가 등록 경로를 지나지 않는다(`IdentifyFlow.decide`)",
+            0, splitAfter,
+        )
+        // ③ **다른 꽃으로 갈리는 것은 그대로 남는다.** 여기까지 0이 되면 접기가
+        //    너무 많이 묶은 것이다(장미와 찔레꽃이 한 칸이 되면 이 값이 0이 된다).
+        assertTrue(
+            "다른 꽃으로 갈리는 사진이 0장이다 — 접기가 서로 다른 꽃까지 묶었는지 본다",
+            splitOtherFlower > 0,
+        )
+        // ④ 후보 개수는 **줄지 않는다**. 접기를 [IdentifyFlow]에만 넣었던 첫 구현은
+        //    3개를 2개로 줄이는 상태였고, 그때도 위 모든 테스트가 초록이었다.
+        //
+        // ⚠️ **이 단정은 이 표본에서는 빨개질 수 없다** — 위 분포가 전/후 완전히 같기
+        //    때문이다(같은 그룹의 학명이 색인에서 이미 한 종으로 모인다). 즉 여기 있는
+        //    것은 **회귀 감시**일 뿐이고, "끊는 단위가 그룹인가"는 이 파일이 못 잰다.
+        //    그건 응답을 지어내야 만들 수 있는 상황이라
+        //    `CollectGroupTest.후보 3칸을 종이 아니라 그룹으로 센다`가 잰다.
+        for (n in 1..3) {
+            assertTrue(
+                "후보 ${n}개인 사진이 대조군 ${distBefore[n]}장 → B-4 ${distAfter[n]}장으로 " +
+                    "움직였다. 끊는 단위를 확인한다(`PlantNetRecognizer.groupOf`)",
+                distAfter.drop(n).sum() >= distBefore.drop(n).sum(),
+            )
+        }
     }
 
     /**

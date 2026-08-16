@@ -25,6 +25,8 @@ class DexFilterTest {
         color: String = "노랑",
         rarity: Rarity = Rarity.COMMON,
         bloomMonths: List<Int> = listOf(3, 4),
+        /** 계약 1-6. 기본값은 자기 id. 필터는 그룹을 모른다 — 접기는 저장소가 한다. */
+        collectGroupId: Int = id,
     ) = Flower(
         id = id,
         name = "꽃$id",
@@ -41,6 +43,7 @@ class DexFilterTest {
         aiDifficulty = AiDifficulty.LOW,
         similarFlowerIds = emptyList(),
         similarFlowerNames = emptyList(),
+        collectGroupId = collectGroupId,
         illustBatch = 1,
     )
 

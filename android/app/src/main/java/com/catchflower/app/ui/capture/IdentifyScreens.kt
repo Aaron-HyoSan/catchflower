@@ -486,7 +486,7 @@ fun NewFlowerScreen(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            MetricColumn("도감", "$collectedCount / ${GamePolicy.TOTAL_FLOWER_COUNT}종")
+            MetricColumn("도감", "$collectedCount / ${GamePolicy.DEX_SLOT_COUNT}종")
             MetricColumn("이번 시즌", "${seasonCount}종 (+1)")
         }
 

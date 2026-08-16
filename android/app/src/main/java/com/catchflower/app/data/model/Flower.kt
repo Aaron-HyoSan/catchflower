@@ -64,8 +64,31 @@ data class Flower(
     val similarFlowerIds: List<Int>,
     /** 도감에 없는 종까지 포함한 표시용 이름. 화면 09 힌트 문구가 이걸 쓴다. */
     val similarFlowerNames: List<String>,
+    /**
+     * **수집 그룹**의 대표 도감번호 (B-4 · 공유계약 1-6). 원본은 `공용_적재/collect_groups.py`.
+     *
+     * 🔴 **사진으로 못 가르는 종을 도감 한 칸으로 묶는다.** PlantNet은 민들레 40장 중
+     *    29장에 `Taraxacum sect. Taraxacum`(종보다 위 계급 = 구분 거부)을 준다 —
+     *    민들레/서양민들레는 씨앗으로 갈라서 꽃 사진으로는 원리상 불가능하다.
+     *    안 묶으면 **채울 수 없는 도감 칸**이 생기고, 사용자는 자기가 못 찍는 줄 안다.
+     *
+     * ⚠️ **대부분 자기 [id]와 같다** (2,057 중 2,044). 13종만 다른 값이고, 그 13종은
+     *    도감 그리드에 **칸이 없다**([com.catchflower.app.data.FlowerRepository.dexFlowers]).
+     *    옵셔널이 아니라 자기 id가 기본값인 이유: null로 두면 읽는 쪽이 "그룹 없음"
+     *    분기를 타야 하고, 한 곳이라도 빠뜨리면 **도감 칸이 조용히 두 개**가 된다.
+     *
+     * 🔴 **행은 남아 있다 — 종을 지운 것이 아니다.** 멤버도 학명 매칭과
+     *    개화월 후보 집합에 계속 들어간다. 순서가 설계다:
+     *    `후보(종) → 매칭(종) → 접기(그룹)`. 접기를 후보 만들기 앞으로 옮기면
+     *    8월에 서양민들레(3~10월)가 후보에서 빠져 **인식이 조용히 죽는다**
+     *    (대표 민들레는 3~5월이다).
+     */
+    val collectGroupId: Int,
     val illustBatch: Int,
 ) {
+    /** 도감 그리드에 칸이 있는가 — 대표종이거나 그룹에 속하지 않는 종. */
+    val isDexRepresentative: Boolean get() = id == collectGroupId
+
     /** 이 달에 피는가. 개화월 하드 필터의 판정. */
     fun bloomsIn(month: Int): Boolean = month in bloomMonths
 

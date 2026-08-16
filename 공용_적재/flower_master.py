@@ -43,6 +43,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 import scientific_aliases  # noqa: E402  (위 sys.path 조작 뒤여야 한다)
+import collect_groups  # noqa: E402  (B-4 수집 그룹 · 같은 이유로 여기서 임포트한다)
 
 ROOT = os.path.dirname(HERE)
 CSV_200 = os.path.join(ROOT, "꽃도감", "꽃목록_200종.csv")
@@ -420,6 +421,11 @@ def build_master():
                              % (raw_name, korean))
         aliases_by_id.setdefault(fid, []).append(raw_name)
 
+    # B-4 수집 그룹 — 표가 도감과 어긋나면 **여기서 죽는다**(조용히 다른 꽃을 합치는 것보다 낫다).
+    name_by_id = {fid: name for name, fid in name_to_id.items()}
+    collect_groups.self_check(name_by_id)
+    group_of = collect_groups.member_to_rep()
+
     flowers = []
     stats = {}
     dangling = []
@@ -472,13 +478,31 @@ def build_master():
         if not family:
             raise ValueError("도감번호 %d: 과가 비어 있다" % fid)
 
+        # `비슷한 꽃`은 화면 05에서 **누를 수 있는 링크**다.
+        # 🔴 접힌 멤버를 그대로 두면 **도감에 칸이 없는 종으로 가는 링크**가 된다.
+        #    그래서 대표종으로 옮기고, 자기 자신·중복을 뺀다. 이름과 id를 **같이**
+        #    옮긴다 — 한쪽만 옮기면 화면의 이름과 눌러서 가는 곳이 갈린다.
+        #    ⚠️ `similar_flower_names`는 **도감에 없는 종까지 포함하는 표시용**이다
+        #    (모델 주석 · 화면 09 힌트). 그래서 못 찾은 이름은 **그대로 남긴다** —
+        #    여기서 지우면 힌트 문구가 조용히 짧아진다.
+        my_group = collect_groups.group_id_of(fid, group_of)
         similar_ids = []
+        kept_names = []
         for nm in similar_names:
             target = name_to_id.get(nfc(nm))
             if target is None:
                 dangling.append((fid, nm))
+                if nfc(nm) not in kept_names:
+                    kept_names.append(nfc(nm))
                 continue
-            similar_ids.append(target)
+            target = collect_groups.group_id_of(target, group_of)
+            if target == my_group:
+                continue
+            if target not in similar_ids:
+                similar_ids.append(target)
+            if name_by_id[target] not in kept_names:
+                kept_names.append(name_by_id[target])
+        similar_names = kept_names
 
         stats[bloom_source] = stats.get(bloom_source, 0) + 1
         flowers.append({
@@ -496,6 +520,10 @@ def build_master():
             "ai_difficulty": difficulty,
             "similar_flower_ids": similar_ids,
             "similar_flower_names": similar_names,
+            # 계약 1-6 (B-4). **자기 id가 기본값**이라 2,057행 전부에 값이 있다 —
+            # 옵셔널로 두면 읽는 쪽이 null을 "그룹 없음"으로 분기해야 하고,
+            # 그 분기를 빠뜨리면 **도감 칸이 조용히 두 개**가 된다.
+            "collect_group_id": my_group,
             # 계약 1-1-e. 대부분 빈 배열이다 — 23종만 값이 있다.
             "scientific_aliases": aliases_by_id.get(fid, []),
             "illust_batch": illust_batch,
@@ -641,6 +669,42 @@ def _verify(flowers):
     if outside:
         problems.append("확장분(id>200)에 별칭이 붙었다: %s — 확장 CSV는 이미 새 이름이다"
                         % [(f["id"], f["name"]) for f in outside[:5]])
+
+    # ── B-4 수집 그룹 (계약 1-6) ──────────────────────────────────────
+    # 🔴 여기서 세는 것은 `collect_groups.self_check`가 **못 보는 것**이다.
+    #    그쪽은 손으로 적은 표를 검사하고, 여기는 **실제로 실린 값**을 검사한다.
+    #    표가 옳아도 적재가 필드를 빠뜨리면(전부 자기 id) 도감 칸 수만 조용히 늘어난다.
+    all_ids = set(f["id"] for f in flowers)
+    group_ids = set()
+    for f in flowers:
+        gid = f.get("collect_group_id")
+        if gid is None:
+            problems.append("%d %s collect_group_id가 없다" % (f["id"], f["name"]))
+            continue
+        group_ids.add(gid)
+        if gid not in all_ids:
+            problems.append("%d %s collect_group_id %r가 도감에 없는 번호다"
+                            % (f["id"], f["name"], gid))
+        # 🔴 **사슬을 금지한다.** 대표종의 그룹은 자기 자신이어야 한다 —
+        #    A→B→C가 생기면 한 번 접기로 안 끝나고, 두 화면이 서로 다른 칸을 센다.
+        elif gid != f["id"]:
+            rep = flowers[gid - 1]
+            if rep["collect_group_id"] != rep["id"]:
+                problems.append("%d %s의 대표 %d %s가 또 다른 그룹의 멤버다 — 사슬이다"
+                                % (f["id"], f["name"], rep["id"], rep["name"]))
+    # 도감 칸 수 = 서로 다른 그룹 id 수. 계약 1-5·1-6과 `GamePolicy.DEX_SLOT_COUNT`가 같아야 한다.
+    if len(group_ids) != collect_groups.SLOT_COUNT:
+        problems.append("도감 칸이 %d개여야 하는데 %d개다"
+                        % (collect_groups.SLOT_COUNT, len(group_ids)))
+    # 🔴 **접힌 종으로 가는 `비슷한 꽃` 링크가 남으면** 화면 05에서 칸이 없는 종으로 간다.
+    for f in flowers:
+        for sid in f["similar_flower_ids"]:
+            if flowers[sid - 1]["collect_group_id"] != sid:
+                problems.append("%d %s의 비슷한꽃 %d이 접힌 멤버다 — 도감에 칸이 없다"
+                                % (f["id"], f["name"], sid))
+            if sid == f["collect_group_id"]:
+                problems.append("%d %s의 비슷한꽃이 자기 그룹(%d)을 가리킨다"
+                                % (f["id"], f["name"], sid))
 
     if problems:
         raise ValueError("마스터 무결성 위반 %d건:\n  - %s"

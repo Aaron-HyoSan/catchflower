@@ -199,6 +199,10 @@ class CaptureViewModel @JvmOverloads constructor(
                 // 응답 요약을 로그로 흘린다. 인식기 안에서 Log를 부르면 JVM 테스트가
                 // 죽으므로 여기서 넘긴다 ([PlantNetRecognizer.log] 주석).
                 log = { android.util.Log.i("CatchFlower", it) },
+                // 🔴 **이걸 안 넘기면 후보 3개가 종 단위로 세어져 B-4가 후보를 줄인다**
+                //    (`민들레 / 서양민들레 / 별꽃` → 화면에 2개). 자산이 그룹의 원본이라
+                //    여기서 표를 다시 적지 않는다([PlantNetRecognizer.groupOf]).
+                groupOf = repository::groupIdOf,
             )
         } else {
             MockFlowerRecognizer()
@@ -604,7 +608,7 @@ class CaptureViewModel @JvmOverloads constructor(
         state = CaptureState.Camera
     }
 
-    fun flowerName(flowerId: Int): String = repository.byId(flowerId)?.name.orEmpty()
+    fun flowerName(flowerId: Int): String = repository.representativeOf(flowerId)?.name.orEmpty()
 
-    fun flower(flowerId: Int) = repository.byId(flowerId)
+    fun flower(flowerId: Int) = repository.representativeOf(flowerId)
 }

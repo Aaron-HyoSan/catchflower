@@ -40,7 +40,14 @@ class DexViewModel(app: Application) : AndroidViewModel(app) {
     /** 현재 월. 개화월 하드 필터와 화면 22 제철 추천의 입력이다. */
     val currentMonth: Int = Calendar.getInstance().get(Calendar.MONTH) + 1
 
-    val allFlowers: List<Flower> = repository.flowers
+    /**
+     * 도감 그리드·`전체 N종`이 쓰는 목록 — **2,044칸**이다(B-4 · 계약 1-6).
+     *
+     * 🔴 **`repository.flowers`(2,057행)가 아니다.** 접힌 13종을 그리면
+     *    **원리상 채울 수 없는 칸**이 생긴다 — 등록은 대표종으로 가므로 그 칸은
+     *    영구히 실루엣이고, 사용자는 자기가 못 찍는 줄 안다(그게 B-4의 출발점이다).
+     */
+    val allFlowers: List<Flower> = repository.dexFlowers
 
     var filter by mutableStateOf(DexFilter())
         private set
@@ -104,10 +111,10 @@ class DexViewModel(app: Application) : AndroidViewModel(app) {
 
     /** `도감 18% 완성` — 소수점 버린 정수 퍼센트. */
     val completionPercent: Int
-        get() = collectedCount * 100 / GamePolicy.TOTAL_FLOWER_COUNT
+        get() = collectedCount * 100 / GamePolicy.DEX_SLOT_COUNT
 
     val progress: Float
-        get() = collectedCount.toFloat() / GamePolicy.TOTAL_FLOWER_COUNT
+        get() = collectedCount.toFloat() / GamePolicy.DEX_SLOT_COUNT
 
     /**
      * `다음 배지까지 3종`.
@@ -181,7 +188,12 @@ class DexViewModel(app: Application) : AndroidViewModel(app) {
             ?.takeIf { discoveries.photos.exists(it) }
             ?.let { discoveries.photos.file(it) }
 
-    fun flower(id: Int): Flower? = repository.byId(id)
+    /**
+     * 🔴 **[FlowerRepository.representativeOf]다 — `byId`가 아니다.** 기록·서버가 접힌
+     *    종의 번호를 들고 있을 수 있고(B-4 이전 기록·iOS 미반영 기록), 그때 `byId`는
+     *    **도감에 칸이 없는 종**을 돌려준다 — 이름은 뜨는데 눌러도 갈 곳이 없다.
+     */
+    fun flower(id: Int): Flower? = repository.representativeOf(id)
 
     fun similarTo(flower: Flower): List<Flower> = repository.similarTo(flower)
 

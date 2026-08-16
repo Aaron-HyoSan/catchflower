@@ -55,6 +55,27 @@ class PlantNetRecognizer(
      *    ([com.catchflower.app.ui.capture.CaptureViewModel])가 주입한다.
      */
     private val log: (String) -> Unit = {},
+    /**
+     * 도감번호 → **수집 그룹 대표 번호** (B-4 · 계약 1-6). 기본값은 항등이다.
+     *
+     * 🔴 **왜 인식기가 그룹을 알아야 하는가 — 여기가 B-4의 실제 지점이다.**
+     *    [parse]는 후보를 **3개에서 끊는다**([GamePolicy.CANDIDATE_COUNT]). 그 3개가
+     *    **종 단위**로 세어진 것이면, `민들레 / 서양민들레 / 별꽃`처럼 앞의 둘이 한 칸으로
+     *    접히는 경우 **화면에 남는 후보가 2개**가 된다 — 즉 접기를 뒤에서만 하면
+     *    B-4가 후보를 **늘리는 게 아니라 줄인다.** (실제로 처음에 그렇게 짰다:
+     *    [com.catchflower.app.recognizer.IdentifyFlow.decide]에서 접고 잘랐는데,
+     *    거기 오는 목록은 **이미 3개로 잘려 있어서** 4순위가 존재하지 않았다.
+     *    ⚠️ 그 상태로도 **테스트는 전부 초록이었다** — Top-1·화면12 비율은 1순위만
+     *    보므로 후보 개수가 줄어도 **원리상 안 움직인다.**)
+     *
+     *    그래서 **끊는 단위를 그룹으로 바꾼다.** `민들레 / 서양민들레 / 별꽃 / 팬지`면
+     *    `민들레 / 별꽃 / 팬지` 3칸이 남는다 — 접힌 자리만큼 **뒤 후보가 올라온다.**
+     *
+     * ⚠️ 후보로 담는 `flowerId`는 **접기 전의 종**이다(점수가 제일 높은 멤버).
+     *    표시·등록은 [IdentifyFlow]가 대표종으로 접는다 — 여기서 미리 대표로 바꾸면
+     *    같은 그룹의 두 번째 멤버가 **더 높은 점수로 덮어쓰는지**를 알 수 없다.
+     */
+    private val groupOf: (Int) -> Int = { it },
 ) : FlowerRecognizer {
 
     /** HTTP 한 번. 테스트에서 갈아끼우는 자리다. */
@@ -131,6 +152,8 @@ class PlantNetRecognizer(
     internal fun parse(body: String, candidates: List<Int>): List<Candidate> {
         val results = JSONObject(body).optJSONArray("results") ?: return emptyList()
         val allowed = candidates.toSet()
+        // 🔴 **종이 아니라 수집 그룹으로 센다** (B-4 · [groupOf] 주석). 종으로 세면
+        //    접히는 두 종이 3칸 중 2칸을 먹고 화면에 후보가 2개만 남는다.
         val seen = HashSet<Int>()
         val out = ArrayList<Candidate>(GamePolicy.CANDIDATE_COUNT)
 
@@ -146,7 +169,9 @@ class PlantNetRecognizer(
             // iOS가 실측 200장으로 밟은 지뢰다 — [ScientificNameIndex] 주석 참조.
             val flowerId = index.flowerId(name, preferring = allowed) ?: continue
             if (flowerId !in allowed) continue
-            if (!seen.add(flowerId)) continue
+            // ⚠️ `flowerId`가 아니라 `groupOf(flowerId)`다. 응답은 점수 내림차순이므로
+            //    같은 그룹에서 **먼저 온 종(= 점수가 높은 쪽)** 이 그 칸을 가진다.
+            if (!seen.add(groupOf(flowerId))) continue
 
             // score는 PlantNet의 보정된 확률이라 **그대로 쓴다** (퍼센트로 곱하지 않는다).
             // 범위를 벗어난 값이 오면 Candidate의 require가 앱을 죽인다 — 서버 값이 우리

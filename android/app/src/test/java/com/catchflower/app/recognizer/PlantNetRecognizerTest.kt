@@ -33,6 +33,8 @@ class PlantNetRecognizerTest {
         scientificName: String,
         bloomMonths: List<Int>,
         aliases: List<String> = emptyList(),
+        /** 계약 1-6. 기본값은 **자기 id**(그룹에 없는 종) — 접기는 여기서 안 잰다. */
+        collectGroupId: Int = id,
     ) = Flower(
         id = id,
         name = name,
@@ -49,6 +51,7 @@ class PlantNetRecognizerTest {
         aiDifficulty = AiDifficulty.LOW,
         similarFlowerIds = emptyList(),
         similarFlowerNames = emptyList(),
+        collectGroupId = collectGroupId,
         illustBatch = 1,
     )
 
