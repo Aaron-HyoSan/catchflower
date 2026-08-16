@@ -39,6 +39,9 @@
 | 다운로드 크기 상한 | 🔵 58.4~64.7MB / 200MB | 같은 스크립트 (bundletool) |
 | 스토어 등록정보·데이터 보안·IARC 답안 | 🔵 초안 완성 | `출시/스토어_등록정보.md` 1~6절 |
 | 앱 아이콘 512 · 그래픽 이미지 1024×500 | 🔵 | `출시/스토어_그래픽/` |
+| 권한 집합 = 데이터 보안 양식 | 🔵 실측 | `check_release_artifact.py` · 6개(신고 대상 5 + 서명 1) · **광고 ID 권한 없음** |
+| 기기 카탈로그 필터 | 🔵 **고쳤다**(2026-08-17) | 필수 기능이 `camera.any` + `faketouch` **둘뿐**이다 (아래 3절) |
+| 크래시 난독화 해제 | 🔵 실측 | AAB 안에 `BUNDLE-METADATA/…/proguard.map`(압축 4.0MB) — **따로 올릴 것이 없다** |
 
 ### 아직 못 채운 것 (오너 값과 무관하게 내가 해야 하는 것)
 
@@ -97,12 +100,38 @@ escape hatch이고, 그렇게 만든 AAB는 `{{시행일}}`이 적힌 처방침�
 | package | `com.catchflower.app` | |
 | versionCode / Name | 1 / 1.0 | **올릴 때마다 +1** |
 | minSdk / targetSdk | 26 / 36 | Play 신규 앱 요건 35+ 충족 |
-| 권한 5개 | CAMERA · ACCESS_FINE_LOCATION · ACCESS_COARSE_LOCATION · INTERNET · ACCESS_NETWORK_STATE | 데이터 보안 양식(6절)이 이 목록과 맞아야 한다 |
+| 권한 5개 | CAMERA · ACCESS_FINE_LOCATION · ACCESS_COARSE_LOCATION · INTERNET · ACCESS_NETWORK_STATE | 데이터 보안 양식(6절)이 이 목록과 맞아야 한다. 이 밖에 `com.catchflower.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`(androidx가 넣는 **서명 권한** · 사용자에게 안 보인다)이 하나 더 있어 badging은 **6개**로 센다 |
+| **필수 기능(Play 기기 필터)** | `android.hardware.camera.any` · `android.hardware.faketouch` | 🔴 **권한이 기능을 필수로 얹는다** — 아래를 본다 |
+| R8 매핑 | AAB 안 `BUNDLE-METADATA/…/proguard.map` | 압축 4.0MB(원본 54.8MB) · **기기로 안 내려간다**(다운로드 크기와 무관) |
 | APK (참고) | 130.0MB | 올리는 것은 AAB다 |
 | AAB (on-disk) | 88.2MB | **다운로드 크기가 아니다** |
 | **다운로드 크기** | **58.4 ~ 64.7MB** | 기기별 분할 뒤 · 상한 200MB |
 | 16KB 정렬 | 64비트 9개 전부 16384 | 32비트 3개는 4096(면제 · 16KB 기기는 전부 64비트) |
 | 업로드 키 카카오 키해시 | `YrZy5Zej88V5CuuG0jSCsXB1zZA=` | 2절 ⑦ · 아래 5절도 본다 |
+
+### 🔴 권한을 선언하면 하드웨어 기능이 **자동으로 필수**가 된다 (2026-08-17에 찾아 고쳤다)
+
+`aapt2 dump badging`으로 보면 매니페스트에 없는 줄이 나온다:
+
+```
+uses-implied-feature: name='android.hardware.camera'
+    reason='requested android.permission.CAMERA permission'
+uses-implied-feature: name='android.hardware.location'
+    reason='requested ACCESS_COARSE_LOCATION, and requested ACCESS_FINE_LOCATION'
+```
+
+**암시된 기능은 `required=true`다.** 그래서 매니페스트가 일부러 `camera.any`(앞·뒤 아무
+카메라)로 열어 뒀는데도 Play는 **뒷면 카메라와 위치 하드웨어를 가진 기기에만** 앱을 보여
+주고 있었다. 위치는 이 앱에서 없어도 되는 것이다(장소명만 안 붙고 화면 03이 안내한다).
+
+🔴 **앱 안에 증상이 0이다.** 빌드·설치·22화면·테스트 전부 초록이고, 손해는 "그 기기의
+스토어에서 검색되지 않는다"로만 나타난다 — **내 폰으로는 원리상 못 본다.**
+🔵 고침은 매니페스트에 `required="false"`를 **명시**하는 것뿐이다(5줄 · 지우면 다시
+자동으로 필수가 된다). 고친 뒤 산출물에서 다시 재니 필수 기능이 **둘**만 남았다.
+🔵 검사도 같이 고쳤다 — `check_release_artifact.py`가 이제 **badging으로** 권한 집합과
+필수 기능을 본다. 예전 판은 `android.permission.*`만 정규식으로 훑어서
+**다른 네임스페이스의 권한(`…gms.permission.AD_ID`)이 보이지 않았고** 암시된 기능은
+아예 안 봤다. 고친 검사를 **고치기 전 산출물**에 돌려 빨간 줄 2개를 먼저 확인했다.
 
 ⚠️ **폭이 6.2MB뿐이다.** 밀도 분할이 거의 아무것도 줄이지 않는다(밀도 차 0.4MB · ABI 차
 6.4MB) — 크기의 대부분은 **밀도로 안 갈리는 asset**(일러스트 2,044장)이다. 나중에 줄일
@@ -193,3 +222,5 @@ python3 android/_tools/sha1_to_keyhash.py <Console의 앱 서명 키 SHA-1>
   (`구현현황_AOS.md`의 마지막 미검증 항목).
 - **프레임 속도.** 에뮬레이터는 SwiftShader라 jank 비율이 무의미하다.
 - 스토어로 받은 앱에서의 카카오 인증(5절). 업로드 전에는 원리상 못 잰다.
+- **실제 기기 카탈로그 수.** 필수 기능이 무엇인지는 산출물에서 재지만, 그것이 몇 대의
+  기기를 남기는지는 **Console의 `기기 카탈로그`에서만** 보인다(업로드 뒤).

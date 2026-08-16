@@ -32,6 +32,39 @@
         android:name="android.hardware.camera.any"
         android:required="true" />
 
+    <!-- 🔴 **권한을 선언하면 하드웨어 기능이 `required=true`로 자동으로 붙는다**
+         (2026-08-17 실측 · `aapt2 dump badging`):
+
+           uses-implied-feature: android.hardware.camera
+               reason='requested android.permission.CAMERA permission'
+           uses-implied-feature: android.hardware.location
+               reason='requested ACCESS_COARSE_LOCATION, and ACCESS_FINE_LOCATION'
+
+         위에서 일부러 `camera.any`(앞·뒤 아무거나)로 열어 뒀는데, CAMERA 권한이
+         **뒷면 카메라(`android.hardware.camera`)를 필수로** 얹어 버렸다. 즉 주석이
+         말하는 것과 Play가 거는 조건이 달랐다. 위치도 같은 이유로 필수가 됐는데
+         이 앱은 위치가 없어도 돈다(장소명만 안 붙는다 · 화면 03이 그 경우를 안내한다).
+
+         🔴 **증상이 앱 안에 없다.** 빌드·설치·화면 전부 정상이고, 손해는 Play
+            **기기 카탈로그에서 조용히 빠지는 기기**로만 나타난다 — 내 폰에서는
+            영원히 안 보인다. 그래서 명시적으로 `required=false`를 적어 되돌린다.
+         ⚠️ 지우지 마라. 지우면 다시 자동으로 필수가 된다(선언이 없는 것과 같다). -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location.network"
+        android:required="false" />
+
     <!-- 🔴 **`android:icon`이 없으면 런처에 안드로이드 기본 로봇 아이콘이 뜬다.**
          빌드도 실행도 정상이고 앱 안 화면도 멀쩡해서, 앱을 켜서 확인하는 동안에는
          **한 번도 눈에 띄지 않는다** — 홈 화면을 봐야 보인다.

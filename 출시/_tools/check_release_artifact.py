@@ -41,6 +41,32 @@ LOCAL_PROPS = ROOT / "android/local.properties"
 #: **on-disk 크기로 하한만** 본다 — 정확한 값은 bundletool `get-size total`이다.
 PLAY_DOWNLOAD_LIMIT = 200 * 1024 * 1024
 
+#: 🔴 **데이터 보안 양식(`출시/스토어_등록정보.md` 6절)이 이 목록과 1:1로 맞아야 한다.**
+#: 라이브러리를 하나 넣으면 매니페스트 머지가 권한을 **말없이** 얹는다(광고 SDK의
+#: `com.google.android.gms.permission.AD_ID`가 대표적이다 — 그게 들어오면 Play가
+#: "광고 ID를 선언했는데 데이터 보안에는 없다"로 심사를 세운다). 그래서 개수만 찍지
+#: 않고 **집합을 비교**한다. 늘면 빨개진다.
+EXPECTED_PERMISSIONS = {
+    "android.permission.INTERNET",
+    "android.permission.CAMERA",
+    "android.permission.ACCESS_COARSE_LOCATION",
+    "android.permission.ACCESS_FINE_LOCATION",
+    "android.permission.ACCESS_NETWORK_STATE",
+    # androidx.core가 넣는 서명(signature) 권한이다. 사용자에게 안 보이고 Play 양식과 무관.
+    "com.catchflower.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+}
+
+#: 🔴 **`required=true`인 기능은 Play 기기 카탈로그에서 기기를 빼는 필터다.**
+#: 권한을 선언하면 기능이 **자동으로 필수로 붙는다**(`uses-implied-feature`) —
+#: CAMERA → `android.hardware.camera`(뒷면), 위치 권한 → `android.hardware.location`.
+#: 앱 안에는 증상이 없고 손해는 "그 기기에서 스토어에 안 보인다"로만 나타나므로
+#: 매니페스트에 `required="false"`를 명시해 되돌린다. 여기 없는 필수 기능이 나오면
+#: **의도한 것인지 먼저 답한다.**
+EXPECTED_REQUIRED_FEATURES = {
+    "android.hardware.camera.any",  # 오너 결정: 카메라 없는 기기에는 설치되지 않게 한다
+    "android.hardware.faketouch",   # 모든 앱에 기본으로 붙는다(터치 기기 전부가 만족)
+}
+
 FAILS: list[str] = []
 WARNS: list[str] = []
 
@@ -74,6 +100,79 @@ def dump_manifest() -> str:
     if r.returncode != 0:
         sys.exit(f"🔴 매니페스트를 못 읽었다:\n{r.stderr[:400]}")
     return r.stdout
+
+
+def dump_badging(apk: pathlib.Path = APK) -> str:
+    """`dump badging`은 xmltree가 못 보여주는 것을 준다 — **암시된 기능**이다.
+
+    ⚠️ 매니페스트에 안 적힌 `uses-implied-feature`는 xmltree에 없다(그건 소스를 그대로
+       찍는다). Play가 실제로 거는 필터는 암시분까지 합친 것이라 **badging으로 본다.**
+    """
+    r = subprocess.run(
+        [str(aapt2()), "dump", "badging", str(apk)],
+        capture_output=True, text=True, timeout=180,
+    )
+    if r.returncode != 0 or "package:" not in r.stdout:
+        sys.exit(f"🔴 badging을 못 읽었다:\n{(r.stderr or r.stdout)[:400]}")
+    return r.stdout
+
+
+def badging_permissions(badging: str) -> set[str]:
+    """네임스페이스를 가리지 않고 **전부** 읽는다.
+
+    🔴 예전 판은 `android.permission.*`만 정규식으로 훑었다 — 그래서
+       `com.google.android.gms.permission.AD_ID`처럼 **다른 네임스페이스의 권한은
+       보이지 않았다.** 하필 그게 데이터 보안 양식을 무효로 만드는 권한이다.
+    """
+    return set(re.findall(r"^uses-permission(?:-sdk-\d+)?: name='([^']+)'", badging, re.MULTILINE))
+
+
+def badging_required_features(badging: str) -> dict[str, str]:
+    """`{기능: 왜 필수인가}` — 명시분과 암시분을 합친다. `not-required`는 제외한다."""
+    required: dict[str, str] = {}
+    for line in badging.splitlines():
+        line = line.strip()
+        m = re.match(r"^uses-feature: name='([^']+)'", line)
+        if m:
+            required.setdefault(m.group(1), "매니페스트에 명시")
+        m = re.match(r"^uses-implied-feature: name='([^']+)' reason='([^']*)'", line)
+        if m:
+            required[m.group(1)] = f"**암시됨** — {m.group(2)}"
+        m = re.match(r"^uses-feature-not-required: name='([^']+)'", line)
+        if m:
+            required.pop(m.group(1), None)
+    return required
+
+
+def check_store_filters() -> None:
+    """권한 집합 · 필수 기능 — **Play 쪽에서만 증상이 나는 것들**."""
+    print("\n권한·기기 필터 (badging · 암시분 포함)")
+    badging = dump_badging()
+
+    perms = badging_permissions(badging)
+    if not perms:
+        sys.exit("🔴 권한을 한 개도 못 읽었다 — 이 앱은 카메라·위치를 쓴다. 파서 문제다.")
+    print(f"   권한 {len(perms)}개: " + " · ".join(sorted(p.rsplit('.', 1)[-1] for p in perms)))
+    for p in sorted(perms - EXPECTED_PERMISSIONS):
+        fail(
+            f"예상에 없는 권한이 들어왔다: `{p}` — **데이터 보안 양식과 어긋난다**"
+            "(라이브러리 머지로 조용히 붙는다 · 양식을 고치거나 권한을 빼고 다시 빌드한다)"
+        )
+    for p in sorted(EXPECTED_PERMISSIONS - perms):
+        warn(f"예상한 권한이 없다: `{p}` — 기능이 죽었거나 양식이 과다 신고 상태다")
+    if not (perms - EXPECTED_PERMISSIONS):
+        ok("권한 집합이 데이터 보안 양식과 같다")
+
+    feats = badging_required_features(badging)
+    for name, why in sorted(feats.items()):
+        if name in EXPECTED_REQUIRED_FEATURES:
+            ok(f"필수 기능 {name} ({why})")
+        else:
+            fail(
+                f"필수 기능 `{name}`이 붙어 있다({why}) — **Play 기기 카탈로그에서 기기가 조용히 빠진다.**"
+                f" 의도한 것이 아니면 매니페스트에 `<uses-feature android:name=\"{name}\" android:required=\"false\" />`"
+            )
+    print("      ⚠️ 여기서 빨개진 것은 **앱 안에 증상이 없다** — 내 폰에서는 영원히 안 보인다.")
 
 
 #: aapt2는 속성 이름을 **네임스페이스까지 풀어서** 찍는다.
@@ -152,15 +251,7 @@ def check_manifest() -> None:
     ok(f"versionCode={must(tree, 'versionCode')} versionName={must(tree, 'versionName')}")
     print("      ⚠️ **올릴 때마다 versionCode를 +1 한다.** 같은 값은 Console이 거부한다.")
 
-    perms = sorted(set(re.findall(rf'A: {re.escape(NS)}:name\([^)]*\)="(android\.permission\.[^"]+)"', tree)))
-    if not perms:
-        sys.exit("🔴 권한을 한 개도 못 읽었다 — 이 앱은 카메라·위치를 쓴다. 파서 문제다.")
-    print(f"   권한 {len(perms)}개: " + " · ".join(p.rsplit('.', 1)[-1] for p in perms))
-    # 🔴 데이터 보안 양식은 **이 목록**과 맞아야 한다. 하나라도 늘면 양식도 고친다.
-    for risky in ("READ_MEDIA_IMAGES", "ACCESS_BACKGROUND_LOCATION", "READ_EXTERNAL_STORAGE"):
-        if any(p.endswith(risky) for p in perms):
-            warn(f"{risky}가 있다 — 데이터 보안 양식과 심사 설명이 필요하다")
-
+    # 권한·기기 필터는 `check_store_filters()`가 badging으로 본다(암시분이 xmltree에 없다).
     ok(f"minSdk={must(tree, 'minSdkVersion')}")
     target = int(must(tree, "targetSdkVersion"), 0)
     # 2026년 8월 기준 신규 앱 요건은 targetSdk 35 이상이다(정책은 매년 8월 올라간다).
@@ -293,6 +384,7 @@ def main() -> int:
     print(f"APK {APK.name} · AAB {AAB.name} (같은 빌드 · 차이 {gap:.0f}초)")
 
     check_manifest()
+    check_store_filters()
     legal_placeholders()
     size_check()
     signing()
