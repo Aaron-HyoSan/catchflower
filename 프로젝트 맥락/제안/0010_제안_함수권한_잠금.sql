@@ -43,6 +43,22 @@
 --     없으면 `Failed(401)`을 내고 호출조차 하지 않는다). 즉 **비로그인 열람은
 --     그대로 돌아간다** — 잠그는 것은 "세션이 아예 없는 호출"이다.
 --
+--  ## 🔵 이 파일이 실제로 막는지 **로컬에서 확인했다**
+--
+--  실서버 실측은 "열려 있다"까지만 말해 준다. 원인과 고침은 로컬 Postgres에 같은 순서를
+--  다시 올려 확인했다 — `python3 supabase/_tools/measure_0010_grants.py`:
+--
+--      ① grant authenticated + revoke anon → 카탈로그: anon=True  authenticated=True
+--         anon이 실제로 호출 → 🔴 돌았다
+--      ② + revoke from public              → 카탈로그: anon=False authenticated=True
+--         anon          → 막혔다: permission denied for function …
+--         authenticated → 돌았다 · service_role → 돌았다
+--      판정: PASS — 재현했고(anon이 실제로 돌았다) 0010이 막는다
+--
+--  🔴 **카탈로그(`has_function_privilege`)만 보지 않고 `set role`로 실제 호출까지 했다.**
+--     권한은 실행 시점에 걸리므로 카탈로그만 읽으면 "막혔다고 적혀 있다"와 "막힌다"를
+--     구분할 수 없다 — 이 저장소에서 정책을 그렇게 믿었다가 세 곳이 뚫려 있었다.
+--
 --  ## 못 잰 것 (모르는 채로 둔다)
 --
 --  `delete_comment` · `discovery_reactions` · `assert_self`는 **같은 방식으로 열려 있을

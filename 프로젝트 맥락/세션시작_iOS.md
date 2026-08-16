@@ -219,6 +219,20 @@ revoke execute on function public.region_ranking(...) from anon;   -- ← 헛돈
 있으므로 **직접 준 적 없는 권한을 회수해도** PUBLIC 경로가 남는다. `revoke … from anon`은
 **오류도 경고도 없이 성공하고 아무것도 바꾸지 않는다.** → **`from public`**이어야 한다.
 
+🔵 **원인과 고침을 로컬 Postgres로 확인했다** — `python3 supabase/_tools/measure_0010_grants.py`
+(`pgserver`+`psycopg` · Docker 불필요 · 프로덕션 안 건드린다):
+
+```
+① grant authenticated + revoke anon → anon=True  · anon이 실제로 호출 → 🔴 돌았다
+② + revoke from public              → anon=False · permission denied
+                                     authenticated·service_role → 돌았다
+판정: PASS
+```
+
+🔴 **카탈로그(`has_function_privilege`)만 보지 않고 `set role`로 실제 호출까지 한다.**
+권한은 실행 시점에 걸려서, 카탈로그만 읽으면 "막혔다고 **적혀 있다**"와 "막힌다"를
+구분할 수 없다 — 0001 7-3절에서 정책을 그렇게 믿었다가 세 곳이 뚫려 있었다.
+
 ⚠️ **앞으로 쓰는 마이그레이션에서 `revoke … from anon`을 쓰지 않는다.** 그 줄은
 "잠갔다"고 읽히면서 아무 일도 하지 않는다. `has_function_privilege('anon', …)`으로
 **재는 줄을 같은 파일에** 둔다.

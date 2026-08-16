@@ -244,7 +244,7 @@ adb shell rm    /data/local/tmp/cf_qa_allow_any_photo   # 끄기 (QA 끝나면 �
 | **B-3-b 임계값** | ⏸ **오너 대기.** `confidenceThreshold` 0.60/0.70/0.85가 같은 점수 오해 위에 있다 — 실기기 정답 10건 중 **0.60을 넘은 건 5건**뿐이라 화면 09(1순위 크게)가 거의 안 나온다 |
 | ~~**B-4 유사종 통합**~~ | 🔵 **8그룹 · 13종을 붙였다**((78) · 계약 1-6 · 0절). 남은 오너 결정 **2건**: ① 국화과 노란 꽃 5종(45·46·47·194·195) 중 **어느 2종**을 남기나 ② 난이도 상 나머지 1,908종 자동 규칙(**속으로 묶으면 79%가 삼켜진다**). ⏸ 그리고 **서버 행 SQL 1건**이 오너 몫이다 — `오너_실행/05_B4_수집그룹_이관.sql`(README 6절) |
 | ~~0004 SQL~~ | 🔵 **이미 들어가 있다**(2026-08-16 실측 (79) — `dong_member_count` **200**). 오너가 08-12에 합본을 다시 붙일 때 같이 적용됐고, `PGRST202`는 **08-09에 잰 낡은 값**이었다. 서버 `flowers`도 **2,057종**이다 |
-| 🔴 **`0010` 함수 권한** | ⏸ **새로 생겼다**((79)) — `revoke execute … from anon`이 **아무것도 막지 않았다**(함수 생성 시 `PUBLIC`에 자동으로 붙는 EXECUTE가 남는다). 로그인 없이 `region_ranking`·`friend_ranking`·`my_season_summary`·`dong_member_count`가 **200을 준다**(실측). 오너가 `프로젝트 맥락/제안/0010_제안_함수권한_잠금.sql`을 붙여넣어야 닫힌다. ✅ **앱은 안 죽는다** — 익명 세션의 롤은 `authenticated`다 |
+| 🔴 **`0010` 함수 권한** | ⏸ **새로 생겼다**((79)) — `revoke execute … from anon`이 **아무것도 막지 않았다**(함수 생성 시 `PUBLIC`에 자동으로 붙는 EXECUTE가 남는다). 로그인 없이 `region_ranking`·`friend_ranking`·`my_season_summary`·`dong_member_count`가 **200을 준다**(실측). 오너가 `프로젝트 맥락/제안/0010_제안_함수권한_잠금.sql`을 붙여넣어야 닫힌다. ✅ **앱은 안 죽는다** — 익명 세션의 롤은 `authenticated`다. 🔵 **구멍·고침·"안 죽는다"를 로컬 Postgres로 전부 재현·검증했다**((79) 3-1절 · `python3 supabase/_tools/measure_0010_grants.py` → PASS) |
 | 뒷정리 | ⏸ **익명 테스트 계정 12개**를 대시보드에서 지울 것. **service_role 키는 받아서도 코드에 넣지 않는다** |
 
 ⚠️ **키는 소스에 넣지 않는다.** `local.properties`(gitignore됨) → `buildConfigField` →

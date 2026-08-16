@@ -580,6 +580,10 @@ revoke execute on function public.region_ranking(...) from anon;   -- ← 이게
 - 🔵 **앱은 이걸로 안 죽는다.** 비로그인 열람도 실제로는 **익명 세션**으로 돌고,
   그 세션의 롤은 `anon`이 아니라 `authenticated`다. 잠그는 것은 **세션이 아예 없는
   호출**뿐이다.
+- 🔵 **이건 추측이 아니라 확인한 것이다.** 내 맥에 Postgres를 띄워 같은 순서를 재현했다
+  (`supabase/_tools/measure_0010_grants.py`): 우리가 쓴 대로 만들면 **anon이 실제로
+  함수를 호출했고**, `from public`으로 바꾸면 **anon만 거부되고 로그인·서버 롤은 그대로
+  돌았다.** 즉 **구멍도, 고침도, "앱이 안 죽는다"도 실제로 돌려 본 결과다.**
 - ⚠️ 3절이 `13줄 전부 ✅`가 나와야 끝난다. **"성공했다"는 메시지는 증거가 아니다** —
   revoke는 아무것도 안 바꿔도 성공한다. 그게 지금 이 사고의 내용이다.
 - ⏸ `delete_comment`·`discovery_reactions`·`assert_self`도 같은 이유로 열려 있을
