@@ -177,7 +177,9 @@ data class MyRegion(
  *    `log` 주입(`android.util.Log`가 JVM에서 던지고 **실패 경로가 전부 로그를 지난다**).
  */
 class RankingService(
-    private val auth: TokenSource,
+    // ⚠️ `TokenSource`가 아니라 [AuthAccount]다 — **내 uuid가 필요하다**
+    //    ([regionRanking]의 🔴: 서버가 지역 랭킹에 `is_me`를 안 준다).
+    private val auth: AuthAccount,
     private val baseUrl: String = AppSecrets.supabaseUrl,
     private val anonKey: String = AppSecrets.supabaseAnonKey,
     private val transport: Transport = HttpTransport,
@@ -216,9 +218,28 @@ class RankingService(
         )
     }
 
-    override suspend fun regionRanking(minMembers: Int?): RankingResult<RegionRanking> =
-        rpc("region_ranking", JSONObject().apply { minMembers?.let { put("min_members", it) } }) {
-            val rows = it.map { o -> rankedRow(o) }
+    /**
+     * 화면 17.
+     *
+     * 🔴 **서버 `region_ranking`은 `is_me`를 주지 않는다** — `friend_ranking`만 준다
+     *    (0002 · `returns table`에 그 칸이 없다). 그래서 `is_me`만 믿으면 지역 랭킹의
+     *    **내 행이 영원히 표시되지 않는다**: 화면 17 `내 순위`가 **1위인 사람에게도 `-`**로
+     *    나오고, 목록에서 내 줄의 강조 테두리도 안 그려진다.
+     *    실측(2026-08-17 · 릴리스 빌드): 내가 1종인데 `내 순위 -`, 같은 1종인 이웃은 5위로
+     *    보였다. `-`는 "상위 목록 밖"이라는 정상 상태와 **글자가 똑같아서** 화면으로는
+     *    구분이 안 된다(근거: `프로젝트 맥락/진행.md` (82)).
+     *
+     * 🔴 **서버를 고치지 않고 여기서 표시한다.** 0002는 iOS 터미널 소유고(계약 §6),
+     *    `is_me`를 추가하면 마이그레이션 + 오너 실행이 필요하다. 반면 내 uuid는 앱이
+     *    이미 알고 있다 — **순위를 다시 세는 것이 아니라 서버가 준 행에 표를 붙이는
+     *    것뿐**이라 계약 3절(순위는 서버가 센다)에 걸리지 않는다.
+     */
+    override suspend fun regionRanking(minMembers: Int?): RankingResult<RegionRanking> {
+        // ⚠️ 세션이 있으면 저장된 uuid를 그대로 준다(네트워크를 타지 않는다). 실패하면
+        //    null이고, 그때는 예전처럼 표가 안 붙는다 — **랭킹 자체를 막지는 않는다.**
+        val myId = runCatching { auth.userId() }.getOrNull()
+        return rpc("region_ranking", JSONObject().apply { minMembers?.let { put("min_members", it) } }) {
+            val rows = it.map { o -> rankedRow(o, myId) }
             RegionRanking(
                 // ⚠️ 행이 없으면 scope를 **모른다**(null). "none"으로 채우지 않는다 —
                 //    실측으로 `[]`는 지역 미설정과 발견 0건 **양쪽 다**이기 때문이다.
@@ -230,6 +251,7 @@ class RankingService(
                 rows = rows,
             )
         }
+    }
 
     override suspend fun friendRanking(): RankingResult<FriendRanking> =
         rpc("friend_ranking", JSONObject()) { FriendRanking(it.map { o -> rankedRow(o) }) }
@@ -336,7 +358,7 @@ class RankingService(
      *    내보내지 않는다 — 0002 5절 "내용은 한 줄도 내보내지 않는다").
      *    기본값 0으로 남는데, **그 값으로 정렬하면 안 되는 이유가 여기 있다.**
      */
-    private fun rankedRow(o: JSONObject): RankedEntry = RankedEntry(
+    private fun rankedRow(o: JSONObject, myId: String? = null): RankedEntry = RankedEntry(
         rank = o.getInt("rank"),
         entry = RankEntry(
             userId = o.getString("user_id"),
@@ -344,7 +366,11 @@ class RankingService(
             speciesCount = o.getInt("species_count"),
             // 대표 꽃이 없을 수 있다(발견이 있으면 항상 있지만 left join이다).
             signatureFlowerId = if (o.isNull("top_flower_id")) 0 else o.getInt("top_flower_id"),
-            isMe = o.optBoolean("is_me", false),
+            // 🔴 서버가 준 `is_me`가 **먼저**다(친구 랭킹). 없으면 uuid로 맞춘다
+            //    (지역 랭킹 — [regionRanking]의 🔴). 대소문자를 무시한다:
+            //    uuid는 같은 값이 대문자로 와도 같은 사람인데, 그때 `==`는 조용히 false다.
+            isMe = o.optBoolean("is_me", false) ||
+                (myId != null && o.getString("user_id").equals(myId, ignoreCase = true)),
         ),
         // 지난 시즌 대비 변동은 **서버가 주지 않는다.** null이면 화면이 `▲`를 안 그린다.
         delta = null,

@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.catchflower.app.core.AppSecrets
@@ -389,9 +390,18 @@ private fun SectionHeader(title: String, actionLabel: String?, onAction: () -> U
  *    `{}`를 넘겨 "누를 수는 있지만 아무 일도 안 하는" 줄로 만들면 **죽은 버튼**이다
  *    (A 문서 3절 ⑤). 그래서 눌림 자체를 붙이지 않고, `보기`도 쓰지 않는다 —
  *    `보기`는 "누르면 열린다"는 약속이다.
+ *
+ * ⚠️ [labelColor]는 **되돌릴 수 없는 행 하나**를 위해 있다(설정 8행 `회원 탈퇴`).
+ *    기본값을 그대로 쓰는 곳이 나머지 전부이므로, 색을 고르는 판단은 여기가 아니라
+ *    [com.catchflower.app.core.SettingsRules.Row.destructive]에 있다.
  */
 @Composable
-internal fun MenuRow(label: String, value: String?, onClick: (() -> Unit)?) {
+internal fun MenuRow(
+    label: String,
+    value: String?,
+    onClick: (() -> Unit)?,
+    labelColor: Color = CfColor.TextPrimary,
+) {
     Column {
         Row(
             Modifier
@@ -404,7 +414,7 @@ internal fun MenuRow(label: String, value: String?, onClick: (() -> Unit)?) {
                 .padding(horizontal = CfDimen.ScreenPadding, vertical = CfDimen.GapMedium),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(label, style = CfText.Body, color = CfColor.TextPrimary)
+            Text(label, style = CfText.Body, color = labelColor)
             Spacer(Modifier.weight(1f))
             // 값이 없고 누를 수도 없는 줄은 오른쪽을 비운다(있을 수 없는 조합이지만,
             // `보기`가 남으면 눌러도 안 열리는 약속이 된다).

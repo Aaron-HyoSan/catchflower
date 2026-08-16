@@ -62,13 +62,27 @@ class RankingServiceTest {
     private class StubAuth(
         private val token: String? = TOKEN,
         private val refreshResult: String? = FRESH,
-    ) : TokenSource {
+        /** 내 uuid. 지역 랭킹의 `is_me`를 앱이 붙이므로 필요하다(`RankingService.regionRanking`). */
+        private val id: String = "5bf714f9-b172-4636-a878-bf8efbc26fb7",
+        /** uuid를 못 얻는 경우(가입 실패·비설정)를 재현한다. */
+        private val idThrows: Boolean = false,
+    ) : AuthAccount {
         var refreshCalls = 0
+        var userIdCalls = 0
         override suspend fun accessToken(): String? = token
         override suspend fun refresh(): String? {
             refreshCalls++
             return refreshResult
         }
+
+        override suspend fun userId(): String {
+            userIdCalls++
+            if (idThrows) throw IllegalStateException("uuid를 모른다")
+            return id
+        }
+
+        override fun needsReauth(): Boolean = false
+        override fun reset() = Unit
 
         companion object {
             const val TOKEN = "stub-token"
@@ -392,6 +406,53 @@ class RankingServiceTest {
         val (_, s) = service(200 to friendMe)
         val r = (s.friendRanking() as RankingResult.Loaded).value
         assertTrue("is_me를 못 읽었다 — 리스트에서 내 행 강조가 사라진다", r.rows.single().entry.isMe)
+    }
+
+    /**
+     * 어떤 경우에 빨개지나: 지역 랭킹에서 **`is_me`만 믿으면.**
+     *
+     * 🔴 위 `regionTwoUsers`는 **실측 응답 그대로**다 — `is_me` 칸이 아예 없다.
+     *    서버 `region_ranking`(0002)의 `returns table`에 그 칸이 없기 때문이다
+     *    (`friend_ranking`에만 있다). 그래서 예전 판은 지역 랭킹의 내 행을 **한 번도**
+     *    표시하지 못했고, 화면 17 `내 순위`가 **1위인 사람에게도 `-`**였다.
+     *    실측(2026-08-17 · 릴리스 빌드): 내가 1종인데 `내 순위 -`, 같은 1종 이웃은 5위.
+     *    `-`는 "상위 목록 밖"과 글자가 같아서 **화면으로는 절대 구분이 안 된다.**
+     */
+    @Test
+    fun 지역_랭킹은_서버가_is_me를_안_줘도_내_행을_찾는다() = runBlocking<Unit> {
+        val (_, s) = service(200 to regionTwoUsers)
+        val r = (s.regionRanking(minMembers = 1) as RankingResult.Loaded).value
+        assertFalse("실측 응답에 `is_me`가 있으면 이 테스트는 아무것도 안 잰다",
+            regionTwoUsers.contains("is_me"))
+        val mine = r.rows.single { it.entry.isMe }
+        assertEquals(meId, mine.entry.userId)
+        assertEquals("내 순위를 서버가 준 값 그대로 써야 한다", 2, mine.rank)
+        assertEquals("내가 아닌 행을 나로 표시했다", 1, r.rows.count { it.entry.isMe })
+    }
+
+    /** uuid 대소문자가 달라도 같은 사람이다. `==`로 비교하면 조용히 `-`가 된다. */
+    @Test
+    fun 대문자_uuid도_내_행이다() = runBlocking<Unit> {
+        val (_, s) = build(
+            listOf(res(200, regionTwoUsers.replace(meId, meId.uppercase()))),
+            StubAuth(),
+        )
+        val r = (s.regionRanking(minMembers = 1) as RankingResult.Loaded).value
+        assertTrue("대문자 uuid를 남으로 봤다", r.rows.any { it.entry.isMe })
+    }
+
+    /**
+     * 어떤 경우에 빨개지나: uuid를 못 얻었을 때 **랭킹을 아예 실패로 만들면.**
+     *
+     * 내 표시가 없는 것보다 목록 자체가 사라지는 것이 나쁘다 — 이웃 순위는 남의 값이라
+     * 내 uuid 없이도 다 그릴 수 있다.
+     */
+    @Test
+    fun uuid를_못_얻어도_지역_랭킹은_나온다() = runBlocking<Unit> {
+        val (_, s) = build(listOf(res(200, regionTwoUsers)), StubAuth(idThrows = true))
+        val r = (s.regionRanking(minMembers = 1) as RankingResult.Loaded).value
+        assertEquals(2, r.rows.size)
+        assertFalse("모르는데 나라고 표시했다", r.rows.any { it.entry.isMe })
     }
 
     // ────────────────────────────────────────────────────────────────

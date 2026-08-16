@@ -37,6 +37,8 @@ import subprocess
 import sys
 import time
 
+from PIL import Image
+
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SDK = pathlib.Path.home() / "Library/Android/sdk"
 EMULATOR = SDK / "emulator/emulator"
@@ -220,7 +222,9 @@ def prepare(reset=False):
     동작이고 화면이 비슷해서** 좌표로 진행하면 조용히 엉뚱한 컷을 녹화한다.
     데이터셋 5종 중 8월 개화는 3종뿐이라 세 테이크면 소진된다 — 지우는 게 정답이다.
     지우면 온보딩(화면 03·02)부터 시작해서 **제출 영상으로도 이쪽이 낫다**
-    (`0/200종` 빈 도감 → `아직 모은 꽃이 없어요` 안내까지 보인다).
+    (`0 / 2044종` 빈 도감 → `아직 모은 꽃이 없어요` 안내까지 보인다.
+    🔴 이 숫자는 `GamePolicy.DEX_SLOT_COUNT`다 — 여기 `200`이라고 적혀 있었고 그건
+    확장 전 범위(`꽃목록_200종.csv`)를 베낀 것이었다).
     """
     if reset:
         adb("shell", "pm", "clear", PKG, check=False)
@@ -237,20 +241,104 @@ def prepare(reset=False):
     adb("shell", "am", "force-stop", PKG, check=False)
 
 
-def walk_to_poster():
-    """포스터가 걸린 벽까지 카메라를 옮긴다.
+def hue_histogram(source, bins=12, width=96):
+    """가운데 40%의 **색조 분포**를 읽는다(채도·명도가 낮은 픽셀은 뺀다).
+
+    `source`는 파일 경로거나 이미 열린 PIL 이미지다.
+
+    ⚠️ `width`로 줄여서 센다. 원본 크기(414k 픽셀)로 파이썬 루프를 돌면 한 번에 4초가
+       걸리고, **그 시간이 녹화에 그대로 들어간다**(도착 판정에 21초를 썼다 — 걸음은
+       8초다). 줄여도 판정이 바뀌지 않는지는 라벨 붙인 대조군으로 확인했다(아래).
+    """
+    im = (source if isinstance(source, Image.Image) else Image.open(source)).convert("RGB")
+    w, h = im.size
+    box = im.crop((int(w * 0.3), int(h * 0.3), int(w * 0.7), int(h * 0.7)))
+    if box.width > width:
+        box = box.resize((width, max(1, box.height * width // box.width)), Image.BILINEAR)
+    hist = [0] * bins
+    n = 0
+    for hue, s, v in box.convert("HSV").getdata():
+        if s > 60 and v > 60:
+            hist[hue * bins // 256] += 1
+            n += 1
+    return [x / n for x in hist] if n else hist
+
+
+def poster_match(shot_path, poster):
+    """프리뷰가 **벽에 걸린 그 사진**을 보고 있나 (0~1, 색조 분포 교집합).
+
+    🔴 왜 이렇게 재나 — 처음에는 "가운데가 진한 색인가"(채도)로 쟀는데, **탁자와 의자
+       프레임이 40%로 통과했다.** 가상 씬의 벽·바닥·가구가 전부 채도 높은 나무색이다.
+       색조 히스토그램도 그냥 노랑을 찾으면 안 된다 — 나무색(주황)과 해바라기(노랑)가
+       8비트 색조에서 겹쳐 교집합 0.41까지 나온다. 그래서 **포스터 자신과 대조한다.**
+       포스터를 바꿔도 고칠 데가 없다.
+
+    실측 대조군 — **라벨을 먼저 붙이고 쟀다**(걸으면서 4초마다 찍은 프레임 + 포스터):
+        나쁨  탁자와 의자(걷는 중) vs 해바라기 벽    0.13
+        좋음  해바라기 도착                          0.82
+        좋음  민들레 도착                            0.66
+        대조  해바라기 도착 vs **엉뚱한 포스터**(장미) 0.18
+        대조  탁자 vs 민들레                          0.07
+      → 경계 0.45 (나쁨·대조는 0.18 이하 · 좋음은 0.66 이상)
+
+    ⚠️ 여기까지 오는 데 두 번 틀렸다. ① 처음엔 "가운데가 진한 색인가"로 쟀고 탁자가
+       40%로 통과했다. ② 색조를 **이웃 칸까지 허용**해 보니 나쁨 1.46 · 좋음 1.34로
+       **뒤집혔다.** 칸을 12개로 줄이고 이웃 허용을 뺀 것이 위 표다.
+    """
+    return sum(min(a, b) for a, b in zip(hue_histogram(poster), hue_histogram(shot_path)))
+
+
+#: 지금 벽에 걸려 있는 사진. `set_wall()`이 채운다. `walk_to_poster()`가 도착 판정에 쓴다.
+WALL = None
+
+
+def set_wall(poster):
+    """벽에 사진을 걸고 **무엇을 걸었는지 기억한다**(도착 판정에 필요하다)."""
+    global WALL
+    sh("adb", "emu", "virtualscene-image", "wall", str(poster), check=False)
+    WALL = pathlib.Path(poster)
+    return WALL
+
+
+def walk_to_poster(timeout=32.0, need=0.45):
+    """포스터가 걸린 벽까지 카메라를 옮기고 **도착했는지 확인한다.**
 
     🔴 **이 걸음이 없으면 프리뷰에 TV(체크무늬)만 보이고**, 셔터를 누르면 1차 필터가
     `Pattern`·`Textile`로 **옳게** 막는다 — 앱 결함이 아니라 겨눈 곳이 꽃이 아닌 것이다.
+
+    🔴 **`sleep(4)`이었고 그건 짧았다.** `adb emu automation play`는 **바로 돌아오고**
+       매크로는 8초 넘게 걸어간다. 그래서 컷 4(`04_aim`)에 **탁자와 의자**가 찍혔고
+       (꽃이 없다) 셔터도 걸음이 끝나기 직전에 눌렸다 — 그때 1차 필터가 막지 않은 것은
+       운이었다. 검사는 전부 초록이었고 **눈으로 봐서 알았다.**
+       ⚠️ 그렇다고 길게 자면 안 된다 — 첫 완주 테이크가 148초 중 50초를 정지된
+       프리뷰로 쓰고 **뒤쪽 지도·도감·랭킹 컷을 잘랐다.** 그래서 **도착하면 곧 나온다.**
+
+    ⚠️ 이미 벽 앞에 있어도 매크로는 **처음 자리로 돌아가서 다시 걷는다**(실측: 재생
+       직후 4초 프레임이 탁자였다). 그래서 "이미 도착했으니 건너뛴다"를 넣지 않는다.
     """
     macro = MACROS / "Walk_to_image_room"
     if not macro.exists():
         raise SystemExit(f"매크로가 없다: {macro}")
     sh("adb", "emu", "automation", "play", str(macro))
-    # 매크로 재생 자체가 약 10초 걸어간다. 그 뒤 프리뷰 안정화만 기다린다 —
-    # ⚠️ **여기를 길게 두면 영상 절반이 정지된 프리뷰가 된다**(첫 완주 테이크가
-    # 148초 중 50초를 프리뷰로 썼고 **뒤쪽 지도·도감·랭킹 컷이 잘렸다**).
-    time.sleep(4)
+    if WALL is None:
+        # 무엇이 걸렸는지 모르면 도착을 잴 수 없다. 조용히 넘기지 않는다 —
+        # 여기서 넘기면 다시 탁자를 찍는다.
+        raise SystemExit("벽에 걸린 사진을 모른다 — `set_wall()`로 걸어야 한다")
+    started = time.monotonic()
+    best = 0.0
+    while time.monotonic() - started < timeout:
+        time.sleep(2)
+        score = poster_match(screenshot("_walk"), WALL)
+        best = max(best, score)
+        if score >= need:
+            print(f"    도착 ({time.monotonic() - started:.0f}초 · 일치 {score:.2f})")
+            time.sleep(1)  # 프리뷰 노출·초점이 자리 잡기를 기다린다
+            return score
+    raise SystemExit(
+        f"걸어갔는데 포스터가 안 보인다 (최고 일치 {best:.2f} < {need} · {timeout:.0f}초).\n"
+        f"  지금 프리뷰: 제출물/영상/_check__walk.png 를 **눈으로 본다**\n"
+        "  · 카메라가 다른 곳을 보고 있거나 벽 사진이 안 바뀌었다"
+    )
 
 
 def tap(name, wait=2.0):
@@ -302,7 +390,7 @@ def run_cuts(dry_run, reset=False, deadline=None):
         screenshot("01b_permission")
         tap_text("허용하고 시작하기", wait=7)
 
-    print("[컷 2] 도감 홈 — 200칸 중 발견한 칸만 색")
+    print("[컷 2] 도감 홈 — 발견한 칸만 색")
     time.sleep(2)
     screenshot("02_dex")
 
@@ -481,13 +569,14 @@ def main():
         print("AVD config 수정")
         setup_avd_config()
         boot(poster)
+        set_wall(poster)  # 부팅 플래그로도 걸리지만 **무엇이 걸렸는지 기억**해야 한다
     else:
         # 이미 떠 있는 에뮬레이터를 쓴다. 카메라가 붙어 있는지 먼저 본다 —
         # **여기서 확인하지 않으면 검은 프리뷰를 녹화해 놓고 알게 된다.**
         cams = adb("shell", "dumpsys", "media.camera", check=False)
         if "Number of camera devices: 2" not in cams:
             raise SystemExit("카메라가 2개가 아니다 — 먼저 --setup 으로 띄운다")
-        sh("adb", "emu", "virtualscene-image", "wall", str(poster), check=False)
+        set_wall(poster)
 
     prepare(reset=not a.no_reset)
     record(a.seconds, a.dry_run, reset=not a.no_reset)

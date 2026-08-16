@@ -96,6 +96,21 @@ object RankingRules {
     }
 
     /**
+     * 화면 17 내 순위 카드의 `이번 시즌 모은 꽃 N종`.
+     *
+     * 🔴 **`?: 0`이 여기 있었고, 아는 값을 틀리게 그렸다.** 실측(2026-08-16 · 스토어
+     *    스크린샷): 해바라기를 등록한 직후 도감은 `이번 시즌 1종`인데 이 카드는
+     *    `0종`이었다. 내가 상위 목록 밖이면(`server == null`) 기본값 0이 그려진 것이다.
+     *    사용자에게는 **"방금 모은 것이 사라졌다"**로 읽힌다.
+     *
+     * @param server 서버 상위 목록의 내 행에서 온 종수. 목록 밖이면 `null`.
+     * @param local 기기에서 센 이번 시즌 종수(도감 헤더와 같은 출처). 읽는 중이면 `null`.
+     * @return 그릴 종수. **둘 다 모르면 `null`이고 그때는 숫자를 그리지 않는다** —
+     *   0은 모르는 값이 아니라 **사실 주장**이다.
+     */
+    fun mySeasonSpeciesCount(server: Int?, local: Int?): Int? = server ?: local
+
+    /**
      * 화면 18 `{1위 닉네임}까지 25종 남음`.
      *
      * @return 1위와의 차이. 내가 1위면 `null`(문장을 쓰지 않는다).
@@ -134,4 +149,56 @@ object RankingRules {
      */
     fun nextPageRank(rows: List<RankedEntry>, shownCount: Int): Int? =
         rows.getOrNull(shownCount)?.rank
+
+    /**
+     * 랭킹을 **얼마나 오래 들고 있어도 되나**. 이 시간이 지나면 탭에 들어올 때 다시 읽는다.
+     *
+     * 남의 종수는 내 기기에서 알 수 없으므로 시간으로만 낡음을 판단한다. 짧게 잡으면
+     * 탭을 왕복할 때마다 서버를 부르고(요금이 아니라 왕복 지연이 문제다), 길게 잡으면
+     * 친구가 방금 올라간 것이 안 보인다.
+     */
+    const val RANKING_STALE_AFTER_MS = 60_000L
+
+    /**
+     * 화면 17·18·20을 열 때 **랭킹을 다시 읽어야 하나.**
+     *
+     * 🔴 **다시 읽지 않는 판이 실제로 틀린 값을 그렸다**(2026-08-17 실측 · 에뮬레이터).
+     *    `RankingViewModel`은 `MainActivity`의 최상위 컴포저블에서 만들어지므로
+     *    `init { refresh() }`가 **앱이 뜨는 순간** 한 번 돈다. 그 시점에는 아직 아무것도
+     *    안 찍었다. 그 뒤 꽃을 등록하면 서버에는 내 행이 생기는데(등록이 `add()` 안에서
+     *    바로 올린다) **탭을 눌러도 다시 읽지 않아** 화면 17이 앱 시작 시점의 응답을
+     *    계속 그린다. 실측: 등록 직후 `내 순위 -` · 같은 세션에서 탭을 다시 눌러도 `-` ·
+     *    **앱을 다시 켜니 `10위`**. 즉 서버는 맞고 화면만 낡았다.
+     *    🔴 `-`는 "상위 목록 밖"과 **글자가 같아서** 증상으로 구분되지 않는다.
+     *
+     * ⚠️ **탭에 들어올 때마다 무조건 다시 읽지는 않는다.** 랭킹은 두 번 왕복하고
+     *    (`region` + `myRegion`, `friend` + `friendCount`) 그 사이 화면은 `Loading`이다 —
+     *    탭을 왕복하면 방금 본 목록이 매번 사라진다.
+     *
+     * @param loading 지금 읽는 중인가. **읽는 중이면 다시 부르지 않는다**(중복 왕복).
+     * @param lastLoadAtMs 마지막으로 조회를 **시작한** 시각. `null`이면 아직 안 읽었다.
+     *   🔴 끝난 시각이 아니라 시작한 시각이다 — 아래 [countAtLastLoad]와 짝을 맞춰야
+     *   조회 중에 등록한 꽃이 **다음 진입에서 반영된다.**
+     * @param lastLoadFailed 마지막 조회가 실패했나(`Failed`). 서버 기능이 꺼진 빌드
+     *   (`NotConfigured`)는 **실패가 아니다** — 눌러도 되지 않는다.
+     * @param countAtLastLoad 조회를 시작할 때 기기가 센 이번 시즌 종수. `null` = 몰랐다.
+     * @param countNow 지금 기기가 센 이번 시즌 종수. `null` = 도감을 아직 읽는 중이다.
+     *   🔴 **종수로 비교한다**(발견 건수가 아니다). 같은 종을 다시 찍으면 랭킹은
+     *   그대로이므로 그때는 다시 읽을 이유가 없다.
+     */
+    fun shouldRefreshRanking(
+        loading: Boolean,
+        lastLoadAtMs: Long?,
+        lastLoadFailed: Boolean,
+        countAtLastLoad: Int?,
+        countNow: Int?,
+        nowMs: Long,
+        staleAfterMs: Long = RANKING_STALE_AFTER_MS,
+    ): Boolean {
+        if (loading) return false
+        if (lastLoadAtMs == null) return true
+        if (lastLoadFailed) return true
+        if (countNow != countAtLastLoad) return true
+        return nowMs - lastLoadAtMs >= staleAfterMs
+    }
 }

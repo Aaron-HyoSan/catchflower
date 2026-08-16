@@ -3,7 +3,9 @@ package com.catchflower.app.data
 import com.catchflower.app.data.model.RankEntry
 import com.catchflower.app.data.model.RankingRules
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -134,6 +136,37 @@ class RankingRulesTest {
         assertNull(RankingRules.speciesToReach(ranked, myRank = 15, targetRank = 15))
     }
 
+    // ── 내 순위 카드의 종수 (2026-08-17) ─────────────────────────────
+
+    /**
+     * 어떤 경우에 빨개지나: 서버 상위 목록에 내 행이 없을 때 **`0종`으로 채우면.**
+     *
+     * 🔴 이건 실측으로 나온 결함이다. 스토어 스크린샷을 찍다가 해바라기를 등록한 직후
+     *    도감은 `이번 시즌 1종`인데 랭킹 카드는 **`이번 시즌 모은 꽃 0종`**이었다
+     *    (`?: 0` · `RankingScreens.MyRankCard`). 순위는 `-`로 비우면서 종수는 0이라고
+     *    **단정**한 것이고, 사용자에게는 "방금 모은 것이 사라졌다"로 읽힌다.
+     *    화면으로는 아무 오류도 안 보인다 — 숫자가 예쁘게 그려진다.
+     */
+    @Test
+    fun `상위 목록 밖이면 기기에서 센 종수를 쓴다`() {
+        assertEquals(1, RankingRules.mySeasonSpeciesCount(server = null, local = 1))
+        // 서버 행이 있으면 그쪽이 이긴다 — 아래 목록의 내 행과 같은 숫자여야 한다.
+        assertEquals(7, RankingRules.mySeasonSpeciesCount(server = 7, local = 1))
+        // 서버가 0을 **실제로** 준 경우는 0이 사실이다(그 동네에서 이번 시즌 0종).
+        assertEquals(0, RankingRules.mySeasonSpeciesCount(server = 0, local = 3))
+    }
+
+    /**
+     * 어떤 경우에 빨개지나: 둘 다 모르는데 **0을 그리면.**
+     *
+     * 도감을 읽기 전(`loading`)이라 기기 값도 없다. 0은 모르는 값이 아니라 사실 주장이고,
+     * 200종을 모은 사용자가 랭킹 탭을 열 때마다 `0종`을 한 프레임 본다.
+     */
+    @Test
+    fun `둘 다 모르면 숫자를 그리지 않는다`() {
+        assertNull(RankingRules.mySeasonSpeciesCount(server = null, local = null))
+    }
+
     // 🔴 **더미 랭킹을 검사하던 테스트 5개를 지웠다**(2026-08-13, `DummyRanking.kt`와 함께).
     //    `더미 지역 랭킹의 순위가 와이어프레임과 같다`·`친구 수는 A 문서의 8명과 같다`·
     //    `더미 친구 랭킹에서 나는 4위다`·`대표 꽃이 서로 다르다`·`도감 200종 안에 있다`.
@@ -219,5 +252,81 @@ class RankingRulesTest {
         assertEquals(5, RankingRules.VISIBLE_ROWS)
         val ranked = RankingRules.rank((1..10).map { entry("u$it", 50 - it) })
         assertEquals(6, RankingRules.nextPageRank(ranked, RankingRules.VISIBLE_ROWS))
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 랭킹 다시 읽기 판정 (2026-08-17)
+    //
+    // 🔴 **이 검사가 없어서 화면이 낡은 값을 그렸다.** 실측: 꽃을 등록한 직후 화면 17이
+    //    `내 순위 -`였고, 같은 세션에서 탭을 다시 눌러도 `-`였고, **앱을 다시 켜니 `10위`**
+    //    였다(에뮬레이터 · 계정 `꽃친구769c` · `삼성2동 이웃 10명`). 서버는 맞았다.
+    //    `-`는 "상위 목록 밖"과 글자가 같아서 **증상으로는 정상과 구분되지 않는다.**
+    // ─────────────────────────────────────────────────────────────
+
+    /** 기본값. 아래 각 테스트는 **한 가지만** 바꾼다. */
+    private fun stale(
+        loading: Boolean = false,
+        lastLoadAtMs: Long? = 1_000L,
+        lastLoadFailed: Boolean = false,
+        countAtLastLoad: Int? = 1,
+        countNow: Int? = 1,
+        nowMs: Long = 1_000L,
+    ) = RankingRules.shouldRefreshRanking(
+        loading = loading,
+        lastLoadAtMs = lastLoadAtMs,
+        lastLoadFailed = lastLoadFailed,
+        countAtLastLoad = countAtLastLoad,
+        countNow = countNow,
+        nowMs = nowMs,
+    )
+
+    @Test
+    fun `한 번도 안 읽었으면 읽는다`() {
+        assertTrue(stale(lastLoadAtMs = null))
+    }
+
+    /**
+     * 🔴 **이 앱이 실제로 틀렸던 자리다.** 앱 시작 시점에 0종으로 읽어 둔 랭킹을
+     *    등록 뒤에도 그대로 쓰면 내 행이 없다. 시간은 1초도 안 지났다.
+     */
+    @Test
+    fun `등록해서 종수가 늘면 시간이 안 지났어도 읽는다`() {
+        assertTrue(stale(countAtLastLoad = 0, countNow = 1, nowMs = 1_000L))
+    }
+
+    /** 도감을 아직 읽는 중이라 몰랐다가 알게 된 것도 **변화다.** */
+    @Test
+    fun `종수를 몰랐다가 알게 되면 읽는다`() {
+        assertTrue(stale(countAtLastLoad = null, countNow = 1))
+    }
+
+    /** 같은 종을 다시 찍으면 종수가 그대로다 — 랭킹도 그대로이므로 왕복하지 않는다. */
+    @Test
+    fun `종수가 같고 시간이 안 지났으면 읽지 않는다`() {
+        assertFalse(stale(countAtLastLoad = 2, countNow = 2, nowMs = 1_000L + 59_999L))
+    }
+
+    @Test
+    fun `낡음 경계를 넘기면 읽는다`() {
+        assertEquals(60_000L, RankingRules.RANKING_STALE_AFTER_MS)
+        val edge = 1_000L + RankingRules.RANKING_STALE_AFTER_MS
+        assertFalse("경계 1ms 전에는 읽지 않는다", stale(nowMs = edge - 1))
+        assertTrue("경계에서는 읽는다", stale(nowMs = edge))
+    }
+
+    /**
+     * ⚠️ **읽는 중이면 다른 조건이 전부 참이어도 부르지 않는다.** 부르면 같은 왕복이
+     *    두 벌 돌고, 늦게 온 응답이 먼저 온 응답을 덮어쓴다.
+     */
+    @Test
+    fun `읽는 중이면 부르지 않는다`() {
+        assertTrue("대조군 — 읽는 중이 아니면 읽는다", stale(lastLoadAtMs = null, countNow = 9))
+        assertFalse(stale(loading = true, lastLoadAtMs = null, countNow = 9, lastLoadFailed = true))
+    }
+
+    /** 실패한 채로 탭에 들어오면 다시 시도한다 — 사용자가 버튼을 찾아 누르기 전에. */
+    @Test
+    fun `지난 조회가 실패했으면 읽는다`() {
+        assertTrue(stale(lastLoadFailed = true))
     }
 }

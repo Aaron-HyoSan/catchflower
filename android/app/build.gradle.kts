@@ -31,6 +31,13 @@ fun secret(name: String): String {
     return "\"$escaped\""
 }
 
+/**
+ * 같은 곳에서 **날값**을 읽는다. 서명 설정은 자바 소스가 아니라 Gradle이 그대로 쓰므로
+ * [secret]의 따옴표가 붙으면 안 된다 — 붙으면 `"…/x.jks"` 라는 이름의 파일을 찾는다.
+ */
+fun prop(name: String): String =
+    (secrets.getProperty(name) ?: System.getenv(name) ?: "").trim()
+
 android {
     namespace = "com.catchflower.app"
     // ⚠️ compileSdk 37: androidx.core 1.19.0이 "compile against 37 or later"를 요구한다.
@@ -38,10 +45,49 @@ android {
     //   따로 올릴 수 있고, 런타임 동작을 지금 바꿀 이유가 없다.
     compileSdk = 37
 
+    // ── 릴리스 서명 ──────────────────────────────────────────────────
+    //
+    // 키스토어는 **저장소 밖**(`~/keys/catchflower/`)에 있고 경로·비밀번호는
+    // `local.properties`의 `CF_KEYSTORE_*` 네 줄에서 읽는다(키 주입과 같은 길).
+    // `.gitignore`가 `*.jks`·`*.keystore`도 막고 있지만, 애초에 저장소 안에 두지 않는다.
+    //
+    // 🔴 **값이 없으면 서명 설정을 만들지 않는다** — 빈 문자열로 만들어 두면
+    //    `bundleRelease`가 "keystore not found"로 죽거나(다른 맥) 더 나쁘게는
+    //    **서명 없이 성공**해서 Play 업로드 화면에서야 막힌다. 없으면 아예 없는 것으로
+    //    두고(=디버그 키로 서명), 무엇이 없는지는 아래 `check`가 말한다.
+    //
+    // ⚠️ **debug에 `applicationIdSuffix`를 주지 않는다.** 패키지명이 바뀌면 카카오
+    //    콘솔에 등록된 패키지·키해시와 어긋나서 **지도와 로그인이 401**이 된다.
+    val keystoreFile = prop("CF_KEYSTORE_FILE").takeIf { it.isNotEmpty() }?.let(::file)
+    if (keystoreFile != null && keystoreFile.exists()) {
+        signingConfigs.create("release") {
+            storeFile = keystoreFile
+            storePassword = prop("CF_KEYSTORE_PASSWORD")
+            keyAlias = prop("CF_KEY_ALIAS")
+            keyPassword = prop("CF_KEY_PASSWORD")
+        }
+    }
+
     defaultConfig {
         applicationId = "com.catchflower.app"
         minSdk = 26
         targetSdk = 36
+        // ── 버전 ────────────────────────────────────────────────────
+        //
+        // 🔴 **규칙은 하나뿐이다: Play에 올릴 때마다 `versionCode`를 +1 한다.**
+        //    같은 값으로 두 번 올리면 Play가 거부한다("이미 사용된 버전 코드").
+        //    그런데 그건 **업로드 화면에서야** 알 수 있고, 그때는 이미 릴리스 노트까지
+        //    다 쓴 상태다. 그래서 올리는 날 첫 번째로 하는 일이 이 줄을 고치는 것이다.
+        //
+        // ⚠️ **되돌릴 수 없다.** 한 번 3으로 올려 업로드하면 2는 영구히 못 쓴다.
+        //    내부 테스트에 올린 것도 소진된다 — 트랙별로 따로 세지 않는다.
+        //
+        // `versionName`은 사람이 읽는 값이고 화면 20-2 `앱 버전` 행에 그대로 나온다
+        // (`BuildConfig.VERSION_NAME`). 규칙: 기능이 늘면 1.1, 고치기만 하면 1.0.1.
+        //
+        // | 올린 날 | versionCode | versionName | 트랙 |
+        // |---|---|---|---|
+        // | (아직) | 1 | 1.0 | 내부 테스트 → 프로덕션 |
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -80,6 +126,34 @@ android {
         buildConfig = true
     }
 
+    buildTypes {
+        release {
+            // R8. 🔴 **켜는 것과 켜고 확인하는 것은 다르다** — 축소는 컴파일도 테스트도
+            //    통과하고 **실행 중에만** `ClassNotFoundException`·빈 화면으로 나온다.
+            //    JVM 테스트 669개는 축소된 코드를 **한 줄도 보지 않는다.**
+            //    그래서 릴리스 빌드는 반드시 기기에 설치해서 화면을 눌러 봐야 한다.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            // 없으면 `signingConfig`가 null이고 AGP가 **디버그 키로** 서명한다
+            // (빌드는 성공하고 Play만 거부한다 — 위 주석).
+            signingConfig = signingConfigs.findByName("release")
+        }
+    }
+
+    // 🔴 **언어별 분할을 끈다.** 이 앱의 문구는 전부 `values/`(기본)에 있어서 분할이
+    //    켜져 있어도 지금은 문제가 없지만, 나중에 `values-en/`이 하나라도 생기면
+    //    **기기 언어가 영어인 사용자만** 우리가 만들지 않은 조합을 받게 된다.
+    //    무게는 무시할 만하다(용량의 대부분은 일러스트 assets이고 그건 분할 대상이 아니다).
+    bundle {
+        language {
+            @Suppress("UnstableApiUsage")
+            enableSplit = false
+        }
+    }
 }
 
 // 도감 2,057종 데이터는 `꽃도감/flowers.json`이 원본이다 (공유 자산 — iOS도 같은 파일을 쓴다).
@@ -109,6 +183,42 @@ abstract class SyncSharedAssets : DefaultTask() {
     @get:InputDirectory
     abstract val illustSource: DirectoryProperty
 
+    /**
+     * `법무/` 원본 디렉터리(개인정보 처리방침 · 이용약관 · 위치기반서비스 이용약관).
+     *
+     * ⚠️ 폴더째 입력으로 잡는다. 나중에 `법무/웹/`(같은 문서의 HTML 사본)이 생기면
+     *    관계없는 파일 때문에 이 태스크가 한 번 더 도는데, 파일 3개 복사라 무게가 없다.
+     *    반대로 파일을 하나씩 선언하면 **문서를 추가할 때 선언을 빠뜨리고**, 그때
+     *    증상은 "고쳤는데 앱에는 옛 문서가 나온다"(=`UP-TO-DATE`)다.
+     */
+    @get:InputDirectory
+    // ⚠️ 애너테이션은 `PathSensitive`고 `PathSensitivity`는 그 인자인 enum이다
+    //    (`inputs.dir(...).withPathSensitivity(...)`와 이름이 헷갈린다).
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val legalSource: DirectoryProperty
+
+    /**
+     * `원본 파일명 → 자산 이름` 짝. 원본은 [com.catchflower.app.core.LegalDoc] 이지만
+     * Gradle은 앱 코드를 읽을 수 없어서 **여기 한 벌이 더 있다.**
+     *
+     * 🔴 두 벌이 어긋나면 앱은 `assets/legal/…`을 못 찾아 `문서를 불러올 수 없어요`를
+     *    그린다 — 빌드는 성공한다. 그래서 `LegalDocsTest`가 이 파일의 텍스트와 enum을
+     *    맞대 본다(테스트가 `build.gradle.kts`를 읽는 유일한 이유다).
+     */
+    @get:Input
+    abstract val legalPairs: MapProperty<String, String>
+
+    /**
+     * 남아 있어도 되는 치환자. 지금은 `{{문의_이메일}}` 하나이고, 그것도
+     * **`CONTACT_EMAIL`이 주입된 빌드에서만** 허용된다(앱이 실행 시점에 바꿔 넣는다).
+     */
+    @get:Input
+    abstract val allowedPlaceholders: SetProperty<String>
+
+    /** true면 치환자가 남아 있을 때 빌드를 세운다(릴리스에서만 true). */
+    @get:Input
+    abstract val failOnLegalPlaceholder: Property<Boolean>
+
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
 
@@ -117,6 +227,7 @@ abstract class SyncSharedAssets : DefaultTask() {
         val target = outputDir.get().asFile
         target.mkdirs()
         source.get().asFile.copyTo(target.resolve("flowers.json"), overwrite = true)
+        copyLegalDocs(target)
 
         // 일러스트: `0001.webp` → `flower_illust/0001.webp`
         val illustDir = target.resolve("flower_illust")
@@ -147,6 +258,61 @@ abstract class SyncSharedAssets : DefaultTask() {
         //    변환 폴더가 낡아서 200장만 들어가도 빌드는 성공한다. 그래서 로그로 남긴다.
         logger.lifecycle("꽃 일러스트 $copied 장을 assets/flower_illust 로 복사했다")
     }
+
+    /**
+     * 법적 문서 3개를 `assets/legal/`로 복사한다. **원본은 `법무/` 폴더 하나다** —
+     * (⚠️ 이 주석에 `법무` 뒤 슬래시+별표를 쓰지 않는다. **코틀린 블록 주석은 중첩돼서**
+     * 그 두 글자가 주석을 하나 더 열고, 닫는 별표+슬래시가 안쪽을 닫아 **함수 본문까지
+     * 주석으로 먹힌다** — 증상은 이 함수가 아니라 아래쪽 `}`에서 `Missing '}'`이다.)
+     * 앱 안에 사본을 두면 문서를 고친 날 한쪽만 고쳐지고, 그때 앱은 **낡은 방침을
+     * 사용자에게 보여 준다**(고지 의무가 있는 문서라 그게 곧 위반이다).
+     *
+     * 🔴 **자산 이름은 ASCII다**(`privacy.txt`). 한글 이름을 그대로 쓰면 macOS 파일명은
+     *    NFD로 저장되고 앱이 `assets.open("개인정보_처리방침.txt")`에 넘기는 문자열은
+     *    NFC라 **기기에서만 FileNotFound**가 된다(이 저장소가 이미 전 종 불일치로
+     *    겪었다 — 위 일러스트 주석). 여기서 이름을 바꿔 담으므로 앱 코드에는 한글
+     *    파일명이 한 글자도 없다.
+     *
+     * ⚠️ 원본을 **경로로 열고, 폴더를 훑어 이름을 비교하지 않는다.** 이름 비교가 바로
+     *    NFD/NFC가 터지는 자리다.
+     */
+    private fun copyLegalDocs(target: File) {
+        val legalDir = target.resolve("legal")
+        legalDir.deleteRecursively()
+        legalDir.mkdirs()
+
+        val remaining = linkedMapOf<String, MutableSet<String>>()
+        val allowed = allowedPlaceholders.get()
+        val placeholder = "\\{\\{[^}]+}}".toRegex()
+
+        legalPairs.get().forEach { (sourceName, assetName) ->
+            val src = legalSource.get().asFile.resolve(sourceName)
+            // 없으면 세운다. 조용히 건너뛰면 설정 8행은 그대로 있고 누르면
+            // `문서를 불러올 수 없어요`가 뜬다 — 심사에서 반려되는 모양이다.
+            check(src.isFile) { "법무/$sourceName 이 없다. 문서 원본은 `법무/`에만 있다." }
+            val raw = src.readText()
+            placeholder.findAll(raw).map { it.value }.filterNot { it in allowed }.forEach {
+                remaining.getOrPut(sourceName) { linkedSetOf() }.add(it)
+            }
+            src.copyTo(legalDir.resolve(assetName), overwrite = true)
+        }
+
+        if (remaining.isEmpty()) return
+
+        val report = remaining.entries.joinToString("\n") { (f, ph) -> "  법무/$f: ${ph.joinToString(" ")}" }
+        // 🔴 **디버그에서는 경고로 끝낸다.** 오너 답(사업자명·시행일·책임자)이 오기
+        //    전에도 화면을 눌러 봐야 하고, 그걸 막으면 개발이 서 버린다.
+        //    반대로 릴리스에서 통과시키면 **`{{시행일}}`이 적힌 방침이 스토어에 올라간다.**
+        if (!failOnLegalPlaceholder.get()) {
+            logger.warn("⚠️ 법적 문서에 아직 채우지 않은 칸이 있다(릴리스 빌드는 여기서 멈춘다):\n$report")
+            return
+        }
+        error(
+            "법적 문서에 채우지 않은 칸이 남아 있어 릴리스 빌드를 멈췄다:\n$report\n" +
+                "오너에게 받을 값이다(A 문서 4절 24번). 값 없이 확인만 하려면 " +
+                "`-PcfAllowLegalPlaceholders=true`.",
+        )
+    }
 }
 
 androidComponents {
@@ -162,9 +328,31 @@ androidComponents {
             "꽃도감/꽃도감_일러스트_전수_webp 폴더가 없다. " +
                 "→ python3 꽃도감/_tools/pack_illust_webp.py 를 먼저 돌린다."
         }
+        val legalDir = rootProject.layout.projectDirectory.dir("../법무")
+        check(legalDir.asFile.isDirectory) { "법무/ 폴더가 없다. 법적 문서 원본이 거기 있다." }
+        // 🔴 **`{{문의_이메일}}`은 주소가 주입된 빌드에서만 허용한다.** 앱이 실행 시점에
+        //    바꿔 넣기 때문에(`LegalDocs.render`) 치환자로 남아 있는 것이 정상인데,
+        //    `CONTACT_EMAIL`이 비어 있으면 바꿔 넣을 값이 없어서 **화면에 `{{문의_이메일}}`
+        //    이 그대로 보인다.** 그때는 다른 치환자와 똑같이 릴리스를 세워야 한다.
+        val contactInjected = prop("CONTACT_EMAIL").isNotEmpty()
         val task = tasks.register<SyncSharedAssets>("sync${variant.name.replaceFirstChar(Char::uppercase)}SharedAssets") {
             source.set(sharedJson)
             illustSource.set(illustDir)
+            legalSource.set(legalDir)
+            // 짝의 원본은 `LegalDoc` enum이다. 어긋나면 `LegalDocsTest`가 잡는다.
+            legalPairs.set(
+                mapOf(
+                    "개인정보_처리방침.txt" to "privacy.txt",
+                    "서비스_이용약관.txt" to "terms.txt",
+                    "위치기반서비스_이용약관.txt" to "location.txt",
+                ),
+            )
+            allowedPlaceholders.set(if (contactInjected) setOf("{{문의_이메일}}") else emptySet())
+            // ⚠️ `variant.buildType`은 String?다. null이면(있을 수 없지만) 세우지 않는다 —
+            //    빌드 타입을 못 읽었다고 릴리스를 막으면 원인이 안 보이는 실패가 된다.
+            failOnLegalPlaceholder.set(
+                variant.buildType == "release" && !project.hasProperty("cfAllowLegalPlaceholders"),
+            )
         }
         variant.sources.assets?.addGeneratedSourceDirectory(task, SyncSharedAssets::outputDir)
     }
@@ -211,6 +399,15 @@ tasks.withType<Test>().configureEach {
     //    SQL만 고치는 커밋(오너가 스키마를 손보는 날이 그렇다)에서 정확히 새어 나간다.
     inputs.dir(root.dir("../supabase/migrations"))
         .withPropertyName("cfTestReadsMigrations").withPathSensitivity(PathSensitivity.RELATIVE)
+    // 법적 문서 = 화면 20-3 본문의 원본. `LegalDocsTest`가 이 파일들을 직접 읽어
+    // 줄바꿈 재조립과 남은 치환자를 잰다. 선언하지 않으면 문서만 고친 커밋에서
+    // 조용히 `UP-TO-DATE`가 된다(위 표와 같은 층).
+    inputs.dir(root.dir("../법무"))
+        .withPropertyName("cfTestReadsLegal").withPathSensitivity(PathSensitivity.RELATIVE)
+    // 🔴 **`build.gradle.kts` 자신도 입력이다.** `LegalDocsTest`가 위 `legalPairs`
+    //    (원본↔자산 짝)를 이 파일의 텍스트에서 읽어 `LegalDoc` enum과 대조한다.
+    inputs.file(layout.projectDirectory.file("build.gradle.kts"))
+        .withPropertyName("cfTestReadsBuildScript").withPathSensitivity(PathSensitivity.NONE)
 }
 
 dependencies {

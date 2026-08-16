@@ -99,14 +99,53 @@ class RankingViewModel @JvmOverloads constructor(
     var friendCount by mutableStateOf<Int?>(null)
         private set
 
+    /**
+     * 마지막으로 조회를 **시작한** 시각. `null`이면 아직 한 번도 안 읽었다.
+     * 판정은 [RankingRules.shouldRefreshRanking]이 한다 — 여기서 하면 JVM 테스트가 못 읽는다.
+     */
+    private var lastLoadAtMs: Long? = null
+
+    /** 조회를 시작할 때 기기가 센 이번 시즌 종수. [refreshIfStale]의 비교 기준이다. */
+    private var seasonCountAtLastLoad: Int? = null
+
     init {
         refresh()
     }
 
     /** A 문서 3절 `조회 실패 → 다시 시도` 버튼이 부른다. */
     fun refresh() {
+        lastLoadAtMs = nowProvider()
         loadRegion()
         loadFriends()
+    }
+
+    /**
+     * 랭킹·마이 탭에 **들어올 때** 부른다. 낡았을 때만 다시 읽는다.
+     *
+     * 🔴 **이게 없으면 방금 찍은 꽃이 순위에 안 나온다.** 이 ViewModel은
+     *    [MainActivity]의 최상위에서 만들어져 `init`이 **앱 시작 시점에** 한 번 돌고,
+     *    탭 이동은 인스턴스를 다시 만들지 않는다. 실측·근거는
+     *    [RankingRules.shouldRefreshRanking]의 🔴에 있다.
+     *
+     * @param mySeasonSpeciesCount 도감과 **같은 출처**의 이번 시즌 종수
+     *   (`DexViewModel.thisSeasonCount`). 읽는 중이면 `null`.
+     */
+    fun refreshIfStale(mySeasonSpeciesCount: Int?) {
+        val stale = RankingRules.shouldRefreshRanking(
+            // `Loading`은 `loadRegion`/`loadFriends`가 왕복 직전에 넣는 값이라
+            // **읽는 중과 정확히 같다.** 따로 세는 카운터를 두면 그 카운터가 틀릴 수 있다.
+            loading = region is RegionRankingUi.Loading || friends is FriendRankingUi.Loading,
+            lastLoadAtMs = lastLoadAtMs,
+            // ⚠️ `NotConfigured`를 실패로 세지 않는다 — 키 없는 빌드에서 탭마다
+            //    같은 판정을 반복하게 된다(그리고 사용자가 할 수 있는 일이 없다).
+            lastLoadFailed = region is RegionRankingUi.Failed || friends is FriendRankingUi.Failed,
+            countAtLastLoad = seasonCountAtLastLoad,
+            countNow = mySeasonSpeciesCount,
+            nowMs = nowProvider(),
+        )
+        if (!stale) return
+        seasonCountAtLastLoad = mySeasonSpeciesCount
+        refresh()
     }
 
     /**

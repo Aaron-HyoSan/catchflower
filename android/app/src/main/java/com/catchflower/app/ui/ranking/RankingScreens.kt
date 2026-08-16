@@ -61,6 +61,12 @@ fun RankingScreen(
     onPickRegion: () -> Unit,
     /** 화면 07(카메라)로 보낸다 — 빈 동네의 `꽃 찍어보기`. */
     onCapture: () -> Unit,
+    /**
+     * 내가 **이번 시즌 모은 종수**(기기에서 센 값 · 도감 헤더와 같은 출처).
+     * 서버 상위 목록에 내 행이 없을 때 이 값으로 카드를 채운다 — 자세한 이유는
+     * [MyRankCard]의 🔴. 아직 읽는 중이면 `null`이고, 그때는 아무 숫자도 그리지 않는다.
+     */
+    mySeasonSpeciesCount: Int?,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxSize()) {
@@ -86,7 +92,12 @@ fun RankingScreen(
         RankingTabs(current = vm.tab, onSelect = vm::selectTab)
 
         when (vm.tab) {
-            RankingTab.REGION -> RegionRanking(vm, onPickRegion = onPickRegion, onCapture = onCapture)
+            RankingTab.REGION -> RegionRanking(
+                vm,
+                onPickRegion = onPickRegion,
+                onCapture = onCapture,
+                mySeasonSpeciesCount = mySeasonSpeciesCount,
+            )
             RankingTab.FRIENDS -> FriendRanking(vm, onInvite = onOpenFriends)
         }
     }
@@ -143,7 +154,13 @@ private fun RankingTabs(current: RankingTab, onSelect: (RankingTab) -> Unit) {
  *    문구는 A 문서 3절 `화면 17 지역 랭킹의 빈·실패 상태`를 쓴다.
  */
 @Composable
-private fun RegionRanking(vm: RankingViewModel, onPickRegion: () -> Unit, onCapture: () -> Unit) {
+private fun RegionRanking(
+    vm: RankingViewModel,
+    onPickRegion: () -> Unit,
+    onCapture: () -> Unit,
+    /** 기기에서 센 내 이번 시즌 종수. 이유는 [MyRankCard]의 🔴. */
+    mySeasonSpeciesCount: Int?,
+) {
     val state = vm.region
     /**
      * `더 보기`를 눌렀나(2026-08-13 · 오너 `죽어있는 버튼 없도록 전부 구현해다오`).
@@ -211,7 +228,7 @@ private fun RegionRanking(vm: RankingViewModel, onPickRegion: () -> Unit, onCapt
             RegionRankingUi.NotConfigured -> Unit
 
             is RegionRankingUi.Loaded -> {
-                item { MyRankCard(vm, state) }
+                item { MyRankCard(vm, state, mySeasonSpeciesCount) }
                 item {
                     Text(
                         // `연남동 이웃 1,284명`. 🔴 B-6이 구로 넓히면 **구명**이 온다 —
@@ -357,9 +374,22 @@ private fun SeasonBanner(vm: RankingViewModel, state: RegionRankingUi) {
  *    ② 내가 상위 목록 밖이면(6위 이하) 내 행이 아예 없다. `0위`로 채우면
  *      **1등보다 위에 있는 순위**를 그린다.
  *    둘 다 **문장을 지운다.** 없는 정보를 그리는 것보다 안 그리는 게 정직하다.
+ *
+ * 🔴 **그런데 종수는 모르는 값이 아니었다 — `?: 0`이 아는 값을 틀리게 그렸다.**
+ *    실측(2026-08-16 · 스토어 스크린샷): 해바라기를 등록한 직후 도감은 `이번 시즌 1종`,
+ *    같은 순간 이 카드는 **`이번 시즌 모은 꽃 0종`**이었다. 상위 목록에 내 행이 없어서
+ *    (`myRegionRank == null`) 기본값 0이 그려진 것이다. 순위는 `-`로 비웠는데 종수는
+ *    **0이라고 단정**했다 — 사용자에게는 "방금 모은 것이 사라졌다"로 읽힌다.
+ *    그래서 서버 행이 없으면 **기기에서 센 값**([mySeasonSpeciesCount] · 도감 헤더와
+ *    같은 출처)을 쓰고, 그것도 읽는 중이면 `-`를 그린다. **0은 사실 주장이다.**
+ *    ⚠️ 서버 행이 있으면 그쪽을 그대로 쓴다 — 아래 목록의 내 행과 같은 숫자여야 한다.
  */
 @Composable
-private fun MyRankCard(vm: RankingViewModel, state: RegionRankingUi.Loaded) {
+private fun MyRankCard(
+    vm: RankingViewModel,
+    state: RegionRankingUi.Loaded,
+    mySeasonSpeciesCount: Int?,
+) {
     val mine = vm.myRegionRank
     Column(
         Modifier
@@ -385,10 +415,15 @@ private fun MyRankCard(vm: RankingViewModel, state: RegionRankingUi.Loaded) {
                 Text("이번 시즌 모은 꽃", style = CfText.Tiny, color = CfColor.TextTertiary)
                 // ⚠️ 지역 랭킹의 내 행에서 읽는다. 친구 랭킹(vm.me)에서 읽으면
                 //    **친구가 없으면 0종이 되고**, 같은 사용자의 종수가 화면마다 달라진다.
+                //    내 행이 없을 때 기기 값으로 내려가는 이유는 위 독스트링 🔴.
+                val myCount = RankingRules.mySeasonSpeciesCount(
+                    server = mine?.entry?.speciesCount,
+                    local = mySeasonSpeciesCount,
+                )
                 Text(
-                    "${mine?.entry?.speciesCount ?: 0}종",
+                    if (myCount != null) "${myCount}종" else "-",
                     style = CfText.BodyBold,
-                    color = CfColor.Primary,
+                    color = if (myCount != null) CfColor.Primary else CfColor.TextTertiary,
                 )
             }
         }

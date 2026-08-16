@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.catchflower.app.core.AppSecrets
+import com.catchflower.app.core.LegalDoc
 import com.catchflower.app.data.FlowerRepository
 import com.catchflower.app.data.OnboardingState
 import com.catchflower.app.ui.onboarding.PermissionIntroScreen
@@ -51,6 +52,8 @@ import com.catchflower.app.ui.place.PlaceViewModel
 import com.catchflower.app.ui.place.RecordDetailScreen
 import com.catchflower.app.ui.place.RecordViewModel
 import com.catchflower.app.ui.my.SeasonResultScreen
+import com.catchflower.app.ui.my.AccountDeletionViewModel
+import com.catchflower.app.ui.my.LegalDocScreen
 import com.catchflower.app.ui.my.SettingsScreen
 import com.catchflower.app.ui.ranking.FriendsScreen
 import com.catchflower.app.ui.ranking.FriendsViewModel
@@ -217,6 +220,14 @@ private fun CatchFlowerRoot() {
     //    사라지고, 그러면 저장 중에 회전한 사용자가 **저장 중이 아닌 화면**으로 돌아온다.
     val profileEditViewModel: ProfileEditViewModel = viewModel()
 
+    // 화면 20-2 8행 `회원 탈퇴`(2026-08-16 · 출시 준비).
+    //
+    // 🔴 **여기서 만든다.** 설정 화면 안에서 만들면 다이얼로그가 `탈퇴를 처리하고
+    //    있어요` 상태일 때 회전하거나 뒤로 가면 ViewModel이 사라지고, **서버 삭제는
+    //    계속 도는데 결과를 받을 곳이 없어진다** — 그러면 기기 데이터가 안 지워지고
+    //    사용자 화면에는 아무 말도 남지 않는다.
+    val accountDeletionViewModel: AccountDeletionViewModel = viewModel()
+
     // 지도 → 화면 15 → 화면 16. **두 단을 각각 플래그로 둔다** — 한 개로 합치면
     // 화면 16의 `뒤로`가 지도까지 돌아가고, 그러면 사용자가 방금 본 장소를 잃는다.
     var placeOpen by remember { mutableStateOf(false) }
@@ -228,6 +239,11 @@ private fun CatchFlowerRoot() {
     var seasonResultOpen by remember { mutableStateOf(false) }
     var profileEditOpen by remember { mutableStateOf(false) }
     var settingsOpen by remember { mutableStateOf(false) }
+
+    // 화면 20-3 법적 문서(2026-08-16). **어떤 문서인지까지 상태다** — `Boolean`으로
+    // 두면 세 행이 같은 화면을 열고 제목·본문을 화면이 스스로 고르게 되는데,
+    // 그러면 `이용약관`을 눌러도 개인정보 처리방침이 나오는 실수가 안 보인다.
+    var legalDocOpen by remember { mutableStateOf<LegalDoc?>(null) }
 
     // 화면 17·20의 `동네 선택하기`가 여는 자리. 화면 02를 위에 겹쳐 띄운다.
     //
@@ -410,6 +426,11 @@ private fun CatchFlowerRoot() {
                             onOpenLastSeason = { seasonResultOpen = true },
                             onPickRegion = { regionPickerOpen = true },
                             onCapture = { tab = NavTab.CAPTURE },
+                            // 🔴 **같은 `DexViewModel`에서 받아 간다.** 랭킹이 저장소를
+                            //    따로 열면 등록 직후에 도감과 다른 숫자를 말한다(화면 20
+                            //    주석과 같은 이유). 읽는 중이면 null → 카드가 `-`를 그린다.
+                            mySeasonSpeciesCount =
+                                if (dexViewModel.loading) null else dexViewModel.thisSeasonCount,
                         )
                     }
 
@@ -441,12 +462,21 @@ private fun CatchFlowerRoot() {
                         //    화면 02를 위에 겹쳐 띄우고, 그 화면을 닫으면 **설정으로
                         //    돌아온다** — 순서를 바꾸면 화면 02가 설정 밑에 깔려
                         //    영원히 안 보인다.
+                        // 화면 20-3 법적 문서. **설정보다 앞에 온다** — 위 화면 02와
+                        // 같은 이유다(설정 위에 겹쳐 띄우고, 닫으면 설정으로 돌아온다).
+                        legalDocOpen != null -> LegalDocScreen(
+                            doc = legalDocOpen!!,
+                            onBack = { legalDocOpen = null },
+                        )
+
                         settingsOpen -> SettingsScreen(
                             // 🔴 문자열을 박지 않는다 — `1.0`을 적어 두면 버전을 올린
                             //    뒤에도 설정 화면만 옛 버전을 말한다.
                             version = BuildConfig.VERSION_NAME,
                             onPickRegion = { regionPickerOpen = true },
+                            onOpenLegal = { doc -> legalDocOpen = doc },
                             onBack = { settingsOpen = false },
+                            deletion = accountDeletionViewModel,
                         )
 
                         // 화면 20-1. `프로필 수정`이 여는 자리.
@@ -523,6 +553,9 @@ private fun CatchFlowerRoot() {
                 regionPickerOpen = false
                 profileEditOpen = false
                 settingsOpen = false
+                // 화면 20-3도 닫는다. 안 닫으면 마이 탭으로 돌아왔을 때 **약관 본문**이
+                // 먼저 나온다(위 `when`에서 설정보다 앞이다).
+                legalDocOpen = null
                 // 화면 23도 닫는다. 안 닫으면 마이 탭에서 `내가 공유한 꽃`을 열어 둔 채
                 // 도감 탭으로 갔을 때 **도감이 아니라 공유 목록**이 나온다.
                 discoveryListMode = null
@@ -530,6 +563,20 @@ private fun CatchFlowerRoot() {
                 // 아까 보던 **남의 기록 상세**가 나온다(친구 관리에서 겪은 그 모양).
                 placeOpen = false
                 recordOpen = false
+                // 🔴 **랭킹은 탭에 들어올 때 다시 읽는다.** 안 읽으면 앱이 뜨는 순간의
+                //    응답을 계속 그린다 — 방금 찍은 꽃이 순위에 없고(`내 순위 -`),
+                //    그 `-`는 "상위 목록 밖"과 글자가 같아서 증상으로 구분되지 않는다
+                //    (2026-08-17 실측: 등록 직후 `-` → 앱 재시작 후 `10위`).
+                //    낡았을 때만 부른다 — 판정과 근거는 [RankingRules.shouldRefreshRanking].
+                //    ⚠️ 마이 탭도 같이 부른다. 화면 20의 `활동 지역`·`친구 관리 N명`이
+                //       **같은 응답**에서 나온다(`rankingViewModel.profile`).
+                if (selected == NavTab.RANKING || selected == NavTab.MY) {
+                    rankingViewModel.refreshIfStale(
+                        // 도감과 같은 출처를 넘긴다(아래 `RankingScreen`과 같은 식).
+                        mySeasonSpeciesCount =
+                            if (dexViewModel.loading) null else dexViewModel.thisSeasonCount,
+                    )
+                }
                 tab = selected
             },
             modifier = Modifier.align(Alignment.BottomCenter),
