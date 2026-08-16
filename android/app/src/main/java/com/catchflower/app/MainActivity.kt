@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
@@ -25,9 +26,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.catchflower.app.core.AppSecrets
+import com.catchflower.app.data.FlowerRepository
 import com.catchflower.app.data.OnboardingState
 import com.catchflower.app.ui.onboarding.PermissionIntroScreen
 import com.catchflower.app.ui.capture.CaptureFlow
+import com.catchflower.app.ui.component.AppLoadingGate
+import com.catchflower.app.ui.component.AppLoadingScreen
 import com.catchflower.app.ui.component.CfBottomNav
 import com.catchflower.app.ui.component.NavTab
 import com.catchflower.app.ui.dex.DexDetailScreen
@@ -56,6 +60,9 @@ import com.catchflower.app.ui.theme.CatchFlowerTheme
 import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
 import com.catchflower.app.ui.theme.CfText
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 class CatchFlowerApp : Application() {
     override fun onCreate() {
@@ -106,6 +113,33 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun CatchFlowerRoot() {
     val context = LocalContext.current
+
+    // 화면 00(로딩) — **모든 것보다 앞이다.** 온보딩보다도 먼저 뜬다.
+    //
+    // 여기서 도감 2,057종 파싱을 **IO 스레드로 옮겨 데운다.** 그 전까지는
+    // `DexViewModel`의 생성자(= 메인 스레드)에서 돌고 있었다.
+    // 🔴 **캐시는 `FlowerRepository`가 스스로 든다**(`@Volatile` + `synchronized`).
+    //    그래서 데운 뒤 ViewModel이 `get()`을 다시 불러도 파싱은 한 번뿐이다 —
+    //    여기서 인스턴스를 들고 있다가 넘기는 배선을 만들지 않는다(넘기는 길이
+    //    하나 더 생기면 어느 쪽이 쓰였는지 화면으로 구분할 수 없다).
+    //
+    // ⚠️ **예외를 삼키지 않는다.** 자산이 깨지면 앱이 죽는 것이 맞다 —
+    //    잡아서 이 화면에 남기면 로고가 영원히 떠 있고, 그건 크래시도 로그도 없는
+    //    "멈춘 앱"이다([AppLoadingGate] 주석).
+    var loadingDone by remember { mutableStateOf(false) }
+    if (!loadingDone) {
+        AppLoadingScreen(modifier = Modifier.fillMaxSize())
+        LaunchedEffect(Unit) {
+            val startedAt = System.currentTimeMillis()
+            withContext(Dispatchers.IO) { FlowerRepository.get(context) }
+            val elapsed = System.currentTimeMillis() - startedAt
+            android.util.Log.i("CatchFlower", "화면 00: 도감 데우기 ${elapsed}ms")
+            // 일이 먼저 끝났으면 하한까지 기다린다(깜빡임 방지 · 규칙은 게이트에 있다).
+            delay(AppLoadingGate.remainingMs(elapsed))
+            loadingDone = true
+        }
+        return
+    }
 
     // 화면 03(권한 안내)은 **첫 실행에만** 보인다.
     //

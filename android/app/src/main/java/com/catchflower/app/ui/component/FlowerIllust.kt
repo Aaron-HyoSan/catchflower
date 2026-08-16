@@ -138,15 +138,26 @@ fun FlowerIllustPlaceholder(
 }
 
 /**
- * 미발견 셀 (화면 04). 와이어프레임은 **회색 실루엣**이다 —
- * 색까지 보여주면 "무슨 꽃인지 모른다"는 정보가 새 버린다.
+ * 미발견 셀 (화면 04). **회색 단색 실루엣** — 색도 모양도 보여주지 않는다.
  *
- * ⚠️ **실제 아트가 왔지만 여기는 일부러 바꾸지 않았다.** B 문서 76행이 미발견 처리를
- *    **2안 시안(a: 일러스트 회색 반투명 / b: 단색 실루엣)** 으로 요청한 **오너 미결 항목**이고,
- *    (a)를 고르면 **꽃 모양이 그대로 드러난다** — 지금의 추상 도형보다 정보가 더 샌다.
- *    "200종 중 상당수가 미발견으로 보이므로 화면 인상을 좌우한다"(77행)는 것도 이 문서의 말이다.
- *    임의로 정하지 않고 (b) 쪽에 가까운 현행을 유지한다. 오너가 (a)를 고르면
- *    [FlowerIllustLoader]가 이미 비트맵을 주므로 이 함수만 바꾸면 된다.
+ * ## 🔵 오너가 (b)로 정했다 (2026-08-16)
+ *
+ * B 문서 76행이 미발견 처리를 **2안 시안(a: 일러스트 회색 반투명 / b: 단색 실루엣)** 으로
+ * 물었고, 오너가 **`미발견 셀 회색 처리해`** 로 답했다(= 권고였던 b).
+ * (a)를 고르면 **꽃 모양이 그대로 드러난다** — 이름만 가리고 그림을 보여주면
+ * "무슨 꽃인지 모른다"는 정보가 새고, 2,044칸 대부분이 미발견이라 도감 첫인상이
+ * "이미 다 아는 꽃 목록"이 된다. 그래서 실제 일러스트를 쓰지 않고 추상 도형을 그린다.
+ *
+ * ## 🔴 결정을 받고 **채우기로 바꿨다** — 그전에는 1.5px 테두리였다
+ *
+ * `Stroke(width = 1.5f)`였다. 그 값은 **dp가 아니라 픽셀**이라(Canvas 안이다)
+ * 3x 기기에서 **0.5dp**로 그려진다 — `#D9D9D9`를 흰 배경에 0.5dp로 그리면
+ * 사실상 안 보이고, 셀은 **빈 칸**으로 읽힌다. "회색 처리"의 반대였다.
+ * ⚠️ 그래서 여기는 **면으로 채운다.** 채우면 도형이 겹쳐도 이음선이 안 생긴다
+ *    (같은 불투명 색이라). 반투명으로 바꾸면 겹친 자리가 진해져 **꽃잎 수가 세진다.**
+ *
+ * ⚠️ 대비를 더 올리지 않는다. 발견한 셀(실제 일러스트)보다 눈에 띄면
+ *    **모은 것이 덜 보인다** — 이 화면의 목적이 뒤집힌다.
  */
 @Composable
 fun FlowerSilhouette(
@@ -165,25 +176,30 @@ fun FlowerSilhouette(
                 repeat(petals) { index ->
                     val angle = (2.0 * Math.PI * index / petals).toFloat()
                     drawCircle(
-                        color = Color(0xFFD9D9D9),
+                        color = SilhouetteGray,
                         radius = radius * 0.34f,
                         center = Offset(
                             center.x + orbit * kotlin.math.cos(angle),
                             center.y + orbit * kotlin.math.sin(angle),
                         ),
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f),
                     )
                 }
             }
+            // 꽃심. 꽃잎보다 조금 진하게 — **단색 한 덩어리**로 보이지 않게 하는 최소한이다.
             drawCircle(
-                color = Color(0xFFD9D9D9),
+                color = SilhouetteGrayCenter,
                 radius = radius * 0.24f,
                 center = center,
-                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f),
             )
         }
     }
 }
+
+/** 미발견 실루엣의 꽃잎 색. 흰 배경 대비 1.3:1 — **읽는 글자가 아니라 도형**이다. */
+private val SilhouetteGray = Color(0xFFD9D9D9)
+
+/** 미발견 실루엣의 꽃심 색. 꽃잎보다 한 단 진하다. */
+private val SilhouetteGrayCenter = Color(0xFFC4C4C4)
 
 /**
  * **내가 찍은 사진 한 장.** 없으면 도감 일러스트로 되돌린다.

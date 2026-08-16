@@ -259,7 +259,12 @@ class IconAssetTest {
      */
     @Test
     fun 납품_아이콘은_CfIcon만_거친다() {
-        val allowed = setOf("CfIcon.kt")
+        // 🔵 **AppLoadingScreen.kt를 2026-08-16에 넣었다.** 위 ⚠️가 예고한 그 경우다.
+        //    화면 00이 그리는 것은 아이콘이 아니라 **앱 배지**(`@mipmap/ic_splash_badge`)이고,
+        //    `CfIcon`은 `@DrawableRes`를 받아서 mipmap을 넘기면 타입이 어긋난다.
+        //    tint 위험이 없는 근거는 아래 단정으로 **고정한다**(목록에 넣는 것만으로
+        //    끝내면 이 파일은 영구 예외가 된다).
+        val allowed = setOf("CfIcon.kt", "AppLoadingScreen.kt")
         val viaPainter = mainSources
             .filter { it.name !in allowed && bodyOf(it).contains("painterResource") }
             .map { it.name }
@@ -267,6 +272,18 @@ class IconAssetTest {
             "납품 아트를 CfIcon 밖에서 그린다 — tint를 줄 수 있는 경로가 열린다: $viaPainter",
             emptyList<String>(),
             viaPainter,
+        )
+
+        // 예외로 둔 파일이 **실제로 색을 안 건드리는지** 본다.
+        val loading = bodyOf(File("src/main/java/com/catchflower/app/ui/component/AppLoadingScreen.kt"))
+        assertTrue("AppLoadingScreen을 못 읽었다 — 예외가 검사 없이 남는다", loading.contains("painterResource"))
+        assertTrue(
+            "화면 00 배지에 colorFilter를 준다 — 컬러 배지가 단색으로 덮인다",
+            !loading.contains("colorFilter"),
+        )
+        assertTrue(
+            "화면 00 배지에 tint를 준다 — 컬러 배지가 단색으로 덮인다",
+            !loading.contains("tint"),
         )
 
         val iconWithPainter = mainSources.filter { file ->
