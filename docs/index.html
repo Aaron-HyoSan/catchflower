@@ -231,7 +231,10 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk</code></pre>
       실제 판별을 보려면 <code>local.properties</code>에 PlantNet·카카오·Supabase 키를 넣는다.<br><br>
       <b>지도는 키해시 등록이 필요하다.</b> 카카오 콘솔에 <b>빌드에 쓴 키스토어의 SHA-1</b>을 등록하지 않으면
       <code>vector/auth</code>가 <b>401</b>을 주고 타일이 안 그려진다. 그래서 배포 APK는 <b>키해시가 등록된 디버그 키</b>로 서명했다 —
-      release 키로 다시 서명하면 지도만 조용히 죽는다.
+      release 키로 다시 서명하면 지도만 조용히 죽는다.<br><br>
+      <b>그래서 이 APK는 스토어 버전과 함께 깔리지 않는다.</b> 패키지 이름과 versionCode가 같은데 서명이 다르기 때문이다
+      (<code>CN=Android Debug</code> vs <code>CN=CatchFlower</code>). 나중에 Play에서 받으려면 <b>이 APK를 먼저 지워야</b> 하고,
+      지우지 않으면 설치가 실패하면서 <b>화면에는 이유가 나오지 않는다.</b> 도감 기록은 계정이 달라 옮겨지지 않는다.
     </div>
   </div>
 </section>

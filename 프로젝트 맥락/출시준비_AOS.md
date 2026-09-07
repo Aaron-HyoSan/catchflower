@@ -13,7 +13,7 @@
 
 | # | 막는 것 | 누가 | 없으면 어떻게 되나 |
 |---|---|---|---|
-| ~~①~~ | ~~법적 문서 빈 칸 **6종**~~ → 🔵 **2026-09-08에 닫혔다**(4-1) | ~~오너~~ | ~~`./gradlew bundleRelease`가 **멈춘다**~~ → 이제 빌드가 된다. 남은 것은 `docs/legal/` **커밋·푸시 + 두 URL 열림 확인**이다 |
+| ~~①~~ | ~~법적 문서 빈 칸 **6종**~~ → 🔵 **2026-09-08에 완전히 닫혔다**(4-1) | ~~오너~~ | ~~`./gradlew bundleRelease`가 **멈춘다**~~ → 빌드가 되고, `docs/legal/` 5장이 **공개돼 열리는 것까지 확인했다**(커밋 `06afc1f`) |
 | ② | 카카오 **릴리스 키해시** 등록 | 오너 | 빌드는 되고 **지도 화면만 401로 죽는다** |
 
 🔴 **①과 ②는 증상이 완전히 다르다.** ①은 빌드가 안 되니 못 올린다. ②는 **올라가고,
@@ -92,13 +92,18 @@
 # ① 🔵 2026-09-08에 했다 — 법적 문서 6칸 + local.properties의 CONTACT_EMAIL
 #    (문서를 손으로 고친다. 여기는 생성물이 아니다: 법무/*.txt 가 원본이다)
 
-# ② 🔵 굽는 것까지 했다(5장). 🔴 **커밋·푸시는 아직 안 했다 — 그게 곧 공개다**
+# ② 🔵 2026-09-08에 굽고 **커밋·푸시까지 했다**(커밋 06afc1f · 5장)
 python3 법무/build_웹.py
 git add docs/legal && git commit && git push        # 푸시가 곧 공개다(GitHub Pages)
 
-# ③ 두 URL이 브라우저로 정말 열리는지 확인한다 — 안 열리면 등록정보 저장이 안 된다
+# ③ 🔵 두 URL이 정말 열리는 것을 확인했다 (HTTP 200 · 치환자 0개 · sha256이 로컬과 같다)
 #    https://aaron-hyosan.github.io/catchflower/legal/privacy.html
 #    https://aaron-hyosan.github.io/catchflower/legal/delete-account.html
+#    ⚠️ "푸시했다"로는 확인이 아니다 — Pages 빌드는 푸시 **뒤에** 따로 돌고 실패할 수 있다.
+#       상태는 여기서 읽는다(사이트를 반복 호출하지 않는다):
+#         gh api repos/Aaron-HyoSan/catchflower/pages/builds/latest --jq '{status,error,commit}'
+#       그리고 내려온 바이트가 로컬 파일과 같은지 sha256으로 맞춘다 — 200만 보면
+#       **낡은 판이 캐시에서 오는 것**을 못 잡는다.
 
 # ④ versionCode를 올린다 (같은 값은 Console이 거부한다). 지금 1 → 올릴 때 2
 #    android/app/build.gradle.kts
@@ -228,6 +233,29 @@ $ python3 법무/build_웹.py          # 2026-09-08 (값을 받은 뒤)
 
 ⚠️ `--allow-placeholders`는 `법무/웹_초안/`(gitignore됨)에만 쓴다 — 모양 확인용이고
 **그 출력은 절대 커밋·공개하지 않는다.** 모양은 그걸로 확인했다(`3개월(90일)` 4곳).
+
+🔵 **공개까지 끝냈다** (커밋 `06afc1f` · 17파일). 굽는 것과 공개는 다른 층이라 따로 쟀다:
+
+| 재본 것 | 결과 |
+|---|---|
+| Pages 설정 | `source: {branch: main, path: /docs}` · `build_type: legacy` · `https_enforced` |
+| Pages 빌드 | `status: built` · `error: null` · **커밋이 `06afc1f`** (푸시 41초 뒤) |
+| `privacy.html` | HTTP 200 · 13,333바이트 · 치환자 0 · 김효산 1 · `2026-09-08` 1 · 메일 1 |
+| `delete-account.html` | HTTP 200 · 5,228바이트 · 치환자 0 · `개발자: 김효산` |
+| 내려온 바이트 = 로컬 파일 | 🔵 sha256 동일 (`5da2526e…` · `8d4087bd…`) |
+| `legal/index.html`의 링크 4개 | 🔵 네 파일 전부 실재 |
+| 눈으로 읽기 | 🔵 삭제 안내·문서 목록 전문을 태그 벗겨 읽었다 — 끊긴 문장·빈 라벨 없음 |
+
+🔴 **HTTP 200만 보면 두 가지를 못 잡는다.** ① 캐시에서 **낡은 판**이 와도 200이다 →
+그래서 sha256을 맞췄다. ② `docs/legal/`이 아예 없어도 Pages는 **뿌리 페이지로 200**을
+줄 수 있다(`custom_404: false`) → 그래서 바이트 수와 `<title>`을 같이 셌다.
+
+⚠️ **웹사이트 칸이 가리키던 페이지가 틀렸다(같이 고쳤다).** `스토어_등록정보.md` 2절이
+웹사이트를 `…/catchflower/`(뿌리)로 두고 설명은 `문서 목록 페이지`라고 적어 뒀는데,
+뿌리는 **해커톤 예선 제출 시점에 굳은 소개 페이지**다(`꽃 200종` · `JVM 409개` ·
+`(49)회차` · 그리고 4-9의 APK 버튼). 문서 목록은 `…/legal/`이다 → 웹사이트 칸을
+`legal/`로 바꿨다. 🔴 **제출 페이지의 숫자는 고치지 않는다** — 그때의 기록이고,
+고쳐도 다음 회차에 또 낡는다([[owner-facing-docs-drift-from-source]]).
 
 ### 4-2. 카카오 릴리스 키해시 — ②번 블로커
 
@@ -386,6 +414,45 @@ select * from public.orphan_photo_objects  order by created_at limit 200;
 🔴 **`delete from storage.objects`로 지우면 안 된다** — 그건 **메타데이터 행만** 지운다.
 바이트는 남고 목록에서만 사라져서 **지운 것처럼 보인다.** Storage 화면에서 지운다.
 (자동화에는 service_role 키가 필요하다 — MVP 범위 밖 · **그 키는 코드에 넣지 않는다**.)
+
+### 4-9. 🔴 테스터 안내에 **이 문장이 없으면** 14일 카운트가 깎인다 (2026-09-08 실측)
+
+GitHub에 공개 릴리스가 하나 있다 — `catchflower-v1.0.apk` (110MB · **이미 2회
+내려받혔다** · `캐치플라워 v1.0 (해커톤 예선 제출)`). 소개 페이지 맨 위에
+`APK 내려받기 (Android) — 가장 빠름` 버튼으로 걸려 있다. **두 산출물을 다 뜯어서 쟀다:**
+
+| | 서명 주체(DN) | 인증서 SHA-1 | package · versionCode |
+|---|---|---|---|
+| GitHub Releases의 APK | `CN=Android Debug` | `55b6f56270686ecabe08bc1f877c6736056ce9af` | `com.catchflower.app` · **1** |
+| 올릴 릴리스 빌드 | `CN=CatchFlower, … C=KR` | `62b672e597a3f3c5790aeb86d23482b17075cd90` | `com.catchflower.app` · **1** |
+
+```bash
+apksigner verify --print-certs <apk>          # 두 줄이 이 표의 근거다
+aapt2 dump badging <apk> | head -1            # package·versionCode가 같은 것
+```
+
+🔴 **패키지와 versionCode가 같은데 서명이 다르다** → 안드로이드는 덮어 설치하지 않는다.
+예전 APK가 깔린 폰에서 **스토어 설치가 실패하고 화면에 이유가 안 나온다**
+(`INSTALL_FAILED_UPDATE_INCOMPATIBLE`은 logcat에만 있다).
+🔴 **③을 직접 깎는다.** 테스터에게는 "앱이 안 깔린다"로 보이고, 못 깐 사람은 **연속 14일
+카운트에서 빠진다**(4-4). 🔴 **우리 폰으로는 원리상 재현이 안 된다** — 우리는 그 APK를
+안 깔았다. [[symptomless-ui-defects]]와 같은 층이다.
+⚠️ 디버그가 `applicationIdSuffix`를 안 쓰는 것은 **일부러 그렇다**(카카오 키해시가
+패키지에 묶여 있다). 그래서 이 충돌은 설정으로 못 없앤다.
+
+**테스터에게 보내는 문장 (그대로 쓴다):**
+
+```text
+설치는 아래 초대 링크로만 해 주세요.
+예전에 GitHub에서 내려받은 catchflower-v1.0.apk 가 폰에 깔려 있으면
+**먼저 삭제**해야 합니다. 지우지 않으면 스토어에서 설치가 실패하는데,
+화면에는 이유가 나오지 않습니다.
+(예전 앱의 도감 기록은 계정이 달라서 옮겨지지 않습니다.)
+```
+
+⏸ **릴리스 자체를 내리거나 설명에 경고를 붙이는 것은 오너 몫이다** — 공개된 제출
+기록이라 내가 지우지 않는다. 🔵 안내문만으로도 막을 수 있다(위 문장).
+🔵 소개 페이지의 서명 관련 안내문에는 이 사실을 한 줄 덧붙여 뒀다(숫자는 안 건드렸다).
 
 ---
 
