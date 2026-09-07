@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>계정 및 데이터 삭제 · 캐치플라워</title>
+<style>
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 24px 20px 64px;
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+               "Malgun Gothic", "Noto Sans KR", sans-serif;
+  line-height: 1.7; color: #1b1b1b; background: #fff;
+}
+main { max-width: 40em; margin: 0 auto; }
+h1 { font-size: 1.35rem; margin: 0 0 4px; }
+.sub { color: #6b6b6b; font-size: .85rem; margin: 0 0 24px; }
+/* 🔴 원본의 손 줄바꿈을 그대로 살린다(위 주석). 좁은 화면에서는 한 번 더 접힌다. */
+.doc { white-space: pre-wrap; word-break: break-word; font-size: .95rem; }
+nav ul { padding-left: 1.2em; }
+a { color: #1c6b3a; }
+.draft {
+  background: #b3261e; color: #fff; padding: 12px 16px; border-radius: 8px;
+  margin: 0 auto 24px; max-width: 40em; font-weight: 700;
+}
+.steps { background: #f2f6f3; border-radius: 8px; padding: 16px 20px; }
+footer { max-width: 40em; margin: 40px auto 0; color: #6b6b6b; font-size: .8rem; }
+@media (prefers-color-scheme: dark) {
+  body { color: #ececec; background: #121212; }
+  .sub, footer { color: #a5a5a5; }
+  a { color: #7fd6a2; }
+  .steps { background: #1e2620; }
+}
+</style>
+</head>
+<body>
+
+<main>
+<h1>계정 및 데이터 삭제</h1>
+<p class="sub">캐치플라워 (Catchflower) · 개발자: 김효산</p>
+
+<h2>앱에서 바로 삭제하기</h2>
+<div class="steps">
+<ol>
+<li>캐치플라워 앱을 엽니다.</li>
+<li>아래 탭에서 <b>마이</b> → 오른쪽 위 <b>설정</b>을 누릅니다.</li>
+<li>맨 아래 <b>회원 탈퇴</b>를 누릅니다.</li>
+<li>안내를 확인하고 한 번 더 누르면 삭제가 끝납니다. (되돌릴 수 없습니다.)</li>
+</ol>
+</div>
+
+<h2>앱 없이 요청하기</h2>
+<p>앱을 이미 지웠거나 앱을 쓸 수 없는 경우, <a href="mailto:regina.aaron.po@gmail.com">regina.aaron.po@gmail.com</a> 으로
+<b>제목에 "계정 삭제 요청"</b>이라고 적어 보내 주세요. 계정을 확인할 수 있는 정보
+(앱에서 쓰던 닉네임, 가입에 사용한 카카오 계정)를 함께 알려 주시면
+본인 확인 후 처리합니다. 접수 후 <b>영업일 기준 7일 이내</b>에 처리하고 회신합니다.</p>
+
+<h2>무엇이 지워지고 무엇이 남나</h2>
+<p>아래는 개인정보 처리방침 6항과 <b>같은 내용</b>입니다.</p>
+<div class="doc">6. 보유 기간과 삭제
+
+  가. 즉시 지워지는 것 — 회원 탈퇴(앱 설정 &gt; 회원 탈퇴)를 하면
+     - 발견 기록 전체(꽃, 좌표, 장소, 메모, 공개 범위)
+     - 내 사진에 달린 댓글과 좋아요
+     - 친구 관계, 차단 목록
+     - 닉네임과 활동 지역
+     - 기기에 저장된 사진과 모든 앱 데이터
+     가 지워집니다. 서버에 올라간 사진은 발견 기록이 지워지면서 다른
+     이용자가 볼 수 있는 경로가 함께 사라지고, 남은 파일은 정리 작업에서
+     파기합니다(마).
+
+  나. 탈퇴 후에도 남는 것
+     - 다른 이용자의 사진에 남긴 댓글 본문: 작성자 표시가 &quot;탈퇴한
+       사용자예요&quot;로 바뀌고 본문은 남습니다. 대화의 맥락이 다른 이용자에게
+       필요하기 때문입니다.
+     - 신고 기록: 신고 대응과 분쟁 처리를 위해 처리 완료 후 최대 1년간
+       보관하고 파기합니다.
+     - 카카오 계정과의 연결 정보, 로그인 세션: 정리 작업에서 파기됩니다.
+     - 계정 식별자(임의의 UUID): 위 댓글의 작성자를 &quot;탈퇴한 사용자예요&quot;로
+       표시하기 위해 남습니다. 이 값에는 이름·연락처 등 이용자를 알아볼 수 있는
+       정보가 들어 있지 않습니다.
+
+  다. 탈퇴는 되돌릴 수 없습니다. 정리 작업이 끝난 뒤에는 같은 카카오 계정으로
+     다시 시작할 수 있고, 이때 빈 도감으로 새로 시작합니다(이전 기록은
+     복구되지 않습니다).
+
+  라. 앱만 삭제한 경우에는 기기 안의 사진과 데이터가 지워지지만, 서버의 계정과
+     발견 기록, 그리고 아직 3개월이 지나지 않은 사진은 남습니다. 완전히
+     지우려면 탈퇴를 이용해 주세요.
+
+  마. 서버에 올라간 사진은 올린 날부터 3개월(90일)이 지나면 지웁니다. 앱이
+     하루 한 번 기간이 지난 사진을 지우고, 앱을 더 이상 열지 않는 계정의
+     사진과 탈퇴로 주인이 없어진 사진은 서비스가 정리 작업에서 파기합니다.
+     기기 안의 사진은 이 기간과 관계없이 그대로 남습니다.
+
+     * 서버의 사진은 백업이 아닙니다. 기기를 바꾸면 3개월이 지난 사진은
+       복구되지 않습니다(발견 기록은 카카오 로그인으로 복구됩니다).</div>
+
+<footer style="margin-top:32px">
+<a href="./privacy.html">개인정보 처리방침</a> ·
+<a href="./terms.html">이용약관</a>
+</footer>
+</main>
+<footer><a href="./">캐치플라워 문서 목록</a></footer>
+</body>
+</html>

@@ -208,16 +208,34 @@ def main() -> int:
             bad.append(f"{url}이 등록정보 문서에 없다 — 스토어에 적을 주소가 빠졌다")
 
     # ── 오너 대기 빈 칸 (문서 전체) ────────────────────────────────
-    left = sorted({m.group(0) for m in PLACEHOLDER.finditer(doc_text)})
+    # 🔴 **모든 치환자가 "빈 칸"인 것은 아니다.** `{{문의_이메일}}`은 원본이
+    #    `local.properties`의 `CONTACT_EMAIL` **하나**이고 앱(`LegalDocs.render`)과
+    #    웹(`build_웹.py`)이 그 값을 바꿔 넣는다. 이 문서에 값을 베껴 두면 사본이 둘이 되고,
+    #    한쪽만 고친 날 **앱과 스토어가 다른 주소를 안내한다** — 그래서 여기서 읽어
+    #    채워 보여 준다. 이것을 빈 칸으로 세면 채울 방법이 없어 **원리상 영원히 FAIL이다.**
+    #    ⚠️ 못 읽었을 때는 다시 빈 칸으로 센다("주입돼 있다"와 "읽지 못했다"는 다른 말이다).
+    resolved: dict[str, str] = {}
+    lp = ROOT / "android" / "local.properties"
+    if lp.is_file():
+        for line in lp.read_text(encoding="utf-8").splitlines():
+            if line.strip().startswith("CONTACT_EMAIL="):
+                value = line.split("=", 1)[1].strip()
+                if value:
+                    resolved["{{문의_이메일}}"] = value
+
+    seen = {m.group(0) for m in PLACEHOLDER.finditer(doc_text)}
+    if resolved:
+        print()
+        print("🔵 `local.properties`가 채우는 칸 — 이 문서에 값을 베껴 두지 않는다:")
+        for key, value in sorted(resolved.items()):
+            자리 = "· 이 문서에는 없다" if key not in seen else ""
+            print(f"   {key} = {value} {자리}".rstrip())
+
+    left = sorted(seen - resolved.keys())
     if left:
         print()
         print(f"⏸ 아직 채우지 않은 칸 {len(left)}개 — 오너에게 받는다(8절):")
         print(f"   {' '.join(left)}")
-        lp = ROOT / "android" / "local.properties"
-        if "{{문의_이메일}}" in left and lp.is_file():
-            for line in lp.read_text(encoding="utf-8").splitlines():
-                if line.strip().startswith("CONTACT_EMAIL="):
-                    print("   (문의 이메일은 local.properties에 이미 있다 — 그 값을 그대로 쓴다)")
         if not args.allow_placeholders:
             bad.append(f"빈 칸 {len(left)}개가 남아 있어 아직 제출할 수 없다")
 

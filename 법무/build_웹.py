@@ -140,6 +140,28 @@ def section_six(privacy_raw: str) -> str:
     return privacy_raw[start:end].rstrip()
 
 
+#: 위치약관 **제12조**의 이름표. 개발자 이름의 원본은 그 한 줄이다.
+OPERATOR_LABEL = "상호:"
+
+
+def operator(location_raw: str) -> str:
+    """삭제 안내 페이지에 쓸 **개발자 이름**을 위치약관 제12조에서 읽어 온다.
+
+    🔴 이 스크립트에 이름을 적지 않는다. 적으면 원본이 두 벌이 되고, 한쪽만 고친 날
+       **약관과 삭제 안내가 서로 다른 사람을 가리킨다** — 둘 다 그럴듯하게 보인다.
+    ⚠️ 아직 안 채운 칸이면 치환자를 **그대로 돌려준다.** 빈 문자열로 바꿔 넘기면
+       아래 [빈 칸 검사]가 셀 것이 없어져서 이름 없는 페이지가 조용히 공개된다.
+    """
+    for line in location_raw.splitlines():
+        s = line.strip()
+        if s.startswith(OPERATOR_LABEL):
+            return s[len(OPERATOR_LABEL) :].strip() or "{{운영자}}"
+    sys.exit(
+        f"🔴 위치약관에서 `{OPERATOR_LABEL}` 줄을 못 찾았다. 제12조의 이름표가 바뀌었으면 "
+        "이 스크립트를 고친다 — 건너뛰게 만들면 삭제 안내에서 개발자 이름이 조용히 빠진다."
+    )
+
+
 def build(contact: str, allow: bool) -> int:
     raws = {}
     for src, _, _ in DOCS:
@@ -165,6 +187,7 @@ def build(contact: str, allow: bool) -> int:
         )
 
     # ── 계정 삭제 안내 (Play 데이터 삭제 URL) ─────────────────────────
+    op = operator(raws["위치기반서비스_이용약관.txt"])
     six = section_six(raws["개인정보_처리방침.txt"])
     if contact:
         six = six.replace(CONTACT_PLACEHOLDER, contact)
@@ -174,7 +197,7 @@ def build(contact: str, allow: bool) -> int:
         else f"<b>{html.escape(CONTACT_PLACEHOLDER)}</b>"
     )
     delete_body = f"""<h1>계정 및 데이터 삭제</h1>
-<p class="sub">캐치플라워 (Catchflower) · 개발자: {{{{운영자}}}}</p>
+<p class="sub">캐치플라워 (Catchflower) · 개발자: {html.escape(op)}</p>
 
 <h2>앱에서 바로 삭제하기</h2>
 <div class="steps">
