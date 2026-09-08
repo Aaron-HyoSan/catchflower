@@ -64,3 +64,11 @@ android/app/src/androidTest/assets/notflower/
 #    보이는 페이지가 된다. 완성본은 `docs/legal/`로 나가고 그건 커밋한다.
 # 재생성: python3 법무/build_웹.py --allow-placeholders
 법무/웹_초안/
+
+# 출시 일정 캘린더 파일 — 날짜가 박힌 **생성물**이다.
+# 🔴 커밋하지 않는다. 모든 날짜가 「클로즈드 테스트 트랙에 올린 날」의 상대값이고
+#    그 날이 정해지기 전에 구운 파일은 **오늘 날짜로 굳어 있다** — 커밋해 두면
+#    낡은 일정이 원본처럼 보인다(이 저장소의 "제출 문서 수치는 틀린다"와 같은 병).
+#    원본은 `출시준비_AOS.md`이고 파일은 필요할 때 다시 굽는다.
+# 재생성: python3 출시/_tools/make_release_calendar.py --올린날 YYYY-MM-DD
+출시/*.ics
