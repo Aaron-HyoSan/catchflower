@@ -125,6 +125,34 @@ def tap_text(*wanted, wait=4.0, required=True, exact=False):
     return None
 
 
+def wait_for_text(*wanted, timeout=25.0, every=1.5):
+    """그 글자가 나타날 때까지 **여러 번** 본다. 없으면 None.
+
+    ⚠️ 반환형 주석을 `str | None`으로 쓰면 안 된다 — 이 도구를 돌리는 파이썬은
+    **`/usr/bin/python3`(3.9)** 이고(PIL이 그쪽에만 있다) 3.9는 그 문법을 모른다.
+    이 파일에는 `from __future__ import annotations`도 없다.
+
+    🔴 `tap_text`는 화면을 **한 번만** 본다(탭하고 `wait`초 자고 한 번 덤프한다).
+    그래서 **네트워크를 기다리는 자리에서는 원리상 깜빡인다** — 2026-09-11에 실제로
+    걸렸다: 활동지역 화면에서 카카오 역지오코딩이 6초를 넘겨 `…동으로 시작하기`가
+    아직 없었고, 스크립트는 **거기서 죽었다**(그 뒤 컷을 한 장도 못 찍었다).
+    손으로 같은 걸음을 밟으니 8초쯤에 `삼성2동으로 시작하기`가 떴다 — 즉 앱은
+    정상이고 **재는 쪽이 성급했다.**
+
+    ⚠️ `wait`를 키우는 것으로 고치지 않는다. 그건 느린 날에 또 깜빡이고, 빠른 날에는
+    매번 그만큼 더 기다린다. 「생겼나」를 **반복해서 묻는 것**이 고침이다.
+    """
+    끝 = time.time() + timeout
+    while True:
+        for label, _, _ in ui_dump():
+            for w in wanted:
+                if w in label:
+                    return label
+        if time.time() >= 끝:
+            return None
+        time.sleep(every)
+
+
 def sh(*args, check=True, capture=True):
     """adb/emulator를 부른다. 실패를 조용히 넘기지 않는다."""
     r = subprocess.run(args, capture_output=capture, text=True, timeout=180)
@@ -385,6 +413,12 @@ def run_cuts(dry_run, reset=False, deadline=None):
         # 아니면 여기서 멈춘다(실제로 한 번 멈췄다).
         dong = tap_text("서울특별시", wait=3, required=False)
         print(f"    찾은 동네: {dong or '(이미 선택됨)'}")
+        # 🔴 여기는 **네트워크를 기다리는 자리**다(카카오 역지오코딩). 한 번만 보면
+        #    느린 날에 죽는다 → 생길 때까지 묻는다. 못 찾으면 tap_text가 지금 보이는
+        #    것을 찍고 멈추므로, 여기서 조용히 넘기지는 않는다.
+        생겼나 = wait_for_text("으로 시작하기", timeout=30)
+        if 생겼나:
+            print(f"    동네 버튼: {생겼나}")
         tap_text("으로 시작하기", wait=6)
         print("[컷 1-2] 권한 안내")
         screenshot("01b_permission")
