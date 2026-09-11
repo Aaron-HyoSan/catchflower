@@ -1,5 +1,6 @@
 -- ════════════════════════════════════════════════════════════════
 --  0010 — `revoke execute … from anon`이 **아무것도 막지 않았다**
+--        ⚠️ **이 제목은 절반만 맞았다 — 아래 「2026-09-11 정정」을 먼저 읽는다.**
 -- ════════════════════════════════════════════════════════════════
 --
 --  🔴 **실측(2026-08-16 · 실서버 · APK에 들어 있는 publishable 키만 씀 · 세션 없음).**
@@ -26,6 +27,42 @@
 --     `PUBLIC`은 "모든 롤"이라서 `anon`도 거기에 포함된다. 그래서
 --     **`anon`에게서 직접 준 적 없는 권한을 회수해도** PUBLIC 경로가 그대로 남는다.
 --     `revoke … from anon`은 **오류도 경고도 없이 성공하고, 아무것도 바꾸지 않는다.**
+--
+--  ## 🔴 2026-09-11 정정 — **위 문장은 절반만 맞았다. 실서버에서 반증됐다**
+--
+--  이 파일 2절(`from public`만 회수)을 실서버에 올렸는데 3절에서 **7개 중 4개만
+--  ✅였다.** 5·6·7번(`assert_self` · `discovery_reactions` · `delete_comment`)은
+--  `anon이_실행가능 = true`로 남아 있었다.
+--
+--  원인은 `pg_proc.proacl`을 읽어서 나왔다(`받는사람=권한/준사람` 형식):
+--
+--      region_ranking      → {postgres=X/postgres,authenticated=X/postgres}      ← 잠겼다
+--      assert_self         → {postgres=X/postgres,anon=X/postgres,authenticated=…} ← 남아 있다
+--                                                 ^^^^^^^^^^^^^^^
+--
+--  🔴 **`anon`에게 직접 준 항목이 따로 있었다.** `PUBLIC` 경로를 끊어도 이 직접
+--     항목은 그대로 남는다. 즉 두 회수가 **서로를 대신하지 못한다** —
+--     어느 쪽이 필요한지는 **함수마다 다르고, 파일을 봐서는 알 수 없다.**
+--     (원래 문장은 `from anon`이 **언제나** 무의미하다고 읽히게 써 있었다.)
+--
+--  🔵 **고침 = 둘 다 쓴다.** 위 3개에 아래를 더 돌려서 13/13 ✅가 됐다:
+--
+--      revoke execute on function public.assert_self(uuid)         from anon;
+--      revoke execute on function public.discovery_reactions(uuid) from anon;
+--      revoke execute on function public.delete_comment(uuid)      from anon;
+--      grant  execute on function public.assert_self(uuid)         to authenticated, service_role;
+--      grant  execute on function public.discovery_reactions(uuid) to authenticated, service_role;
+--      grant  execute on function public.delete_comment(uuid)      to authenticated, service_role;
+--
+--  ⚠️ **왜 로컬 실측(아래 measure_0010_grants.py)이 이걸 못 잡았나.** 그 스크립트는
+--     `0002`·`0004`가 쓰는 방식으로 함수를 새로 만들어 재현했다 — 거기서는 `anon`
+--     직접 항목이 **생기지 않는다.** 실서버의 그 3개는 다른 마이그레이션(0007·0009)이
+--     `grant … to anon`을 실제로 썼기 때문에 생긴 것이다.
+--     🔴 **재현이 원본과 같은 경로로 만들어졌는지 세지 않으면, 재현은 대조군만 잡는다.**
+--
+--  🔵 **그래서 3절이 이 파일을 구했다.** "성공했다"만 봤으면 4/7로 끝났고, 열린
+--     3개 중 하나가 **남의 댓글을 지우는 `delete_comment`**였다.
+--     → 진단이 필요하면 3절 뒤의 **3-b절(proacl 덤프)** 을 쓴다.
 --
 --  ⚠️ **그래서 이건 "정책이 붙었는지"를 보는 검사로는 절대 안 잡힌다.** `02_적용확인.sql`은
 --     함수가 **있는지**를 세고 있고, 있는 건 맞다. 권한은 `pg_policies`에도, 함수 본문에도
@@ -113,7 +150,12 @@ order by 잠글것인가 desc, 순서;
 -- ────────────────────────────────────────────────────────────────
 --  2절 — 잠근다. 🔴 **1절 표를 확인한 뒤에** 아래 `/*` `*/` 두 줄을 지운다.
 -- ────────────────────────────────────────────────────────────────
---  🔴 `from anon`이 아니라 **`from public`**이다. 그것이 이 파일의 전부다.
+--  🔴 ~~`from anon`이 아니라 **`from public`**이다. 그것이 이 파일의 전부다.~~
+--     **2026-09-11 정정: 틀렸다. 둘 다 해야 한다.** `from public`만 돌리면 실서버에서
+--     7개 중 3개가 안 잠긴다(`assert_self` · `discovery_reactions` · `delete_comment`
+--     에는 `anon`에게 **직접 준 항목**이 따로 있다). 머리말의 정정 절 참조.
+--     🔵 그래서 아래 목록은 **두 벌**이다. 어느 쪽이 필요한지 함수마다 다르므로
+--        **전부에 둘 다 돌린다** — 필요 없는 쪽은 아무 일도 안 하고 성공한다.
 --  ⚠️ `authenticated`·`service_role`에게는 **다시 명시적으로 준다.** PUBLIC을 걷으면
 --     명시 grant만 남으므로, 원래 그 롤로 돌던 호출이 조용히 죽는 일이 없게 한다.
 --  ✅ **두 번 돌려도 안전하다**(revoke·grant는 멱등이다).
@@ -126,6 +168,15 @@ revoke execute on function public.dong_member_count(text, timestamptz)   from pu
 revoke execute on function public.assert_self(uuid)                      from public;
 revoke execute on function public.discovery_reactions(uuid)              from public;
 revoke execute on function public.delete_comment(uuid)                   from public;
+
+-- 🔴 여기부터가 2026-09-11에 추가된 줄이다. **이게 없으면 3개가 안 잠긴다.**
+revoke execute on function public.region_ranking(uuid, timestamptz, int) from anon;
+revoke execute on function public.friend_ranking(uuid, timestamptz)      from anon;
+revoke execute on function public.my_season_summary(uuid, timestamptz)   from anon;
+revoke execute on function public.dong_member_count(text, timestamptz)   from anon;
+revoke execute on function public.assert_self(uuid)                      from anon;
+revoke execute on function public.discovery_reactions(uuid)              from anon;
+revoke execute on function public.delete_comment(uuid)                   from anon;
 
 grant execute on function public.region_ranking(uuid, timestamptz, int) to authenticated, service_role;
 grant execute on function public.friend_ranking(uuid, timestamptz)      to authenticated, service_role;
@@ -179,3 +230,44 @@ select
 from 대상
 order by 잠글것인가 desc, 순서;
 */
+
+
+-- ────────────────────────────────────────────────────────────────
+--  3-b절 — 3절에서 ❌가 남았을 때만. **왜 안 잠겼는지**를 본다.
+-- ────────────────────────────────────────────────────────────────
+--  🔴 `has_function_privilege`는 "열려 있다"까지만 말한다. **어느 경로로** 열려
+--     있는지는 `pg_proc.proacl`에만 적혀 있다 — 그걸 모르면 어떤 revoke를 더
+--     써야 하는지 알 수 없고, 추측으로 SQL을 더 만들게 된다.
+--
+--  읽는 법: 항목은 `받는사람=권한/준사람`이다. `받는사람`이 비면 그게 `PUBLIC`이다.
+--    · `anon=X/postgres`  가 보이면 → `revoke … from anon`   이 필요하다
+--    · `=X/postgres`      가 보이면 → `revoke … from public` 이 필요하다
+--    · 둘 다 보이면 → **둘 다** 필요하다(하나만 하면 조용히 안 막힌다)
+--
+--  ⚠️ **이미 잠긴 함수 2개를 대조군으로 같이 뽑는다.** 안 그러면 "이 모양이 원래
+--     그런 것"인지 "이 함수만 다른 것"인지 구분할 수 없다.
+
+/*
+with 대상(순서, 이름, 인수, 비고) as (
+  values
+    ( 1, 'region_ranking',      'uuid, timestamptz, int', '대조군 — 이미 잠겼어야 한다'),
+    ( 2, 'my_season_summary',   'uuid, timestamptz',      '대조군 — 이미 잠겼어야 한다'),
+    ( 3, 'assert_self',         'uuid',                   '3절에서 ❌였다'),
+    ( 4, 'discovery_reactions', 'uuid',                   '3절에서 ❌였다'),
+    ( 5, 'delete_comment',      'uuid',                   '3절에서 ❌였다')
+)
+select
+  t.순서,
+  t.이름,
+  t.비고,
+  has_function_privilege('anon', 'public.' || t.이름 || '(' || t.인수 || ')', 'execute')
+    as "anon이_실행가능",
+  coalesce(p.proacl::text, '(null = PUBLIC에게 열린 기본 상태)') as 권한항목
+from 대상 t
+left join pg_proc p
+       on p.oid = to_regprocedure('public.' || t.이름 || '(' || t.인수 || ')')
+order by t.순서;
+*/
+
+--  🔵 2026-09-11 실측 결과 — 3·4·5번에 `anon=X/postgres`가 있었고 1·2번에는 없었다.
+--     대조군이 없었으면 "proacl에 anon이 있는 게 정상"으로 읽고 넘겼을 것이다.

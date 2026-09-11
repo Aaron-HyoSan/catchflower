@@ -285,13 +285,25 @@ select '④ 정책 4개',
                          'discovery_photos_update','discovery_photos_delete')
   ) = 4 then '🔵 OK' else '🔴 4개가 아니다' end
 union all
-select '⑤ 읽기 정책이 definer가 아니다',
+-- 🔴 **2026-09-11 실측: 이 줄이 틀려서 정상인 정책에 빨강이 떴다.**
+--    원래 `qual like '%public.discoveries%'` 였는데, Postgres는 정책을 저장할 때
+--    표현식을 **자기 방식으로 다시 써서** 넣는다 — `public` 이 search_path 에 있으면
+--    스키마 이름을 **떼고** 적는다. 실제로 저장돼 있던 본문은 이랬다:
+--      … AND (EXISTS ( SELECT 1 FROM discoveries d
+--                      WHERE (d.id = photo_discovery_id(objects.name))))
+--    즉 `public.` 이 없다. 정책은 완벽한데 검사가 원리상 절대 통과할 수 없었다.
+--    ⚠️ **정책 본문을 `like` 로 재려면 스키마 접두사를 넣지 않는다.**
+--       그리고 "그 이름이 나온다"가 아니라 **규칙을 이루는 조각을 하나씩** 센다.
+select '⑤ 읽기 정책이 공개 범위를 본다',
   case when (
     select count(*) from pg_policies
     where schemaname = 'storage' and tablename = 'objects'
       and policyname = 'discovery_photos_read'
-      and qual like '%public.discoveries%'
-  ) = 1 then '🔵 OK' else '🔴 discoveries 를 안 본다 — 공개 범위가 사진에 안 걸린다' end
+      and qual like '%discoveries%'
+      and qual like '%photo_discovery_id%'
+      and qual like '%90 days%'
+      and qual like '%auth.uid()%'
+  ) = 1 then '🔵 OK' else '🔴 discoveries·90일·auth.uid() 중 빠진 것이 있다' end
 union all
 select '⑥ 버킷이 공개가 아니다',
   case when not exists (
