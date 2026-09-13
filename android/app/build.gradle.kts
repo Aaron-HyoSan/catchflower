@@ -87,8 +87,16 @@ android {
         //
         // | 올린 날 | versionCode | versionName | 트랙 |
         // |---|---|---|---|
-        // | (아직) | 1 | 1.0 | 내부 테스트 → 프로덕션 |
-        versionCode = 1
+        // | (아직) | 1 | 1.0 | **한 번도 안 올렸다** — 1은 소진되지 않았다 |
+        // | (준비) | 2 | 1.0 | 클로즈드 테스트 (첫 업로드 후보) |
+        //
+        // 🔵 **2026-09-13에 1 → 2로 올렸다**(`출시준비_AOS.md` 2절 ④).
+        // ⚠️ **1을 소진해서 올린 게 아니다.** 공개된 해커톤 APK(GitHub 릴리스)가
+        //    `versionCode=1`이라, 그 APK가 깔린 기기에 스토어 빌드가 **업그레이드로
+        //    보이게** 하려면 더 큰 값이어야 한다. 🔴 그래도 그 기기는 **서명이 달라서
+        //    설치 자체가 막힌다**(4-9) — versionCode는 그 문제를 고치지 못한다.
+        //    두 개는 다른 층이고, 여기 올린 것은 「같은 값 재업로드 거부」쪽 대비다.
+        versionCode = 2
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

@@ -47,6 +47,7 @@ import com.catchflower.app.ui.component.CfTextButton
 import com.catchflower.app.ui.component.CfToast
 import com.catchflower.app.ui.component.ExternalOpen
 import com.catchflower.app.ui.component.LoginGateSheet
+import com.catchflower.app.ui.component.rememberNamedToaster
 import com.catchflower.app.ui.component.rememberToaster
 import com.catchflower.app.ui.theme.CfColor
 import com.catchflower.app.ui.theme.CfDimen
@@ -102,6 +103,15 @@ fun FriendsScreen(
      */
     friendsVm: FriendsViewModel,
     onBack: () -> Unit,
+    /**
+     * 친구 관계가 바뀌었다 — **랭킹을 다시 읽어야 한다**(2026-08-27 · 항목 1·2).
+     *
+     * 🔴 **이 인자가 없으면 수락이 안 된 것처럼 보인다.** [friendCount]와 [friends]는
+     *    `friend_ranking`이 준 값이고 이 화면은 그걸 다시 읽을 수 없다 — 수락 뒤에
+     *    `내 친구 0`이 그대로 남고 목록도 빈 채라 사용자는 **수락이 실패한 것으로
+     *    읽는다.** 화면 02(지역 저장)에서 같은 이유로 같은 배선을 했다.
+     */
+    onFriendsChanged: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var tab by remember { mutableStateOf(FriendTab.MINE) }
@@ -150,7 +160,7 @@ fun FriendsScreen(
         )
 
         if (searching) {
-            FriendSearchPanel(vm = friendsVm)
+            FriendSearchPanel(vm = friendsVm, onFriendsChanged = onFriendsChanged)
             return@Column
         }
 
@@ -161,7 +171,12 @@ fun FriendsScreen(
         }
 
         when (tab) {
-            FriendTab.MINE -> MyFriendsList(friendCount, friends)
+            FriendTab.MINE -> MyFriendsList(
+                friendCount = friendCount,
+                all = friends,
+                vm = friendsVm,
+                onFriendsChanged = onFriendsChanged,
+            )
             // 연락처 매칭이 없는 동안은 **초대 링크 하나만** 둔다. 가짜 연락처 목록을
             // 그리는 것보다 낫다(클래스 주석).
             FriendTab.INVITE -> ContactsDeniedFallback(onInvite = invite)
@@ -184,8 +199,9 @@ fun FriendsScreen(
  *    눌렀을 때 막으면 `누를 수 있는데 실패하는 버튼`이 된다(A 문서 3절 ③).
  */
 @Composable
-private fun FriendSearchPanel(vm: FriendsViewModel) {
+private fun FriendSearchPanel(vm: FriendsViewModel, onFriendsChanged: () -> Unit) {
     val toast = rememberToaster()
+    val namedToast = rememberNamedToaster()
     Column(
         Modifier
             .fillMaxSize()
@@ -249,13 +265,31 @@ private fun FriendSearchPanel(vm: FriendsViewModel) {
                 verticalArrangement = Arrangement.spacedBy(CfDimen.GapMedium),
             ) {
                 items(vm.rowsWithLocalState(state.rows), key = { it.id }) { row ->
-                    SearchResultRow(row) { id ->
-                        vm.add(id) { ok ->
-                            // 🔴 **`{이름}님과 친구가 되었어요`를 쓰지 않는다.** 요청은
-                            //    `pending`으로 들어가고 수락은 상대만 할 수 있다(C-2).
-                            toast(if (ok) CfToast.FRIEND_REQUEST_SENT else CfToast.NETWORK_ERROR)
-                        }
-                    }
+                    SearchResultRow(
+                        row = row,
+                        onAdd = { id ->
+                            vm.add(id) { ok ->
+                                // 🔴 **`{이름}님과 친구가 되었어요`를 쓰지 않는다.** 요청은
+                                //    `pending`으로 들어가고 수락은 상대만 할 수 있다(C-2).
+                                toast(if (ok) CfToast.FRIEND_REQUEST_SENT else CfToast.NETWORK_ERROR)
+                            }
+                        },
+                        // 🔵 **검색 결과에서도 수락할 수 있다**(2026-08-27). 그전에는 이
+                        //    자리에 `친구 추가`가 떠서, 누르면 반대 방향 요청이 하나 더
+                        //    생기고 **아무도 친구가 되지 않았다**([FriendRules.State.INCOMING]).
+                        onAccept = { id ->
+                            vm.accept(id) { ok ->
+                                if (ok) {
+                                    namedToast(CfToast.FRIEND_ACCEPTED, row.nickname)
+                                    onFriendsChanged()
+                                    // 목록의 그 줄을 `이미 친구예요`로 바꾸려면 다시 물어야 한다.
+                                    vm.retry()
+                                } else {
+                                    toast(CfToast.FRIEND_ACCEPT_FAILED)
+                                }
+                            }
+                        },
+                    )
                 }
             }
         }
@@ -263,7 +297,11 @@ private fun FriendSearchPanel(vm: FriendsViewModel) {
 }
 
 @Composable
-private fun SearchResultRow(row: FriendRules.Found, onAdd: (String) -> Unit) {
+private fun SearchResultRow(
+    row: FriendRules.Found,
+    onAdd: (String) -> Unit,
+    onAccept: (String) -> Unit,
+) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -292,6 +330,11 @@ private fun SearchResultRow(row: FriendRules.Found, onAdd: (String) -> Unit) {
 
             FriendRules.State.FRIEND ->
                 Text("이미 친구예요", style = CfText.Body, color = CfColor.TextSecondary)
+
+            // A 문서 3절 `화면 19에 받은 친구 요청이 뜬다`의 `수락`을 그대로 쓴다 —
+            // 같은 동작을 화면 자리마다 다르게 부르지 않는다.
+            FriendRules.State.INCOMING ->
+                CfSmallButton(text = "수락", onClick = { onAccept(row.id) })
         }
     }
 }
@@ -341,6 +384,22 @@ private fun RowScope.FriendTabItem(label: String, selected: Boolean, onClick: ()
  *
  * **재요청 버튼을 두지 않는다.** 주석이 "권한 재요청은 강요하지 않는다"고 못 박았고,
  * 연락처 없이도 초대 링크는 그대로 동작한다.
+ *
+ * ## 🔴 2026-09-13: 이 화면이 **거짓말을 하고 있었다** (A 문서 3절 ⑨)
+ *
+ * `링크를 받은 지인이 가입하면 자동으로 연결돼요`라고 말했는데 **그걸 하는 코드가
+ * 0줄이었다** — 링크는 파라미터 없는 스토어 URL이고, 서버에 「누가 초대했는지」를 적는
+ * 컬럼이 없다. 🔴 **여기서 결함은 코드가 아니라 문장이다** — 버튼은 잘 눌리고 공유
+ * 시트도 정상으로 뜬다. 그래서 빈 람다·`TODO`·죽은 버튼을 재는 검사가 **전부 초록**이었다.
+ *
+ * ⚠️ **함정이 하나 더 있었다.** 이 파일의 옛 주석은 "연락처 매칭이 붙을 때까지"라고
+ *    적어서 **언젠가 붙는 것처럼** 읽혔다. 실제로는 공개된 `docs/legal/privacy.html`
+ *    §1 3)이 「연락처 권한 자체를 요청하지 않습니다」라고 약속했으므로 **영구히 안 붙는다.**
+ *    → 연락처를 가리키는 문구는 임시가 아니라 **틀린 문구**였다.
+ *
+ * 🔵 **지금 문구는 이미 도는 것만 가리킨다** — 헤더 `검색` → [FriendSearchPanel] →
+ *    `친구 추가`(`pending`) → 상대가 `수락`. C-2(상호 수락)를 문장에 넣은 이유가 그것이다:
+ *    `친구가 돼요`로 끝내면 **요청을 보낸 것만으로 친구가 된다는 새 거짓말**이 된다.
  */
 @Composable
 private fun ContactsDeniedFallback(
@@ -355,20 +414,32 @@ private fun ContactsDeniedFallback(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            "초대 링크로도 친구가 될 수 있어요",
+            "닉네임으로 친구를 찾을 수 있어요",
             style = CfText.Section,
             color = CfColor.TextPrimary,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(CfDimen.GapSmall))
         Text(
-            "링크를 받은 지인이 가입하면 자동으로 연결돼요",
+            "오른쪽 위 검색으로 닉네임을 찾아 요청을 보내면, 상대가 수락할 때 친구가 돼요",
             style = CfText.Body,
             color = CfColor.TextSecondary,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(CfDimen.GapLarge))
         CfPrimaryButton(text = "초대 링크 보내기", onClick = onInvite)
+        // 🔴 **버튼은 그대로 두고 링크가 404인 사실을 말한다.** 지우면 와이어프레임과
+        //    어긋나고(3절 죽은 버튼 처리 원칙), `준비 중` 토스트로 뭉개면
+        //    [com.catchflower.app.ui.DeadButtonTest]가 막아 둔 되돌림이 된다.
+        if (!AppLinks.STORE_LISTING_LIVE) {
+            Spacer(Modifier.height(CfDimen.GapSmall))
+            Text(
+                "지금은 스토어 준비 중이라 링크가 열리지 않아요",
+                style = CfText.Caption,
+                color = CfColor.TextTertiary,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 
@@ -380,14 +451,30 @@ private fun ContactsDeniedFallback(
  *    깔렸다(클래스 주석). 두 값의 출처가 갈리면 그 모순이 다시 생긴다.
  */
 @Composable
-private fun MyFriendsList(friendCount: Int?, all: List<RankedEntry>) {
+private fun MyFriendsList(
+    friendCount: Int?,
+    all: List<RankedEntry>,
+    vm: FriendsViewModel,
+    onFriendsChanged: () -> Unit,
+) {
     // 나를 뺀다 — `friend_ranking`은 내 행을 같이 준다(랭킹 화면이 `나`를 표시해야 해서).
     // ⚠️ `remember(all)`로 키를 준다. 키 없이 `remember`만 쓰면 서버 응답이 늦게 와도
     //    **첫 프레임의 빈 목록이 그대로 남는다**(더미 시절에는 항상 값이 있어서 안 보였다).
     val friends = remember(all) { all.filterNot { it.entry.isMe } }
 
+    // 🔴 **탭을 열 때 한 번 읽는다.** `Unit` 키라 탭을 오갈 때마다 다시 부르지 않는다 —
+    //    수락·거절 뒤 갱신은 [FriendsViewModel.loadIncoming]이 스스로 한다.
+    androidx.compose.runtime.LaunchedEffect(Unit) { vm.loadIncoming() }
+
+    val incoming = vm.incoming
+    // 받은 요청이 있으면 **빈 상태 문구를 쓰지 않는다.** `아직 겨룰 친구가 없어요`를
+    // 전체 화면으로 덮으면 수락 버튼이 그 아래 묻혀 보이지 않는다 — 요청이 와 있는데
+    // 화면은 "친구를 만들 방법이 검색뿐"이라고 말하는 상태가 된다.
+    // (2026-09-13까지 이 자리의 문구는 `연락처`였다 — A 문서 3절 ⑨)
+    val hasIncoming = incoming is IncomingUi.Loaded || incoming is IncomingUi.Failed
+
     // A 문서 3절 빈 상태 `친구 없음`. **문구를 새로 쓰지 않는다.**
-    if (friends.isEmpty()) {
+    if (friends.isEmpty() && !hasIncoming) {
         Column(
             Modifier
                 .fillMaxSize()
@@ -403,7 +490,7 @@ private fun MyFriendsList(friendCount: Int?, all: List<RankedEntry>) {
             )
             Spacer(Modifier.height(CfDimen.GapSmall))
             Text(
-                "연락처에서 지인을 찾아보세요",
+                "닉네임으로 친구를 찾아보세요",
                 style = CfText.Body,
                 color = CfColor.TextSecondary,
                 textAlign = TextAlign.Center,
@@ -412,11 +499,68 @@ private fun MyFriendsList(friendCount: Int?, all: List<RankedEntry>) {
         return
     }
 
+    val toast = rememberToaster()
+    val namedToast = rememberNamedToaster()
+
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(CfDimen.ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(CfDimen.GapMedium),
     ) {
+        // ── 받은 친구 요청 (A 문서 3절 · 2026-08-27) ──
+        // 🔴 **0건이면 아무것도 안 그린다.** `받은 친구 요청 0`을 그리면 늘 보이는
+        //    빈 섹션이 되고, 그건 죽은 자리다(탭을 안 만든 것과 같은 이유).
+        when (incoming) {
+            IncomingUi.Idle, IncomingUi.Loading, IncomingUi.Empty -> Unit
+
+            is IncomingUi.Failed -> item {
+                Column {
+                    Text(
+                        "받은 요청을 불러오지 못했어요",
+                        style = CfText.Body,
+                        color = CfColor.TextSecondary,
+                    )
+                    Spacer(Modifier.height(CfDimen.GapSmall))
+                    CfTextButton(text = "다시 시도", onClick = vm::loadIncoming)
+                }
+            }
+
+            is IncomingUi.Loaded -> {
+                item {
+                    Text(
+                        "받은 친구 요청 ${incoming.rows.size}",
+                        style = CfText.Section,
+                        color = CfColor.TextPrimary,
+                    )
+                }
+                items(incoming.rows, key = { "incoming-${it.requesterId}" }) { row ->
+                    IncomingRequestRow(
+                        row = row,
+                        onAccept = {
+                            vm.accept(row.requesterId) { ok ->
+                                if (ok) {
+                                    namedToast(CfToast.FRIEND_ACCEPTED, row.nickname)
+                                    // 🔴 여기서 랭킹을 다시 읽는다 — 안 읽으면
+                                    //    `내 친구 {n}`이 그대로여서 수락이 실패한
+                                    //    것처럼 보인다([onFriendsChanged] 주석).
+                                    onFriendsChanged()
+                                } else {
+                                    toast(CfToast.FRIEND_ACCEPT_FAILED)
+                                }
+                            }
+                        },
+                        onDecline = {
+                            vm.decline(row.requesterId) { ok ->
+                                toast(
+                                    if (ok) CfToast.FRIEND_DECLINED else CfToast.FRIEND_ACCEPT_FAILED,
+                                )
+                            }
+                        },
+                    )
+                }
+            }
+        }
+
         item {
             Text(
                 friendCount?.let { "친구 ${it}명" } ?: "친구",
@@ -462,6 +606,44 @@ private fun MyFriendsList(friendCount: Int?, all: List<RankedEntry>) {
 //    ⚠️ **다시 만들 때는 연락처 매칭(전화번호 해시 대조)과 같이 붙인다.** 화면만
 //    되살리면 같은 사고가 그대로 돌아온다. 권한 요청 UI([ContactsPermissionPrompt])는
 //    그때 쓰려고 **지우지 않고 남겨 뒀다.**
+
+/**
+ * 받은 친구 요청 한 줄 — `{닉네임}` + `수락` / `거절` (A 문서 3절 · 2026-08-27).
+ *
+ * ⚠️ **`거절`을 [CfTextButton]으로 둔다.** `수락`과 같은 무게로 그리면 중장년 타깃에서
+ *    둘 중 무엇이 기본 행동인지 알 수 없다(1절 Ghost 규칙).
+ *
+ * ⚠️ **닉네임이 유일한 단서다** — 종수·지역이 없다(A 문서 4절 27번).
+ */
+@Composable
+private fun IncomingRequestRow(
+    row: FriendRules.Incoming,
+    onAccept: () -> Unit,
+    onDecline: () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(CfDimen.RadiusCard))
+            .background(CfColor.Surface)
+            .padding(CfDimen.GapMedium),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Avatar(row.nickname)
+        Spacer(Modifier.width(CfDimen.GapMedium))
+        Text(
+            row.nickname,
+            style = CfText.BodyBold,
+            color = CfColor.TextPrimary,
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        CfTextButton(text = "거절", onClick = onDecline)
+        Spacer(Modifier.width(CfDimen.GapSmall))
+        CfSmallButton(text = "수락", onClick = onAccept)
+    }
+}
 
 /**
  * 이름 첫 글자 아바타.

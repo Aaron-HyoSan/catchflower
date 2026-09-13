@@ -86,4 +86,23 @@ object AppLinks {
     /** 플레이스토어 앱 페이지. 4절 16번 — **출시 전에는 404다.** */
     fun playStore(applicationId: String): String =
         "https://play.google.com/store/apps/details?id=$applicationId"
+
+    /**
+     * **스토어 페이지가 살아 있는가.** [playStore]가 주는 URL이 404가 아닌 날 `true`로 바꾼다.
+     *
+     * ## 왜 상수 하나로 두는가
+     *
+     * 🔴 **화면이 「링크를 보내세요」라고 말하는데 그 링크가 404다.** 클로즈드 테스트에서도
+     *    스토어 페이지는 없다 — 테스터 12명이 첫날 그 링크를 받는다(A 문서 4절 16번).
+     *    그 사실을 **문구로 말하는 것**이 유일하게 정직한 상태이고, 그 문구는 출시하는 날
+     *    **거짓이 된다.** 그래서 지울 자리를 한 곳으로 모았다.
+     *
+     * ⚠️ **`BuildConfig.DEBUG`로 가르지 않는다.** 클로즈드 테스트에 올라가는 것은
+     *    **릴리스 빌드**다 — 디버그로 가르면 정작 테스터가 보는 빌드에서 안내가 사라진다.
+     *
+     * 🔵 **바꾸는 날 할 일:** 이 값을 `true`로 + `A_문구·버튼_스펙.md` 3절
+     *    `19 초대 링크 · 출시 전 안내` 줄 삭제. 두 곳뿐이다
+     *    ([com.catchflower.app.ui.ranking.FriendsScreen]이 유일한 사용처).
+     */
+    const val STORE_LISTING_LIVE = false
 }

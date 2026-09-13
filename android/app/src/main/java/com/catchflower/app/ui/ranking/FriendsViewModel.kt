@@ -40,6 +40,29 @@ sealed interface FriendSearchUi {
 }
 
 /**
+ * 화면 19 `내 친구` 탭 맨 위 **받은 요청** 섹션의 상태(2026-08-27 · 항목 1).
+ *
+ * 🔴 **[Empty]와 [Failed]를 갈라 둔다.** 뭉치면 **못 물어본 것을 "받은 요청이 없다"고
+ *    말한다** — 그런데 이 섹션은 0건일 때 **아무것도 안 그리므로**, 실패를 0건으로
+ *    뭉개면 화면에 흔적이 전혀 남지 않는다. 요청이 와 있는데 영원히 못 보게 된다.
+ *    ([FriendSearchUi]에서 한 판단과 같지만 여기가 더 조용하다.)
+ */
+sealed interface IncomingUi {
+    /** 아직 안 물어봤다. 로그인 전이거나 키 없는 빌드도 여기다. */
+    data object Idle : IncomingUi
+
+    data object Loading : IncomingUi
+
+    /** 받은 요청이 0건이다. 화면은 섹션을 **안 그린다**(A 문서 3절). */
+    data object Empty : IncomingUi
+
+    data class Loaded(val rows: List<FriendRules.Incoming>) : IncomingUi
+
+    /** 못 읽었다. 화면은 `받은 요청을 불러오지 못했어요` + `다시 시도`를 그린다. */
+    data class Failed(val code: Int) : IncomingUi
+}
+
+/**
  * 화면 19 `검색`(닉네임으로 친구 찾기) · `친구 추가`.
  *
  * 2026-08-13에 죽은 버튼을 실제 동작으로 바꾸며 생겼다(A 문서 3절 ③).
@@ -152,15 +175,7 @@ class FriendsViewModel @JvmOverloads constructor(
      *   **로그인이 필요해 막힌 경우에는 아예 안 부른다.**
      */
     fun add(userId: String, onDone: (Boolean) -> Unit) {
-        if (LoginGate.requiresLogin(
-                action = LoginGate.GatedAction.FRIEND_REQUEST,
-                kakaoLinked = usage.kakaoLinked(),
-                identifyCount = usage.identifyCount(),
-            )
-        ) {
-            loginRequired = LoginGate.GatedAction.FRIEND_REQUEST
-            return
-        }
+        if (gateBlocks()) return
         val src = source ?: run {
             onDone(false)
             return
@@ -179,6 +194,97 @@ class FriendsViewModel @JvmOverloads constructor(
                 FriendResult.TooShort, FriendResult.NotConfigured -> onDone(false)
             }
         }
+    }
+
+    // ── 받은 요청 · 수락 · 거절 (2026-08-27 · 항목 1) ─────────────────
+
+    var incoming by mutableStateOf<IncomingUi>(IncomingUi.Idle)
+        private set
+
+    private var incomingJob: Job? = null
+
+    /**
+     * 받은 요청을 읽는다. 화면이 열릴 때·수락·거절 뒤에 부른다.
+     *
+     * ⚠️ **이미 돌고 있으면 다시 시작한다**(`cancel` 후 재발). 수락 직후에 앞의 조회가
+     *    늦게 도착하면 **방금 수락한 사람이 목록에 다시 나타난다.**
+     *
+     * 🔴 **[IncomingUi.Loading]으로 먼저 바꾸지 않는다** — 이미 목록이 그려져 있을 때
+     *    로딩으로 되돌리면 섹션이 사라졌다 나타난다(수락할 때마다 화면이 튄다).
+     *    처음 조회에서만 [IncomingUi.Loading]을 쓴다.
+     */
+    fun loadIncoming() {
+        val src = source ?: return
+        incomingJob?.cancel()
+        if (incoming is IncomingUi.Idle) incoming = IncomingUi.Loading
+        incomingJob = viewModelScope.launch {
+            incoming = when (val res = src.incoming()) {
+                is FriendResult.Loaded ->
+                    if (res.value.isEmpty()) IncomingUi.Empty else IncomingUi.Loaded(res.value)
+
+                is FriendResult.Failed -> IncomingUi.Failed(res.code)
+                // 여기까지 올 수 없다(검색어가 없는 호출이다). 그래도 뭉개지 않는다.
+                FriendResult.TooShort, FriendResult.NotConfigured -> IncomingUi.Failed(0)
+            }
+        }
+    }
+
+    /**
+     * 받은 요청을 수락한다. **여기서 실제로 친구가 된다**(C-2).
+     *
+     * 🔴 **로그인 게이트를 [LoginGate.GatedAction.FRIEND_REQUEST]로 재사용한다.**
+     *    새 enum 값을 만들지 않았다 — 그 목록은 공유계약 3절이고 **혼자 못 바꾼다**
+     *    (iOS도 같은 값을 가져야 한다). 수락은 친구 관계를 만드는 같은 종류의 행동이라
+     *    같은 게이트가 맞다.
+     *
+     * ⚠️ 성공 뒤 [onDone]이 `true`로 불리면 화면은 **친구 랭킹까지 다시 읽어야 한다** —
+     *    안 읽으면 `내 친구 {n}`이 그대로여서 **수락이 안 된 것처럼 보인다.**
+     *
+     * @param onDone `true`면 친구가 됐다. **로그인이 막았을 때는 안 부른다**([add]와 같다).
+     */
+    fun accept(requesterId: String, onDone: (Boolean) -> Unit) {
+        if (gateBlocks()) return
+        val src = source ?: run {
+            onDone(false)
+            return
+        }
+        viewModelScope.launch {
+            val ok = src.accept(requesterId) is FriendResult.Loaded
+            // 🔴 **성공이든 실패든 다시 읽는다.** 실패 원인 대부분이 "그 요청이 이미
+            //    없다"(취소·탈퇴)이므로, 안 읽으면 사라진 요청이 목록에 계속 남아
+            //    누를 때마다 실패한다.
+            loadIncoming()
+            onDone(ok)
+        }
+    }
+
+    /**
+     * 받은 요청을 거절한다 = 행을 지운다. **차단이 아니다** — 상대는 다시 보낼 수 있다.
+     *
+     * ⚠️ 0행 삭제도 성공이다([FriendService.decline]) — 이미 없는 요청을 거절한 것이다.
+     */
+    fun decline(requesterId: String, onDone: (Boolean) -> Unit) {
+        if (gateBlocks()) return
+        val src = source ?: run {
+            onDone(false)
+            return
+        }
+        viewModelScope.launch {
+            val ok = src.decline(requesterId) is FriendResult.Loaded
+            loadIncoming()
+            onDone(ok)
+        }
+    }
+
+    /** [add]·[accept]·[decline]이 같은 판정을 쓴다 — 세 곳에 각자 쓰면 한 곳이 안 막힌다. */
+    private fun gateBlocks(): Boolean {
+        val blocked = LoginGate.requiresLogin(
+            action = LoginGate.GatedAction.FRIEND_REQUEST,
+            kakaoLinked = usage.kakaoLinked(),
+            identifyCount = usage.identifyCount(),
+        )
+        if (blocked) loginRequired = LoginGate.GatedAction.FRIEND_REQUEST
+        return blocked
     }
 
     /**

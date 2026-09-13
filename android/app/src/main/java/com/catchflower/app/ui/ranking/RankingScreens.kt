@@ -98,7 +98,7 @@ fun RankingScreen(
                 onCapture = onCapture,
                 mySeasonSpeciesCount = mySeasonSpeciesCount,
             )
-            RankingTab.FRIENDS -> FriendRanking(vm, onInvite = onOpenFriends)
+            RankingTab.FRIENDS -> FriendRanking(vm, onFindFriends = onOpenFriends)
         }
     }
 }
@@ -581,7 +581,7 @@ private fun RankBadge(rank: Int) {
 // ── 화면 18 친구 ────────────────────────────────────────────────────
 
 @Composable
-private fun FriendRanking(vm: RankingViewModel, onInvite: () -> Unit) {
+private fun FriendRanking(vm: RankingViewModel, onFindFriends: () -> Unit) {
     // 🔴 **응답이 오기 전에 초대 화면을 띄우면 안 된다.** 친구가 8명인 사용자도
     //    탭을 열 때마다 `아직 겨룰 친구가 없어요`를 먼저 보게 된다 —
     //    더미를 읽던 때는 목록이 항상 있었으니 없던 문제다.
@@ -612,7 +612,7 @@ private fun FriendRanking(vm: RankingViewModel, onInvite: () -> Unit) {
     //    `|| forceNoFriends`를 붙여 뒀던 자리인데, 그러면 테스트가 재는 조건과
     //    화면이 쓰는 조건이 갈린다(2026-08-09에 떼면서 남긴 주석 참고).
     if (vm.showInviteInsteadOfRanking || vm.friends is FriendRankingUi.NotConfigured) {
-        NoFriendsInvite(onInvite = onInvite)
+        NoFriendsInvite(onFindFriends = onFindFriends)
         return
     }
 
@@ -651,7 +651,7 @@ private fun FriendRanking(vm: RankingViewModel, onInvite: () -> Unit) {
             }
         }
         items(vm.friendRest) { ranked -> RankRow(ranked, vm) }
-        item { InvitePrompt(onInvite) }
+        item { InvitePrompt(onFindFriends) }
     }
 }
 
@@ -714,9 +714,15 @@ private fun PodiumSlot(ranked: RankedEntry, vm: RankingViewModel, isWinner: Bool
     }
 }
 
-/** 초대 유도 — `친구가 많을수록 재미있어요`. 리스트 아래에 둔다. */
+/**
+ * 초대 유도 — `친구가 많을수록 재미있어요`. 리스트 아래에 둔다.
+ *
+ * 🔴 **버튼 이름이 `초대`가 아니라 `친구 찾기`다**(2026-09-13 · A 문서 2절 261행).
+ *    [onFindFriends]가 실제로 하는 일은 **화면 19로 이동**이다 — 공유 시트가 아니다.
+ *    옛 이름은 라벨이 동작을 거짓말하고 있었다(A 문서 3절 ⑨ ④).
+ */
 @Composable
-private fun InvitePrompt(onInvite: () -> Unit) {
+private fun InvitePrompt(onFindFriends: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -729,13 +735,13 @@ private fun InvitePrompt(onInvite: () -> Unit) {
             Text("친구가 많을수록 재미있어요", style = CfText.BodyBold, color = CfColor.TextPrimary)
             Spacer(Modifier.height(CfDimen.GapTiny))
             Text(
-                "연락처에 저장된 지인을 초대해 보세요",
+                "닉네임으로 친구를 찾아보세요",
                 style = CfText.Caption,
                 color = CfColor.TextSecondary,
             )
         }
         Spacer(Modifier.width(CfDimen.GapMedium))
-        CfSmallButton(text = "초대", onClick = onInvite)
+        CfSmallButton(text = "친구 찾기", onClick = onFindFriends)
     }
 }
 
@@ -743,10 +749,19 @@ private fun InvitePrompt(onInvite: () -> Unit) {
  * 친구 0~2명 — 랭킹 대신 초대 CTA가 **화면의 주인공**이 된다 (주석 ④).
  *
  * 문구는 A 문서 3절 빈 상태 `친구 없음` 항목을 쓴다:
- * `아직 겨룰 친구가 없어요` / `연락처에서 지인을 찾아보세요`.
+ * `아직 겨룰 친구가 없어요` / `닉네임으로 친구를 찾아보세요`.
+ *
+ * 🔴 **2026-09-13에 두 군데를 갈았다**(A 문서 3절 ⑨):
+ * - 부연 `연락처에서 지인을 찾아보세요` → **연락처는 영구히 안 붙는다.** 공개된
+ *   처방침 §1 3)이 「연락처 권한 자체를 요청하지 않습니다」라고 약속했다.
+ * - 버튼 `초대 링크 보내기` → **링크를 안 보낸다.** [onFindFriends]는 `onOpenFriends`라
+ *   화면 19로 **이동**한다. 라벨이 동작을 거짓말하고 있었다.
+ *
+ * ⚠️ **이 자리를 「초대 자리가 없어서 새로 만들어야 한다」로 읽지 마라** —
+ *    `기획_친구초대_바이럴.md`가 그렇게 적었다가 1-a에서 정정했다. 자리는 셋이다.
  */
 @Composable
-private fun NoFriendsInvite(onInvite: () -> Unit) {
+private fun NoFriendsInvite(onFindFriends: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
@@ -757,15 +772,15 @@ private fun NoFriendsInvite(onInvite: () -> Unit) {
         Text("아직 겨룰 친구가 없어요", style = CfText.Section, color = CfColor.TextPrimary)
         Spacer(Modifier.height(CfDimen.GapSmall))
         Text(
-            "연락처에서 지인을 찾아보세요",
+            "닉네임으로 친구를 찾아보세요",
             style = CfText.Body,
             color = CfColor.TextSecondary,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(CfDimen.GapLarge))
         com.catchflower.app.ui.component.CfPrimaryButton(
-            text = "초대 링크 보내기",
-            onClick = onInvite,
+            text = "친구 찾기",
+            onClick = onFindFriends,
         )
         // 🔴 여기 있던 `[개발] 랭킹으로 돌아가기` 버튼을 지웠다(2026-08-09).
         //    친구 0명이 실제 상태가 된 지금, 되돌릴 랭킹 자체가 없다.
